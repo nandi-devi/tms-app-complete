@@ -231,8 +231,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     if (!lr.to) newErrors.to = 'Destination is required.';
     if (!lr.consignorId) newErrors.consignorId = 'Consignor is required.';
     if (!lr.consigneeId) newErrors.consigneeId = 'Consignee is required.';
-    if (lr.packages.some(p => !p.count || !p.description)) {
-        newErrors.packages = 'Package count and description are required for all package lines.';
+    if (lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
+        newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
