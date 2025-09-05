@@ -1,6 +1,5 @@
 import type { Vehicle } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
 
 export const getVehicles = async (): Promise<Vehicle[]> => {
     const response = await fetch(`${API_BASE_URL}/vehicles`);
