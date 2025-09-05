@@ -15,7 +15,6 @@ interface LorryReceiptFormProps {
   customers: Customer[];
   vehicles: Vehicle[];
   existingLr?: LorryReceipt;
-  nextLrNumber: number;
   onSaveCustomer: (customer: Omit<Customer, 'id' | '_id'> & { _id?: string }) => Promise<Customer>;
   lorryReceipts: LorryReceipt[];
   onSaveVehicle: (vehicle: Omit<Vehicle, 'id' | '_id'>) => Promise<Vehicle>;
@@ -146,7 +145,7 @@ const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => vo
 };
 
 
-export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCancel, customers, vehicles, existingLr, nextLrNumber, onSaveCustomer, lorryReceipts, onSaveVehicle }) => {
+export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCancel, customers, vehicles, existingLr, onSaveCustomer, lorryReceipts, onSaveVehicle }) => {
   
   const initialState: Omit<LorryReceipt, 'id' | 'status'> = {
     date: getCurrentDate(),
@@ -275,7 +274,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         {vehicles.map(v => <option key={v._id} value={v.number} />)}
       </datalist>
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-800">{existingLr ? `Edit Lorry Receipt #${existingLr.id}` : `Create Lorry Receipt #${nextLrNumber}`}</h2>
+        <h2 className="text-3xl font-bold text-gray-800">{existingLr ? `Edit Lorry Receipt #${existingLr.id}` : 'Create Lorry Receipt'}</h2>
         <div className="flex items-center space-x-2">
             <span className="font-bold text-lg">Total: ₹{lr.totalAmount.toLocaleString('en-IN')}</span>
         </div>

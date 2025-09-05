@@ -14,6 +14,7 @@ export enum GstPayableBy {
 }
 
 export interface ILorryReceipt extends Document {
+  id: number;
   date: string;
   reportingDate?: string;
   deliveryDate?: string;
@@ -55,6 +56,7 @@ export interface ILorryReceipt extends Document {
 }
 
 const LorryReceiptSchema = new Schema({
+  id: { type: Number, unique: true },
   date: { type: String, required: true },
   reportingDate: { type: String },
   deliveryDate: { type: String },

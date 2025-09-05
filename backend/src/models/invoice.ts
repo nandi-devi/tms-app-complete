@@ -5,6 +5,7 @@ export enum GstType {
 }
 
 export interface IInvoice extends Document {
+  id: number;
   date: string;
   customer: Schema.Types.ObjectId;
   lorryReceipts: Schema.Types.ObjectId[];
@@ -23,6 +24,7 @@ export interface IInvoice extends Document {
 }
 
 const InvoiceSchema = new Schema({
+  id: { type: Number, unique: true },
   date: { type: String, required: true },
   customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
   lorryReceipts: [{ type: Schema.Types.ObjectId, ref: 'LorryReceipt' }],

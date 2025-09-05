@@ -15,7 +15,6 @@ interface InvoiceFormProps {
   customers: Customer[];
   companyInfo: CompanyInfo;
   existingInvoice?: Invoice;
-  nextInvoiceNumber: number;
   preselectedLr?: LorryReceipt;
 }
 
@@ -30,7 +29,7 @@ const ToggleSwitch: React.FC<{ label: string; checked: boolean; onChange: (check
     </label>
 );
 
-export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, companyInfo, existingInvoice, nextInvoiceNumber, preselectedLr }) => {
+export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, companyInfo, existingInvoice, preselectedLr }) => {
 
   const getInitialState = (): Omit<Invoice, 'id'> => {
     if (existingInvoice) {
@@ -75,7 +74,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   useEffect(() => {
     if (preselectedLr) {
       // Bill to consignor by default when creating from an LR.
-      const billToId = preselectedLr.consignorId;
+      const billToId = preselectedLr.consignor._id;
       setInvoice(prev => ({ ...prev, customerId: billToId as any }));
       setSelectedLrs(new Set([preselectedLr._id]));
     }
@@ -166,7 +165,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     }
   };
   
-  const customerLrs = availableLrs.filter(lr => lr.consignorId === invoice.customerId || lr.consigneeId === invoice.customerId);
+  const customerLrs = availableLrs.filter(lr => lr.consignor._id === invoice.customerId || lr.consignee._id === invoice.customerId);
   const customer = customers.find(c => c._id === invoice.customerId);
   const manualTaxFromRate = invoice.gstType === GstType.IGST 
     ? (invoice.totalAmount * invoice.igstRate / 100) 
@@ -176,7 +175,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-800">{existingInvoice ? `Edit Invoice #${existingInvoice.id}` : `Create Invoice #${nextInvoiceNumber}`}</h2>
+      <h2 className="text-3xl font-bold text-gray-800">{existingInvoice ? `Edit Invoice #${existingInvoice.id}` : 'Create Invoice'}</h2>
 
       <Card title="Invoice Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
