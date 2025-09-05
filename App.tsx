@@ -13,19 +13,24 @@ import { Setup } from './components/Setup';
 import { hashPassword } from './services/authService';
 import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment } from './types';
 import { LorryReceiptStatus } from './types';
-import { initialCustomers, initialVehicles, initialCompanyInfo } from './constants';
+import { initialCompanyInfo } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { mockLorryReceipts, mockInvoices, mockPayments } from './mockData';
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer as deleteCustomerService } from './services/customerService';
+import { getVehicles, createVehicle } from './services/vehicleService';
+import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryReceipt } from './services/lorryReceiptService';
+import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
+import { getPayments, createPayment } from './services/paymentService';
 
 export type View = 
   | { name: 'DASHBOARD' }
   | { name: 'CREATE_LR' }
-  | { name: 'EDIT_LR', id: number }
-  | { name: 'VIEW_LR', id: number }
+  | { name: 'EDIT_LR', id: string }
+  | { name: 'VIEW_LR', id: string }
   | { name: 'CREATE_INVOICE' }
-  | { name: 'CREATE_INVOICE_FROM_LR', lrId: number }
-  | { name: 'EDIT_INVOICE', id: number }
-  | { name: 'VIEW_INVOICE', id: number }
+  | { name: 'CREATE_INVOICE_FROM_LR', lrId: string }
+  | { name: 'EDIT_INVOICE', id: string }
+  | { name: 'VIEW_INVOICE', id: string }
   | { name: 'SETTINGS' }
   | { name: 'CLIENTS' }
   | { name: 'LEDGER' };
@@ -33,23 +38,43 @@ export type View =
 const App: React.FC = () => {
   const [view, setView] = useState<View>({ name: 'DASHBOARD' });
   
-  const [lorryReceipts, setLorryReceipts] = useLocalStorage<LorryReceipt[]>('lorryReceipts', mockLorryReceipts);
-  const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', mockInvoices);
-  const [payments, setPayments] = useLocalStorage<Payment[]>('payments', mockPayments);
-  const [customers, setCustomers] = useLocalStorage<Customer[]>('customers', initialCustomers);
-  const [vehicles, setVehicles] = useLocalStorage<Vehicle[]>('vehicles', initialVehicles);
+  const [lorryReceipts, setLorryReceipts] = useState<LorryReceipt[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo>('companyInfo', initialCompanyInfo);
 
-  const [nextLrNumber, setNextLrNumber] = useLocalStorage<number>('nextLrNumber', (mockLorryReceipts.length > 0 ? Math.max(...mockLorryReceipts.map(lr => lr.id)) : 0) + 1);
-  const [nextInvoiceNumber, setNextInvoiceNumber] = useLocalStorage<number>('nextInvoiceNumber', (mockInvoices.length > 0 ? Math.max(...mockInvoices.map(i => i.id)) : 0) + 1);
-  const [nextCustomerId, setNextCustomerId] = useLocalStorage<number>('nextCustomerId', (initialCustomers.length > 0 ? Math.max(...initialCustomers.map(c => c.id)) : 0) + 1);
-  const [nextPaymentId, setNextPaymentId] = useLocalStorage<number>('nextPaymentId', (mockPayments.length > 0 ? Math.max(...mockPayments.map(p => p.id)) : 0) + 1);
-  const [nextVehicleId, setNextVehicleId] = useLocalStorage<number>('nextVehicleId', (initialVehicles.length > 0 ? Math.max(...initialVehicles.map(v => v.id)) : 0) + 1);
+  const [nextLrNumber, setNextLrNumber] = useState(0);
+  const [nextInvoiceNumber, setNextInvoiceNumber] = useState(0);
     
   // Auth state
   const [passwordHash, setPasswordHash] = useLocalStorage<string | null>('app_password_hash', null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState('');
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [fetchedCustomers, fetchedVehicles, fetchedLorryReceipts, fetchedInvoices, fetchedPayments] = await Promise.all([
+          getCustomers(),
+          getVehicles(),
+          getLorryReceipts(),
+          getInvoices(),
+          getPayments(),
+        ]);
+        setCustomers(fetchedCustomers);
+        setVehicles(fetchedVehicles);
+        setLorryReceipts(fetchedLorryReceipts);
+        setInvoices(fetchedInvoices);
+        setPayments(fetchedPayments);
+      } catch (error) {
+        console.error('Failed to fetch initial data:', error);
+        // Optionally, show an error message to the user
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   const handleSetPassword = async (password: string) => {
       const hash = await hashPassword(password);
@@ -87,105 +112,150 @@ const App: React.FC = () => {
       return { success: true, message: "Password updated successfully." };
   };
 
-  const saveLorryReceipt = (lr: Omit<LorryReceipt, 'id' | 'status'> & { id?: number }) => {
-    if (lr.id) {
-      setLorryReceipts(prev => prev.map(l => l.id === lr.id ? { ...l, ...lr } : l));
-    } else {
-      const newLr: LorryReceipt = {
-        ...lr,
-        id: nextLrNumber,
-        status: LorryReceiptStatus.CREATED,
-      };
-      setLorryReceipts(prev => [...prev, newLr]);
-      setNextLrNumber(prev => prev + 1);
+  const saveLorryReceipt = async (lr: Omit<LorryReceipt, 'id' | '_id' | 'status'> & { _id?: string }) => {
+    try {
+      if (lr._id) {
+        const updatedLr = await updateLorryReceipt(lr._id, lr);
+        setLorryReceipts(prev => prev.map(l => l._id === updatedLr._id ? updatedLr : l));
+      } else {
+        const newLrData = {
+          ...lr,
+          status: LorryReceiptStatus.CREATED,
+        };
+        const newLr = await createLorryReceipt(newLrData);
+        setLorryReceipts(prev => [...prev, newLr]);
+      }
+      setView({ name: 'DASHBOARD' });
+    } catch (error) {
+      console.error('Failed to save lorry receipt:', error);
+      // Handle error appropriately
     }
-    setView({ name: 'DASHBOARD' });
   };
   
-  const saveCustomer = (customerData: Omit<Customer, 'id'> & { id?: number }): Customer => {
-    if (customerData.id) {
-      // Update existing customer
-      const updatedCustomer = { ...customerData, id: customerData.id } as Customer;
-      setCustomers(prev => prev.map(c => c.id === customerData.id ? updatedCustomer : c));
-      return updatedCustomer;
-    } else {
-      // Create new customer
-      const newCustomer: Customer = {
-        ...customerData,
-        id: nextCustomerId,
-      };
-      setCustomers(prev => [...prev, newCustomer]);
-      setNextCustomerId(prev => prev + 1);
-      return newCustomer;
+  const saveCustomer = async (customerData: Omit<Customer, 'id' | '_id'> & { _id?: string }): Promise<Customer> => {
+    try {
+      if (customerData._id) {
+        // Update existing customer
+        const updated = await updateCustomer(customerData._id, customerData);
+        setCustomers(prev => prev.map(c => c._id === updated._id ? updated : c));
+        return updated;
+      } else {
+        // Create new customer
+        const newCustomer = await createCustomer(customerData);
+        setCustomers(prev => [...prev, newCustomer]);
+        return newCustomer;
+      }
+    } catch (error) {
+      console.error('Failed to save customer:', error);
+      // Optionally, show an error to the user
+      throw error; // Re-throw to be handled by the form
     }
   };
 
-  const deleteCustomer = (id: number) => {
-    const isUsedInLr = lorryReceipts.some(lr => lr.consignorId === id || lr.consigneeId === id);
-    const isUsedInInvoice = invoices.some(inv => inv.customerId === id);
-    const isUsedInPayment = payments.some(p => p.customerId === id);
+  const deleteCustomer = async (id: string) => {
+    // TODO: Re-implement this check with server-side logic if necessary.
+    // For now, we assume the backend will handle deletion constraints.
+    // const isUsedInLr = lorryReceipts.some(lr => lr.consignorId === id || lr.consigneeId === id);
+    // const isUsedInInvoice = invoices.some(inv => inv.customerId === id);
+    // const isUsedInPayment = payments.some(p => p.customerId === id);
 
-    if (isUsedInLr || isUsedInInvoice || isUsedInPayment) {
-      alert('This client cannot be deleted because they are associated with existing lorry receipts, invoices, or payments. Please remove those records first.');
-      return;
-    }
+    // if (isUsedInLr || isUsedInInvoice || isUsedInPayment) {
+    //   alert('This client cannot be deleted because they are associated with existing lorry receipts, invoices, or payments. Please remove those records first.');
+    //   return;
+    // }
     
     if (window.confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-      setCustomers(prev => prev.filter(c => c.id !== id));
+      try {
+        await deleteCustomerService(id);
+        setCustomers(prev => prev.filter(c => c._id !== id));
+      } catch (error) {
+        console.error('Failed to delete customer:', error);
+        alert('Failed to delete client. It might be in use.');
+      }
     }
   };
 
-  const saveVehicle = (vehicleData: Omit<Vehicle, 'id'>): Vehicle => {
-    const newVehicle: Vehicle = {
-        ...vehicleData,
-        id: nextVehicleId,
-    };
-    setVehicles(prev => [...prev, newVehicle]);
-    setNextVehicleId(prev => prev + 1);
-    return newVehicle;
-  };
-
-  const saveInvoice = (invoice: Omit<Invoice, 'id'> & { id?: number }) => {
-    if (invoice.id) {
-      setInvoices(prev => prev.map(i => i.id === invoice.id ? { ...i, ...invoice } : i));
-    } else {
-      const newInvoice: Invoice = {
-        ...invoice,
-        id: nextInvoiceNumber,
-      };
-      setInvoices(prev => [...prev, newInvoice]);
-      setNextInvoiceNumber(prev => prev + 1);
-
-      const invoicedLrIds = new Set(invoice.lorryReceipts.map(lr => lr.id));
-      setLorryReceipts(prevLrs => prevLrs.map(lr => 
-        invoicedLrIds.has(lr.id) ? { ...lr, status: LorryReceiptStatus.INVOICED } : lr
-      ));
+  const saveVehicle = async (vehicleData: Omit<Vehicle, 'id' | '_id'>): Promise<Vehicle> => {
+    try {
+      const newVehicle = await createVehicle(vehicleData);
+      setVehicles(prev => [...prev, newVehicle]);
+      return newVehicle;
+    } catch (error) {
+      console.error('Failed to save vehicle:', error);
+      throw error;
     }
-    setView({ name: 'DASHBOARD' });
   };
 
-  const savePayment = (payment: Omit<Payment, 'id'>) => {
-    const newPayment: Payment = {
-        ...payment,
-        id: nextPaymentId,
-    };
-    setPayments(prev => [...prev, newPayment]);
-    setNextPaymentId(prev => prev + 1);
+  const saveInvoice = async (invoice: Omit<Invoice, 'id' | '_id'> & { _id?: string }) => {
+    try {
+      let savedInvoice;
+      if (invoice._id) {
+        savedInvoice = await updateInvoice(invoice._id, invoice);
+        setInvoices(prev => prev.map(i => i._id === savedInvoice._id ? savedInvoice : i));
+      } else {
+        savedInvoice = await createInvoice(invoice);
+        setInvoices(prev => [...prev, savedInvoice]);
+      }
+
+      const invoicedLrIds = new Set(savedInvoice.lorryReceipts.map(lr => lr._id));
+      const updatedLrs = lorryReceipts.map(lr =>
+        invoicedLrIds.has(lr._id) ? { ...lr, status: LorryReceiptStatus.INVOICED } : lr
+      );
+      setLorryReceipts(updatedLrs);
+
+      // Also update status on the backend for each LR
+      for (const lrId of invoicedLrIds) {
+        await updateLorryReceipt(lrId, { status: LorryReceiptStatus.INVOICED });
+      }
+
+      setView({ name: 'DASHBOARD' });
+    } catch (error) {
+      console.error('Failed to save invoice:', error);
+    }
+  };
+
+  const savePayment = async (payment: Omit<Payment, 'id' | '_id'>) => {
+    try {
+      const newPayment = await createPayment(payment);
+      setPayments(prev => [...prev, newPayment]);
+    } catch (error) {
+      console.error('Failed to save payment:', error);
+    }
   };
   
-  const updateLrStatus = (id: number, status: LorryReceiptStatus) => {
-      setLorryReceipts(prev => prev.map(lr => lr.id === id ? { ...lr, status } : lr));
+  const updateLrStatus = async (id: string, status: LorryReceiptStatus) => {
+    try {
+        const lrToUpdate = lorryReceipts.find(lr => lr._id === id);
+        if (lrToUpdate) {
+            const updatedLr = await updateLorryReceipt(id, { ...lrToUpdate, status });
+            setLorryReceipts(prev => prev.map(lr => lr._id === id ? updatedLr : lr));
+        }
+    } catch (error) {
+        console.error('Failed to update LR status:', error);
+    }
   };
   
-  const deleteLr = (id: number) => {
+  const deleteLr = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this Lorry Receipt?')) {
-      setLorryReceipts(prev => prev.filter(lr => lr.id !== id));
+      try {
+        await deleteLorryReceipt(id);
+        setLorryReceipts(prev => prev.filter(lr => lr._id !== id));
+      } catch (error) {
+        console.error('Failed to delete lorry receipt:', error);
+        alert('Failed to delete lorry receipt. It might be in use in an invoice.');
+      }
     }
   };
 
-  const deleteInvoice = (id: number) => {
+  const deleteInvoice = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this Invoice?')) {
-      setInvoices(prev => prev.filter(i => i.id !== id));
+      try {
+        await deleteInvoiceService(id);
+        setInvoices(prev => prev.filter(i => i._id !== id));
+      } catch (error) {
+        console.error('Failed to delete invoice:', error);
+        alert('Failed to delete invoice.');
+      }
     }
   };
 
@@ -204,20 +274,20 @@ const App: React.FC = () => {
                   onSaveVehicle={saveVehicle}
                 />;
       case 'EDIT_LR':
-        const lrToEdit = lorryReceipts.find(lr => lr.id === view.id);
+        const lrToEdit = lorryReceipts.find(lr => lr._id === view.id);
         return lrToEdit ? <LorryReceiptForm 
                   onSave={saveLorryReceipt} 
                   onCancel={() => setView({ name: 'DASHBOARD' })} 
                   customers={customers}
                   vehicles={vehicles}
                   existingLr={lrToEdit}
-                  nextLrNumber={lrToEdit.id}
+                  nextLrNumber={0} // Not used anymore
                   onSaveCustomer={saveCustomer}
                   lorryReceipts={lorryReceipts}
                   onSaveVehicle={saveVehicle}
                 /> : <div>LR not found</div>;
       case 'VIEW_LR':
-        const lrToView = lorryReceipts.find(lr => lr.id === view.id);
+        const lrToView = lorryReceipts.find(lr => lr._id === view.id);
         return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} customers={customers} vehicles={vehicles} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
@@ -235,13 +305,13 @@ const App: React.FC = () => {
                   companyInfo={companyInfo}
                 />;
       case 'CREATE_INVOICE_FROM_LR':
-        const lrToInvoice = lorryReceipts.find(lr => lr.id === view.lrId);
+        const lrToInvoice = lorryReceipts.find(lr => lr._id === view.lrId);
         if (!lrToInvoice) return <div>LR not found</div>;
         const availableLrsForNewInvoice = lorryReceipts.filter(lr => 
             lr.status === LorryReceiptStatus.CREATED ||
             lr.status === LorryReceiptStatus.IN_TRANSIT ||
             lr.status === LorryReceiptStatus.DELIVERED ||
-            lr.id === view.lrId
+            lr._id === view.lrId
         );
          return <InvoiceForm 
                   onSave={saveInvoice}
@@ -253,10 +323,10 @@ const App: React.FC = () => {
                   companyInfo={companyInfo}
                 />;
       case 'EDIT_INVOICE':
-         const invoiceToEdit = invoices.find(inv => inv.id === view.id);
+         const invoiceToEdit = invoices.find(inv => inv._id === view.id);
          const lrsForEdit = lorryReceipts.filter(lr => 
             (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || 
-            invoiceToEdit?.lorryReceipts.some(ilr => ilr.id === lr.id)
+            invoiceToEdit?.lorryReceipts.some(ilr => ilr._id === lr._id)
           );
          return invoiceToEdit ? <InvoiceForm 
                    onSave={saveInvoice}
@@ -264,11 +334,11 @@ const App: React.FC = () => {
                    availableLrs={lrsForEdit}
                    customers={customers}
                    existingInvoice={invoiceToEdit}
-                   nextInvoiceNumber={invoiceToEdit.id}
+                   nextInvoiceNumber={0}
                    companyInfo={companyInfo}
                  /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
-        const invoiceToView = invoices.find(inv => inv.id === view.id);
+        const invoiceToView = invoices.find(inv => inv._id === view.id);
         return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} /> : <div>Invoice not found</div>;
       
       case 'SETTINGS':

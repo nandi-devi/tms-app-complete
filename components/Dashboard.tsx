@@ -17,9 +17,9 @@ interface DashboardProps {
   vehicles: Vehicle[];
   companyInfo: CompanyInfo;
   onViewChange: (view: View) => void;
-  onUpdateLrStatus: (id: number, status: LorryReceiptStatus) => void;
-  onDeleteLr: (id: number) => void;
-  onDeleteInvoice: (id: number) => void;
+  onUpdateLrStatus: (id: string, status: LorryReceiptStatus) => void;
+  onDeleteLr: (id: string) => void;
+  onDeleteInvoice: (id: string) => void;
 }
 
 const statusColors: { [key in LorryReceiptStatus]: string } = {
@@ -115,7 +115,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
   const [selectedStatus, setSelectedStatus] = useState('');
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | {type: 'INVOICE', data: Invoice} | null>(null);
 
-  const customerMap = useMemo(() => new Map(customers.map(c => [c.id, c.name])), [customers]);
+  const customerMap = useMemo(() => new Map(customers.map(c => [c._id, c.name])), [customers]);
 
   const filteredLrs = useMemo(() => {
     return lorryReceipts
@@ -141,13 +141,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
         const matchesStartDate = !start || lrDate >= start;
         const matchesEndDate = !end || lrDate <= end;
         const matchesCustomer = selectedCustomerId === '' || 
-          lr.consignorId === parseInt(selectedCustomerId) ||
-          lr.consigneeId === parseInt(selectedCustomerId);
+          lr.consignorId === selectedCustomerId ||
+          lr.consigneeId === selectedCustomerId;
         const matchesStatus = selectedStatus === '' || lr.status === selectedStatus;
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus;
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.id - a.id);
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || (b._id > a._id ? -1 : 1));
   }, [lorryReceipts, searchTerm, startDate, endDate, selectedCustomerId, selectedStatus, customerMap]);
 
   const filteredInvoices = useMemo(() => {
@@ -157,7 +157,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
         const matchesSearch = searchTerm === '' ||
           inv.id.toString().includes(searchTerm) ||
           customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          inv.lorryReceipts.some(lr => lr.id.toString().includes(searchTerm));
+          inv.lorryReceipts.some(lr => lr.id.includes(searchTerm));
 
         const invDate = new Date(inv.date);
         invDate.setHours(0, 0, 0, 0);
@@ -169,11 +169,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
         
         const matchesStartDate = !start || invDate >= start;
         const matchesEndDate = !end || invDate <= end;
-        const matchesCustomer = selectedCustomerId === '' || inv.customerId === parseInt(selectedCustomerId);
+        const matchesCustomer = selectedCustomerId === '' || inv.customerId === selectedCustomerId;
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer;
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.id - a.id);
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || (b._id > a._id ? -1 : 1));
   }, [invoices, searchTerm, startDate, endDate, selectedCustomerId, customerMap]);
 
   return (
@@ -206,7 +206,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
               onChange={e => setSelectedCustomerId(e.target.value)} 
             >
               <option value="">All Clients</option>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
             </Select>
            <Select
               label="LR Status"
@@ -237,7 +237,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLrs.map(lr => (
-                <tr key={lr.id} onClick={() => setPreviewItem({ type: 'LR', data: lr })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
+                <tr key={lr._id} onClick={() => setPreviewItem({ type: 'LR', data: lr })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lr.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(lr.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customerMap.get(lr.consignorId)}</td>
@@ -248,7 +248,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
                     <select 
                       value={lr.status} 
                       onClick={e => e.stopPropagation()}
-                      onChange={(e) => onUpdateLrStatus(lr.id, e.target.value as LorryReceiptStatus)}
+                      onChange={(e) => onUpdateLrStatus(lr._id, e.target.value as LorryReceiptStatus)}
                       className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full ${statusColors[lr.status]} border-0 bg-opacity-80 focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 focus:outline-none`}
                     >
                       {Object.values(LorryReceiptStatus).map(status => (
@@ -258,11 +258,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     {[LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) && (
-                        <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'CREATE_INVOICE_FROM_LR', lrId: lr.id }); }} className="text-blue-600 hover:text-blue-900 transition-colors">Create Invoice</button>
+                        <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'CREATE_INVOICE_FROM_LR', lrId: lr.id as any }); }} className="text-blue-600 hover:text-blue-900 transition-colors">Create Invoice</button>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_LR', id: lr.id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
-                    <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_LR', id: lr.id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
-                    <button onClick={(e) => { e.stopPropagation(); onDeleteLr(lr.id); }} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
+                    <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_LR', id: lr._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
+                    <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_LR', id: lr._id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteLr(lr._id); }} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
                   </td>
                 </tr>
               ))}
@@ -286,15 +286,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredInvoices.map(inv => (
-                <tr key={inv.id} onClick={() => setPreviewItem({ type: 'INVOICE', data: inv })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
+                <tr key={inv._id} onClick={() => setPreviewItem({ type: 'INVOICE', data: inv })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inv.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customerMap.get(inv.customerId)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{inv.grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_INVOICE', id: inv.id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
-                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_INVOICE', id: inv.id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
-                     <button onClick={(e) => { e.stopPropagation(); onDeleteInvoice(inv.id); }} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
+                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_INVOICE', id: inv._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
+                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_INVOICE', id: inv._id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
+                     <button onClick={(e) => { e.stopPropagation(); onDeleteInvoice(inv._id); }} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
                   </td>
                 </tr>
               ))}

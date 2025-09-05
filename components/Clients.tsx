@@ -10,13 +10,13 @@ import { indianStates } from '../constants';
 
 interface ClientsProps {
   customers: Customer[];
-  onSave: (customer: Omit<Customer, 'id'> & { id?: number }) => Customer;
-  onDelete: (id: number) => void;
+  onSave: (customer: Omit<Customer, 'id' | '_id'> & { _id?: string }) => Promise<Customer>;
+  onDelete: (id: string) => void;
 }
 
 const ClientFormModal: React.FC<{
-    client: Omit<Customer, 'id'> & { id?: number } | null;
-    onSave: (customer: Omit<Customer, 'id'> & { id?: number }) => void;
+    client: Partial<Customer> | null;
+    onSave: (customer: Partial<Customer>) => Promise<any>;
     onClose: () => void;
 }> = ({ client, onSave, onClose }) => {
     if (!client) return null;
@@ -24,6 +24,7 @@ const ClientFormModal: React.FC<{
     const [formData, setFormData] = useState(client);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [verifyStatus, setVerifyStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
 
@@ -66,11 +67,19 @@ const ClientFormModal: React.FC<{
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (validate()) {
-            onSave(formData);
-            onClose();
+            setIsSaving(true);
+            try {
+                await onSave(formData);
+                onClose();
+            } catch (error) {
+                console.error("Failed to save client", error);
+                // Optionally show an error message to the user
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
@@ -80,7 +89,7 @@ const ClientFormModal: React.FC<{
           onClick={onClose}
         >
             <div onClick={e => e.stopPropagation()} className="w-full max-w-2xl">
-                <Card title={formData.id ? 'Edit Client' : 'Add New Client'}>
+                <Card title={formData._id ? 'Edit Client' : 'Add New Client'}>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="flex items-start space-x-2">
                              <Input 
@@ -117,8 +126,10 @@ const ClientFormModal: React.FC<{
                         </div>
 
                         <div className="flex justify-end space-x-2 pt-4 border-t mt-4">
-                            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                            <Button type="submit">Save Client</Button>
+                            <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>
+                            <Button type="submit" disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save Client'}
+                            </Button>
                         </div>
                     </form>
                 </Card>
@@ -129,7 +140,7 @@ const ClientFormModal: React.FC<{
 
 
 export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete }) => {
-    const [editingClient, setEditingClient] = useState<Omit<Customer, 'id'> & { id?: number } | null>(null);
+    const [editingClient, setEditingClient] = useState<Partial<Customer> | null>(null);
 
     const handleAddNew = () => {
         setEditingClient({ name: '', tradeName: '', address: '', state: '', gstin: '', contactPerson: '', contactPhone: '', contactEmail: '' });
@@ -164,7 +175,7 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete })
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {customers.map(client => (
-                                <tr key={client.id} className="hover:bg-slate-50">
+                                <tr key={client._id} className="hover:bg-slate-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm align-top">
                                         <div className="font-medium text-gray-900">{client.name}</div>
                                         {client.tradeName && <div className="text-gray-500">{client.tradeName}</div>}
@@ -181,7 +192,7 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete })
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4 align-top">
                                         <button onClick={() => handleEdit(client)} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
-                                        <button onClick={() => onDelete(client.id)} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
+                                        <button onClick={() => onDelete(client._id)} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
                                     </td>
                                 </tr>
                             ))}

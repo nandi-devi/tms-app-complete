@@ -29,9 +29,9 @@ const copyTypes = [
 ];
 
 export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt, companyInfo, customers, vehicles, copyType, hideCharges }) => {
-    const consignor = customers.find(c => c.id === lorryReceipt.consignorId);
-    const consignee = customers.find(c => c.id === lorryReceipt.consigneeId);
-    const vehicle = vehicles.find(v => v.id === lorryReceipt.vehicleId);
+    const consignor = customers.find(c => c._id === lorryReceipt.consignorId);
+    const consignee = customers.find(c => c._id === lorryReceipt.consigneeId);
+    const vehicle = vehicles.find(v => v._id === lorryReceipt.vehicleId);
 
     const charges = [
         { label: 'Freight', value: lorryReceipt.charges.freight },

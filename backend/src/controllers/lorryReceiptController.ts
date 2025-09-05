@@ -13,32 +13,74 @@ export const getLorryReceipts = async (req: Request, res: Response) => {
   }
 };
 
+export const getLorryReceiptById = async (req: Request, res: Response) => {
+    try {
+        const lorryReceipt = await LorryReceipt.findById(req.params.id)
+            .populate('consignor')
+            .populate('consignee')
+            .populate('vehicle');
+        if (lorryReceipt == null) {
+            return res.status(404).json({ message: 'Cannot find lorry receipt' });
+        }
+        res.json(lorryReceipt);
+    } catch (err: any) {
+        return res.status(500).json({ message: err.message });
+    }
+};
+
 export const createLorryReceipt = async (req: Request, res: Response) => {
+  const { consignorId, consigneeId, vehicleId, ...rest } = req.body;
   const lorryReceipt = new LorryReceipt({
-    date: req.body.date,
-    reportingDate: req.body.reportingDate,
-    deliveryDate: req.body.deliveryDate,
-    consignor: req.body.consignorId,
-    consignee: req.body.consigneeId,
-    vehicle: req.body.vehicleId,
-    from: req.body.from,
-    to: req.body.to,
-    packages: req.body.packages,
-    charges: req.body.charges,
-    totalAmount: req.body.totalAmount,
-    eWayBillNo: req.body.eWayBillNo,
-    valueGoods: req.body.valueGoods,
-    gstPayableBy: req.body.gstPayableBy,
-    status: req.body.status,
-    insurance: req.body.insurance,
-    invoiceNo: req.body.invoiceNo,
-    sealNo: req.body.sealNo,
+    ...rest,
+    consignor: consignorId,
+    consignee: consigneeId,
+    vehicle: vehicleId,
   });
 
   try {
     const newLorryReceipt = await lorryReceipt.save();
-    res.status(201).json(newLorryReceipt);
+    const populatedLr = await LorryReceipt.findById(newLorryReceipt._id)
+        .populate('consignor')
+        .populate('consignee')
+        .populate('vehicle');
+    res.status(201).json(populatedLr);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }
+};
+
+export const updateLorryReceipt = async (req: Request, res: Response) => {
+    try {
+        const { consignorId, consigneeId, vehicleId, ...rest } = req.body;
+        const updatedData = {
+            ...rest,
+            consignor: consignorId,
+            consignee: consigneeId,
+            vehicle: vehicleId,
+        };
+        const updatedLorryReceipt = await LorryReceipt.findByIdAndUpdate(req.params.id, updatedData, { new: true })
+            .populate('consignor')
+            .populate('consignee')
+            .populate('vehicle');
+
+        if (updatedLorryReceipt == null) {
+            return res.status(404).json({ message: 'Cannot find lorry receipt' });
+        }
+        res.json(updatedLorryReceipt);
+    } catch (err: any) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+export const deleteLorryReceipt = async (req: Request, res: Response) => {
+    try {
+        // TODO: Check if this LR is part of an invoice before deleting
+        const lorryReceipt = await LorryReceipt.findByIdAndDelete(req.params.id);
+        if (lorryReceipt == null) {
+            return res.status(404).json({ message: 'Cannot find lorry receipt' });
+        }
+        res.json({ message: 'Deleted Lorry Receipt' });
+    } catch (err: any) {
+        res.status(500).json({ message: err.message });
+    }
 };

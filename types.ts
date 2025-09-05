@@ -31,11 +31,12 @@ export enum PaymentMode {
 }
 
 export interface Customer {
-  id: number;
+  _id: string;
+  id: string;
   name: string; // Legal Name of Business
   tradeName?: string;
   address: string;
-  state: string;
+  state:string;
   gstin: string;
   contactPerson?: string;
   contactPhone?: string;
@@ -43,18 +44,20 @@ export interface Customer {
 }
 
 export interface Vehicle {
-  id: number;
+  _id: string;
+  id: string;
   number: string;
 }
 
 export interface LorryReceipt {
-  id: number;
+  _id: string;
+  id: string;
   date: string;
   reportingDate?: string;
   deliveryDate?: string;
-  consignorId: number;
-  consigneeId: number;
-  vehicleId: number;
+  consignorId: string;
+  consigneeId: string;
+  vehicleId: string;
   from: string;
   to: string;
   packages: {
@@ -90,9 +93,10 @@ export interface LorryReceipt {
 }
 
 export interface Invoice {
-  id: number;
+  _id: string;
+  id: string;
   date: string;
-  customerId: number;
+  customerId: string;
   lorryReceipts: LorryReceipt[];
   totalAmount: number; // This will now act as the subtotal (taxable amount)
   remarks: string;
@@ -124,8 +128,9 @@ export interface CompanyInfo {
 }
 
 export interface Payment {
-    id: number;
-    customerId: number;
+    _id: string;
+    id: string;
+    customerId: string;
     date: string;
     amount: number;
     type: PaymentType;

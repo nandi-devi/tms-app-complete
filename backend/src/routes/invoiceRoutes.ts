@@ -1,9 +1,21 @@
 import express from 'express';
-import { getInvoices, createInvoice } from '../controllers/invoiceController';
+import {
+    getInvoices,
+    createInvoice,
+    getInvoiceById,
+    updateInvoice,
+    deleteInvoice
+} from '../controllers/invoiceController';
 
 const router = express.Router();
 
-router.get('/', getInvoices);
-router.post('/', createInvoice);
+router.route('/')
+    .get(getInvoices)
+    .post(createInvoice);
+
+router.route('/:id')
+    .get(getInvoiceById)
+    .put(updateInvoice)
+    .delete(deleteInvoice);
 
 export default router;
