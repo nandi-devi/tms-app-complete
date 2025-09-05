@@ -45,9 +45,6 @@ const App: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo>('companyInfo', initialCompanyInfo);
 
-  const [nextLrNumber, setNextLrNumber] = useState(0);
-  const [nextInvoiceNumber, setNextInvoiceNumber] = useState(0);
-    
   // Auth state
   const [passwordHash, setPasswordHash] = useLocalStorage<string | null>('app_password_hash', null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -268,7 +265,6 @@ const App: React.FC = () => {
                   onCancel={() => setView({ name: 'DASHBOARD' })} 
                   customers={customers}
                   vehicles={vehicles}
-                  nextLrNumber={nextLrNumber}
                   onSaveCustomer={saveCustomer}
                   lorryReceipts={lorryReceipts}
                   onSaveVehicle={saveVehicle}
@@ -281,7 +277,6 @@ const App: React.FC = () => {
                   customers={customers}
                   vehicles={vehicles}
                   existingLr={lrToEdit}
-                  nextLrNumber={0} // Not used anymore
                   onSaveCustomer={saveCustomer}
                   lorryReceipts={lorryReceipts}
                   onSaveVehicle={saveVehicle}
@@ -301,7 +296,6 @@ const App: React.FC = () => {
                   onCancel={() => setView({ name: 'DASHBOARD' })}
                   availableLrs={availableLrs}
                   customers={customers}
-                  nextInvoiceNumber={nextInvoiceNumber}
                   companyInfo={companyInfo}
                 />;
       case 'CREATE_INVOICE_FROM_LR':
@@ -318,7 +312,6 @@ const App: React.FC = () => {
                   onCancel={() => setView({ name: 'DASHBOARD' })}
                   availableLrs={availableLrsForNewInvoice}
                   customers={customers}
-                  nextInvoiceNumber={nextInvoiceNumber}
                   preselectedLr={lrToInvoice}
                   companyInfo={companyInfo}
                 />;
@@ -334,7 +327,6 @@ const App: React.FC = () => {
                    availableLrs={lrsForEdit}
                    customers={customers}
                    existingInvoice={invoiceToEdit}
-                   nextInvoiceNumber={0}
                    companyInfo={companyInfo}
                  /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
