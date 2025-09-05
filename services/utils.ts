@@ -63,50 +63,48 @@ export const getCurrentDate = () => {
 };
 
 // Mock function to simulate fetching customer details from a GSTIN API
-export const fetchGstDetails = (gstin: string): Promise<Omit<Customer, 'id'>> => {
-    console.log(`Fetching details for GSTIN: ${gstin}`);
-    
-    // This is a mock API call. Replace with a real API endpoint.
-    // The 'name' should be the Legal Name of Business.
-    const mockDatabase: { [key: string]: Omit<Customer, 'id'> } = {
-        '29AABCU9603R1ZM': { 
-            name: 'Acme Technologies Private Limited', 
-            tradeName: 'Acme Tech',
-            address: '123 Tech Park, Electronic City,\nBangalore - 560100', 
-            state: 'Karnataka',
-            gstin 
-        },
-        '24AAACC1234A1Z5': { 
-            name: 'Gujarat Goods Corporation', 
-            tradeName: 'Gujarat Goods Corp',
-            address: '456 Commerce House, Ring Road,\nSurat - 395002', 
-            state: 'Gujarat',
-            gstin 
-        },
-        '07AABCS1234D1Z2': { 
-            name: 'Delhi Traders Incorporated', 
-            tradeName: 'Delhi Traders Inc.',
-            address: '789 Market Lane, Chandni Chowk,\nNew Delhi - 110006', 
-            state: 'Delhi',
-            gstin 
-        },
-         '33ITWPS2062F1Z7': {
-            name: 'Navakar Enterprises Private Limited',
-            tradeName: 'Navakar Enterprises',
-            address: 'No-2/465,Brindavan Thotam Kasinaickanpatty,\nTirupattur - 635901',
-            state: 'Tamil Nadu',
-            gstin
-        }
-    };
+// Assuming you have your API key stored in an environment variable
+// For client-side Vite apps, it should be VITE_GSTIN_API_KEY
+const GSTIN_API_KEY = import.meta.env.VITE_GSTIN_API_KEY; 
 
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const result = mockDatabase[gstin.toUpperCase()];
-            if (result) {
-                resolve(result);
-            } else {
-                reject(new Error('GSTIN not found or invalid. Please check the number or enter details manually.'));
-            }
-        }, 1500); // Simulate network delay
-    });
+export const fetchGstDetails = async (gstin: string): Promise<Omit<Customer, 'id'>> => {
+    console.log(`Fetching details for GSTIN: ${gstin}`);
+
+    if (!GSTIN_API_KEY) {
+        throw new Error('GSTIN API Key is not configured. Please set VITE_GSTIN_API_KEY in your environment variables.');
+    }
+
+    const apiUrl = `https://sheet.gstincheck.co.in/check/${GSTIN_API_KEY}/${gstin}`;
+
+    try {
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            // Handle HTTP errors (e.g., 404, 401, 500)
+            const errorText = await response.text();
+            throw new Error(`API call failed with status ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        // The API response structure might be different from your Customer type.
+        // You'll need to map the API response data to your Customer type.
+        // Example:
+        const customerDetails: Omit<Customer, 'id'> = {
+            name: data.legalName || '', // Adjust based on actual API response field names
+            tradeName: data.tradeName || '',
+            address: data.address || '',
+            state: data.state || '',
+            gstin: data.gstin || gstin, // Use the GSTIN from response or input
+            contactPerson: '', // API might not provide this
+            contactPhone: '', // API might not provide this
+            contactEmail: '', // API might not provide this
+        };
+
+        return customerDetails;
+
+    } catch (error: any) {
+        console.error("Error fetching GSTIN details:", error);
+        throw new Error(`Failed to fetch GSTIN details: ${error.message}`);
+    }
 };
