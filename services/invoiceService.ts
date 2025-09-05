@@ -1,5 +1,5 @@
 import type { Invoice } from '../types';
-import { API_BASE_URL } from '../constants';
+
 
 export const getInvoices = async (): Promise<Invoice[]> => {
     const response = await fetch(`${API_BASE_URL}/invoices`);

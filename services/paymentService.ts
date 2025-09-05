@@ -1,5 +1,5 @@
 import type { Payment } from '../types';
-import { API_BASE_URL } from '../constants';
+
 
 export const getPayments = async (): Promise<Payment[]> => {
     const response = await fetch(`${API_BASE_URL}/payments`);

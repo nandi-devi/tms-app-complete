@@ -1,5 +1,5 @@
 import type { Customer } from '../types';
-import { API_BASE_URL } from '../constants';
+
 
 export const getCustomers = async (): Promise<Customer[]> => {
     const response = await fetch(`${API_BASE_URL}/customers`);

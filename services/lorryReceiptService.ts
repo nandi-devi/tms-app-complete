@@ -1,5 +1,5 @@
 import type { LorryReceipt } from '../types';
-import { API_BASE_URL } from '../constants';
+
 
 export const getLorryReceipts = async (): Promise<LorryReceipt[]> => {
     const response = await fetch(`${API_BASE_URL}/lorryreceipts`);
