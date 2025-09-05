@@ -10,15 +10,15 @@ import { Textarea } from './ui/Textarea';
 import { indianStates } from '../constants';
 
 interface LorryReceiptFormProps {
-  onSave: (lr: Omit<LorryReceipt, 'id' | 'status'> & { id?: number }) => void;
+  onSave: (lr: Omit<LorryReceipt, 'id' | '_id' | 'status'> & { _id?: string }) => Promise<void>;
   onCancel: () => void;
   customers: Customer[];
   vehicles: Vehicle[];
   existingLr?: LorryReceipt;
   nextLrNumber: number;
-  onSaveCustomer: (customer: Omit<Customer, 'id'>) => Customer;
+  onSaveCustomer: (customer: Omit<Customer, 'id' | '_id'> & { _id?: string }) => Promise<Customer>;
   lorryReceipts: LorryReceipt[];
-  onSaveVehicle: (vehicle: Omit<Vehicle, 'id'>) => Vehicle;
+  onSaveVehicle: (vehicle: Omit<Vehicle, 'id' | '_id'>) => Promise<Vehicle>;
 }
 
 const Tooltip: React.FC<{ text: string }> = ({ text }) => (
@@ -32,7 +32,7 @@ const Tooltip: React.FC<{ text: string }> = ({ text }) => (
     </span>
 );
 
-const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => void, onSaveCustomer: (customer: Omit<Customer, 'id'>) => Customer }> = ({ onCustomerAdded, onSaveCustomer }) => {
+const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => void, onSaveCustomer: (customer: Partial<Customer>) => Promise<Customer> }> = ({ onCustomerAdded, onSaveCustomer }) => {
     const [mode, setMode] = useState<'closed' | 'gstin' | 'manual'>('closed');
     const [gstin, setGstin] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +55,7 @@ const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => vo
         setIsLoading(true); setFetchError('');
         try {
             const customerData = await fetchGstDetails(gstin);
-            const newCustomer = onSaveCustomer(customerData);
+            const newCustomer = await onSaveCustomer(customerData);
             onCustomerAdded(newCustomer);
             resetAndClose();
         } catch (err: any) {
@@ -65,12 +65,12 @@ const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => vo
         }
     };
     
-    const handleManualSave = () => {
+    const handleManualSave = async () => {
         if (!manualName.trim() || !manualAddress.trim() || !manualState) { 
             setManualError('Legal Name, Address, and State are required.'); return; 
         }
         setManualError('');
-        const customerData: Omit<Customer, 'id'> = { 
+        const customerData: Partial<Customer> = {
             name: manualName.trim(), 
             tradeName: manualTradeName.trim(),
             address: manualAddress.trim(), 
@@ -80,7 +80,7 @@ const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => vo
             contactPhone: manualContactPhone.trim(),
             contactEmail: manualContactEmail.trim(),
         };
-        const newCustomer = onSaveCustomer(customerData);
+        const newCustomer = await onSaveCustomer(customerData);
         onCustomerAdded(newCustomer);
         resetAndClose();
     };
@@ -150,9 +150,9 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   
   const initialState: Omit<LorryReceipt, 'id' | 'status'> = {
     date: getCurrentDate(),
-    consignorId: 0,
-    consigneeId: 0,
-    vehicleId: 0,
+    consignorId: '',
+    consigneeId: '',
+    vehicleId: '',
     from: '',
     to: '',
     packages: [{ count: 0, packingMethod: '', description: '', actualWeight: 0, chargedWeight: 0 }],
@@ -173,7 +173,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   
   const [vehicleNumber, setVehicleNumber] = useState(() => {
     if (existingLr) {
-        return vehicles.find(v => v.id === existingLr.vehicleId)?.number || '';
+        return vehicles.find(v => v._id === existingLr.vehicleId)?.number || '';
     }
     return '';
   });
@@ -212,8 +212,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         }
     }
     else {
-        const numericFields = ['consignorId', 'consigneeId'];
-        setLr(prev => ({ ...prev, [name]: (type === 'number' || numericFields.includes(name)) ? parseInt(value, 10) || 0 : value }));
+        setLr(prev => ({ ...prev, [name]: value }));
     }
   };
   
@@ -239,18 +238,18 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     return Object.keys(newErrors).length === 0;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
       const trimmedVehicleNumber = vehicleNumber.trim();
       let vehicle = vehicles.find(v => v.number.toLowerCase() === trimmedVehicleNumber.toLowerCase());
-      let finalVehicleId: number;
+      let finalVehicleId: string;
 
       if (vehicle) {
-        finalVehicleId = vehicle.id;
+        finalVehicleId = vehicle._id;
       } else {
-        const newVehicle = onSaveVehicle({ number: trimmedVehicleNumber });
-        finalVehicleId = newVehicle.id;
+        const newVehicle = await onSaveVehicle({ number: trimmedVehicleNumber });
+        finalVehicleId = newVehicle._id;
       }
       
       const lrDataToSave = {
@@ -258,12 +257,12 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         vehicleId: finalVehicleId,
       };
 
-      onSave(lrDataToSave);
+      await onSave(lrDataToSave);
     }
   };
   
-  const selectedConsignor = customers.find(c => c.id === lr.consignorId);
-  const selectedConsignee = customers.find(c => c.id === lr.consigneeId);
+  const selectedConsignor = customers.find(c => c._id === lr.consignorId);
+  const selectedConsignee = customers.find(c => c._id === lr.consigneeId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -273,7 +272,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         ))}
       </datalist>
       <datalist id="vehicles-list">
-        {vehicles.map(v => <option key={v.id} value={v.number} />)}
+        {vehicles.map(v => <option key={v._id} value={v.number} />)}
       </datalist>
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">{existingLr ? `Edit Lorry Receipt #${existingLr.id}` : `Create Lorry Receipt #${nextLrNumber}`}</h2>
@@ -304,10 +303,10 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
             <div className="relative">
                 <div className="flex items-center">
                     <Select name="consignorId" label="Select Consignor" value={lr.consignorId} onChange={handleChange} required error={errors.consignorId}>
-                        <option value={0} disabled>Select Consignor</option>
-                        {customers.map(c => <option key={c.id} value={c.id}>{c.tradeName || c.name}</option>)}
+                        <option value="" disabled>Select Consignor</option>
+                        {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
                     </Select>
-                    <NewCustomerSection onSaveCustomer={onSaveCustomer} onCustomerAdded={(c) => setLr(prev => ({...prev, consignorId: c.id}))}/>
+                    <NewCustomerSection onSaveCustomer={onSaveCustomer as any} onCustomerAdded={(c) => setLr(prev => ({...prev, consignorId: c._id}))}/>
                 </div>
                 {selectedConsignor && (
                     <div className="text-sm p-3 bg-slate-50 rounded-lg mt-4 space-y-2">
@@ -332,10 +331,10 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
            <div className="relative">
                 <div className="flex items-center">
                     <Select name="consigneeId" label="Select Consignee" value={lr.consigneeId} onChange={handleChange} required error={errors.consigneeId}>
-                        <option value={0} disabled>Select Consignee</option>
-                        {customers.map(c => <option key={c.id} value={c.id}>{c.tradeName || c.name}</option>)}
+                        <option value="" disabled>Select Consignee</option>
+                        {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
                     </Select>
-                    <NewCustomerSection onSaveCustomer={onSaveCustomer} onCustomerAdded={(c) => setLr(prev => ({...prev, consigneeId: c.id}))}/>
+                    <NewCustomerSection onSaveCustomer={onSaveCustomer as any} onCustomerAdded={(c) => setLr(prev => ({...prev, consigneeId: c._id}))}/>
                 </div>
                 {selectedConsignee && (
                     <div className="text-sm p-3 bg-slate-50 rounded-lg mt-4 space-y-2">

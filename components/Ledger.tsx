@@ -11,12 +11,12 @@ interface LedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
-  onSavePayment: (payment: Omit<Payment, 'id'>) => void;
+  onSavePayment: (payment: Omit<Payment, 'id' | '_id'>) => Promise<void>;
 }
 
 const AddPaymentForm: React.FC<{
-    customerId: number;
-    onSave: (payment: Omit<Payment, 'id'>) => void;
+    customerId: string;
+    onSave: (payment: Omit<Payment, 'id' | '_id'>) => Promise<void>;
     onCancel: () => void;
 }> = ({ customerId, onSave, onCancel }) => {
     const initialState = {
@@ -30,10 +30,10 @@ const AddPaymentForm: React.FC<{
         setPayment(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (payment.amount <= 0) { alert('Payment amount must be greater than zero.'); return; }
-        onSave(payment);
+        await onSave(payment);
         setPayment(initialState);
     };
     
@@ -62,7 +62,7 @@ const AddPaymentForm: React.FC<{
 };
 
 export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, onSavePayment }) => {
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(customers[0]?.id || null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(customers[0]?._id || null);
   const [isPaymentFormVisible, setIsPaymentFormVisible] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -71,11 +71,11 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
   const transactionData = useMemo(() => {
     if (!selectedCustomerId) return null;
     const customerInvoices = invoices.filter(inv => inv.customerId === selectedCustomerId).map(inv => ({
-        type: 'invoice' as const, date: inv.date, id: `inv-${inv.id}`, particulars: `Invoice No: ${inv.id} (LRs: ${inv.lorryReceipts.map(lr => lr.id).join(', ')})`,
+        type: 'invoice' as const, date: inv.date, id: `inv-${inv._id}`, particulars: `Invoice No: ${inv.id} (LRs: ${inv.lorryReceipts.map(lr => lr.id).join(', ')})`,
         debit: inv.grandTotal, credit: 0
     }));
     const customerPayments = payments.filter(p => p.customerId === selectedCustomerId).map(p => ({
-        type: 'payment' as const, date: p.date, id: `pay-${p.id}`, particulars: `${p.type} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`,
+        type: 'payment' as const, date: p.date, id: `pay-${p._id}`, particulars: `${p.type} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`,
         debit: 0, credit: p.amount
     }));
     const allTransactions = [...customerInvoices, ...customerPayments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || (a.type === 'invoice' ? -1 : 1));
@@ -103,8 +103,8 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
     return { transactions: filteredTransactions, totalDebit, totalCredit, finalBalance };
   }, [selectedCustomerId, invoices, payments, startDate, endDate, transactionType]);
 
-  const handleSavePayment = (payment: Omit<Payment, 'id'>) => {
-    onSavePayment(payment);
+  const handleSavePayment = async (payment: Omit<Payment, 'id' | '_id'>) => {
+    await onSavePayment(payment);
     setIsPaymentFormVisible(false);
   }
 
@@ -112,9 +112,9 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
     <div className="space-y-6">
       <h2 className="text-3xl font-bold text-gray-800">Client Ledger</h2>
       <Card>
-        <Select label="Select Client" value={selectedCustomerId || ''} onChange={(e) => setSelectedCustomerId(parseInt(e.target.value, 10))}>
+        <Select label="Select Client" value={selectedCustomerId || ''} onChange={(e) => setSelectedCustomerId(e.target.value)}>
           <option value="" disabled>Select a client</option>
-          {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
         </Select>
       </Card>
       

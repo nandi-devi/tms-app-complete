@@ -38,7 +38,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     }
     return {
       date: getCurrentDate(),
-      customerId: 0,
+      customerId: '',
       lorryReceipts: [],
       totalAmount: 0,
       remarks: '',
@@ -57,14 +57,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
 
   const [invoice, setInvoice] = useState(getInitialState);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [selectedLrs, setSelectedLrs] = useState<Set<number>>(
-    new Set(existingInvoice?.lorryReceipts.map(lr => lr.id) || [])
+  const [selectedLrs, setSelectedLrs] = useState<Set<string>>(
+    new Set(existingInvoice?.lorryReceipts.map(lr => lr._id) || [])
   );
   
   // Auto-set GST type based on client and company state
   useEffect(() => {
     if (invoice.customerId && !invoice.isManualGst) {
-        const client = customers.find(c => c.id === invoice.customerId);
+        const client = customers.find(c => c._id === invoice.customerId);
         if (client) {
             const newGstType = client.state === companyInfo.state ? GstType.CGST_SGST : GstType.IGST;
             setInvoice(prev => ({...prev, gstType: newGstType}));
@@ -76,13 +76,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     if (preselectedLr) {
       // Bill to consignor by default when creating from an LR.
       const billToId = preselectedLr.consignorId;
-      setInvoice(prev => ({ ...prev, customerId: billToId }));
-      setSelectedLrs(new Set([preselectedLr.id]));
+      setInvoice(prev => ({ ...prev, customerId: billToId as any }));
+      setSelectedLrs(new Set([preselectedLr._id]));
     }
   }, [preselectedLr]);
 
   const calculateTotals = useCallback(() => {
-      const lrs = availableLrs.filter(lr => selectedLrs.has(lr.id));
+      const lrs = availableLrs.filter(lr => selectedLrs.has(lr._id));
       const subtotal = lrs.reduce((sum, lr) => sum + lr.totalAmount, 0);
       
       let cgst = 0, sgst = 0, igst = 0, grandTotal = subtotal;
@@ -119,7 +119,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     calculateTotals();
   }, [calculateTotals]);
 
-  const handleLrSelectionChange = (lrId: number) => {
+  const handleLrSelectionChange = (lrId: string) => {
     setSelectedLrs(prev => {
       const newSet = new Set(prev);
       if (newSet.has(lrId)) newSet.delete(lrId);
@@ -135,7 +135,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
       setSelectedLrs(new Set());
     }
     
-    const numericFields = ['customerId', 'cgstRate', 'sgstRate', 'igstRate', 'cgstAmount', 'sgstAmount', 'igstAmount'];
+    const numericFields = ['cgstRate', 'sgstRate', 'igstRate', 'cgstAmount', 'sgstAmount', 'igstAmount'];
     setInvoice(prev => ({
         ...prev,
         [name]: (type === 'number' || numericFields.includes(name)) ? parseFloat(value) || 0 : value
@@ -162,12 +162,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSave({ ...invoice, id: existingInvoice?.id });
+      onSave({ ...invoice, _id: existingInvoice?._id });
     }
   };
   
   const customerLrs = availableLrs.filter(lr => lr.consignorId === invoice.customerId || lr.consigneeId === invoice.customerId);
-  const customer = customers.find(c => c.id === invoice.customerId);
+  const customer = customers.find(c => c._id === invoice.customerId);
   const manualTaxFromRate = invoice.gstType === GstType.IGST 
     ? (invoice.totalAmount * invoice.igstRate / 100) 
     : (invoice.totalAmount * (invoice.cgstRate + invoice.sgstRate) / 100);
@@ -181,8 +181,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
       <Card title="Invoice Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Select label="Client" name="customerId" value={invoice.customerId} onChange={handleChange} required error={errors.customerId}>
-            <option value={0} disabled>Select Client</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <option value="" disabled>Select Client</option>
+            {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </Select>
           <Input label="Invoice Date" type="date" name="date" value={invoice.date} onChange={handleChange} required error={errors.date} />
         </div>
@@ -191,14 +191,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
 
       <Card title="Select Lorry Receipts for Invoice">
         <div className="max-h-64 overflow-y-auto border rounded-md">
-          {invoice.customerId === 0 ? (
+          {invoice.customerId === '' ? (
             <p className="text-gray-500 text-center p-4">Please select a client to see available Lorry Receipts.</p>
           ) : customerLrs.length > 0 ? (
             <table className="min-w-full">
               <thead className="bg-slate-100 sticky top-0">
                 <tr>
                   <th className="p-3 text-left w-12"><input type="checkbox" onChange={(e) => {
-                      const allIds = new Set(customerLrs.map(lr => lr.id));
+                      const allIds = new Set(customerLrs.map(lr => lr._id));
                       setSelectedLrs(e.target.checked ? allIds : new Set());
                   }}/></th>
                   <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase">LR No.</th>
@@ -209,8 +209,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
               </thead>
               <tbody>
               {customerLrs.map(lr => (
-                <tr key={lr.id} className="border-b last:border-0 hover:bg-slate-50">
-                  <td className="p-3"><input type="checkbox" checked={selectedLrs.has(lr.id)} onChange={() => handleLrSelectionChange(lr.id)} /></td>
+                <tr key={lr._id} className="border-b last:border-0 hover:bg-slate-50">
+                  <td className="p-3"><input type="checkbox" checked={selectedLrs.has(lr._id)} onChange={() => handleLrSelectionChange(lr._id)} /></td>
                   <td className="p-3 text-sm">{lr.id}</td>
                   <td className="p-3 text-sm">{formatDate(lr.date)}</td>
                   <td className="p-3 text-sm">{lr.to}</td>

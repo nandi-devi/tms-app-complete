@@ -1,6 +1,8 @@
 
 import type { Customer, Vehicle, CompanyInfo } from './types';
 
+export const API_BASE_URL = 'https://one23456-t7q1.onrender.com/api';
+
 export const indianStates = [
   "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
   "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa",
