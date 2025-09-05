@@ -91,11 +91,11 @@ export const fetchGstDetails = async (gstin: string): Promise<Omit<Customer, 'id
         // You'll need to map the API response data to your Customer type.
         // Example:
         const customerDetails: Omit<Customer, 'id'> = {
-            name: data.legalName || '', // Adjust based on actual API response field names
-            tradeName: data.tradeName || '',
-            address: data.address || '',
-            state: data.state || '',
-            gstin: data.gstin || gstin, // Use the GSTIN from response or input
+            name: data.lgnm || '', // Mapped from 'lgnm' (Legal Name of Business)
+            tradeName: data.tradeName || '', // Keep as is, might need adjustment if API uses different key
+            address: data.adr || '', // Mapped from 'adr' (Full Address)
+            state: data.state || '', // Keep as is, might need adjustment if API uses different key
+            gstin: data.gstin || gstin, // Keep as is, might need adjustment if API uses different key
             contactPerson: '', // API might not provide this
             contactPhone: '', // API might not provide this
             contactEmail: '', // API might not provide this
