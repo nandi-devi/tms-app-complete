@@ -89,16 +89,32 @@ export const fetchGstDetails = async (gstin: string): Promise<Omit<Customer, 'id
 
         // The API response structure might be different from your Customer type.
         // You'll need to map the API response data to your Customer type.
-        // Example:
+        const apiData = data.data; // The actual details are nested under a 'data' key
+
+        if (!apiData) {
+            throw new Error(data.message || 'GSTIN data not found in response.');
+        }
+
+        const addressComponents = [
+            apiData.pradr?.addr?.bno,
+            apiData.pradr?.addr?.bnm,
+            apiData.pradr?.addr?.st,
+            apiData.pradr?.addr?.loc,
+            apiData.pradr?.addr?.dst,
+        ].filter(Boolean); // Filter out empty/null/undefined parts
+
+        const fullAddress = addressComponents.join(', ') + (apiData.pradr?.addr?.pncd ? ` - ${apiData.pradr.addr.pncd}` : '');
+
+
         const customerDetails: Omit<Customer, 'id'> = {
-            name: data.lgnm || '', // Mapped from 'lgnm' (Legal Name of Business)
-            tradeName: data.tradeName || '', // Keep as is, might need adjustment if API uses different key
-            address: data.adr || '', // Mapped from 'adr' (Full Address)
-            state: data.state || '', // Keep as is, might need adjustment if API uses different key
-            gstin: data.gstin || gstin, // Keep as is, might need adjustment if API uses different key
-            contactPerson: '', // API might not provide this
-            contactPhone: '', // API might not provide this
-            contactEmail: '', // API might not provide this
+            name: apiData.lgnm || '',
+            tradeName: apiData.tradeNam || '',
+            address: fullAddress,
+            state: apiData.pradr?.addr?.stcd || '',
+            gstin: apiData.gstin || gstin,
+            contactPerson: '',
+            contactPhone: '',
+            contactEmail: '',
         };
 
         return customerDetails;
