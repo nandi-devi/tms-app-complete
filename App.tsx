@@ -109,7 +109,7 @@ const App: React.FC = () => {
       return { success: true, message: "Password updated successfully." };
   };
 
-  const saveLorryReceipt = async (lr: Omit<LorryReceipt, 'id' | '_id' | 'status'> & { _id?: string }) => {
+  const saveLorryReceipt = async (lr: Partial<LorryReceipt>) => {
     try {
       if (lr._id) {
         const updatedLr = await updateLorryReceipt(lr._id, lr);
@@ -183,7 +183,7 @@ const App: React.FC = () => {
     }
   };
 
-  const saveInvoice = async (invoice: Omit<Invoice, 'id' | '_id'> & { _id?: string }) => {
+  const saveInvoice = async (invoice: Partial<Invoice>) => {
     try {
       let savedInvoice;
       if (invoice._id) {
