@@ -1,0 +1,5 @@
+{
+  "name": "All India Logistics Chennai Portal",
+  "description": "A comprehensive logistics management application for creating and managing Lorry Receipts (LRs) and Invoices, tracking shipment lifecycles, and generating PDF documents for All India Logistics Chennai.",
+  "requestFramePermissions": []
+}
