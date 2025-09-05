@@ -20,7 +20,7 @@ interface InvoiceViewProps {
 }
 
 export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, customers }) => {
-    const client = customers.find(c => c.id === invoice.customerId);
+    const client = customers.find(c => c._id === invoice.customerId);
 
     const totalPacks = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.count, 0), 0);
     const totalWeight = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.chargedWeight, 0), 0);
@@ -87,12 +87,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     </thead>
                     <tbody>
                         {invoice.lorryReceipts.map(lr => {
-                            const consignee = customers.find(c => c.id === lr.consigneeId);
+                            const consignee = customers.find(c => c._id === lr.consigneeId);
                             const packs = lr.packages.reduce((sum, p) => sum + p.count, 0);
                             const weight = lr.packages.reduce((sum, p) => sum + p.chargedWeight, 0);
                             const otherCharges = lr.charges.aoc + lr.charges.hamali + lr.charges.bCh + lr.charges.trCh + lr.charges.detentionCh;
                             return (
-                                <tr key={lr.id} className="border-b border-gray-300">
+                                <tr key={lr._id} className="border-b border-gray-300">
                                     <td className="p-1 border border-gray-300">{lr.id}</td>
                                     <td className="p-1 border border-gray-300">{formatDate(lr.date)}</td>
                                     <td className="p-1 border border-gray-300">{lr.to}</td>

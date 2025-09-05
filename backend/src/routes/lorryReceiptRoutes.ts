@@ -1,9 +1,21 @@
 import express from 'express';
-import { getLorryReceipts, createLorryReceipt } from '../controllers/lorryReceiptController';
+import {
+    getLorryReceipts,
+    createLorryReceipt,
+    getLorryReceiptById,
+    updateLorryReceipt,
+    deleteLorryReceipt
+} from '../controllers/lorryReceiptController';
 
 const router = express.Router();
 
-router.get('/', getLorryReceipts);
-router.post('/', createLorryReceipt);
+router.route('/')
+    .get(getLorryReceipts)
+    .post(createLorryReceipt);
+
+router.route('/:id')
+    .get(getLorryReceiptById)
+    .put(updateLorryReceipt)
+    .delete(deleteLorryReceipt);
 
 export default router;

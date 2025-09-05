@@ -12,29 +12,68 @@ export const getInvoices = async (req: Request, res: Response) => {
   }
 };
 
+export const getInvoiceById = async (req: Request, res: Response) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id)
+            .populate('customer')
+            .populate('lorryReceipts');
+        if (invoice == null) {
+            return res.status(404).json({ message: 'Cannot find invoice' });
+        }
+        res.json(invoice);
+    } catch (err: any) {
+        return res.status(500).json({ message: err.message });
+    }
+};
+
 export const createInvoice = async (req: Request, res: Response) => {
+  const { customerId, lorryReceipts, ...rest } = req.body;
   const invoice = new Invoice({
-    date: req.body.date,
-    customer: req.body.customerId,
-    lorryReceipts: req.body.lorryReceipts.map((lr: any) => lr.id),
-    totalAmount: req.body.totalAmount,
-    remarks: req.body.remarks,
-    gstType: req.body.gstType,
-    cgstRate: req.body.cgstRate,
-    sgstRate: req.body.sgstRate,
-    igstRate: req.body.igstRate,
-    cgstAmount: req.body.cgstAmount,
-    sgstAmount: req.body.sgstAmount,
-    igstAmount: req.body.igstAmount,
-    grandTotal: req.body.grandTotal,
-    isRcm: req.body.isRcm,
-    isManualGst: req.body.isManualGst,
+    ...rest,
+    customer: customerId,
+    lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
   });
 
   try {
     const newInvoice = await invoice.save();
-    res.status(201).json(newInvoice);
+    const populatedInvoice = await Invoice.findById(newInvoice._id)
+        .populate('customer')
+        .populate('lorryReceipts');
+    res.status(201).json(populatedInvoice);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }
+};
+
+export const updateInvoice = async (req: Request, res: Response) => {
+    try {
+        const { customerId, lorryReceipts, ...rest } = req.body;
+        const updatedData = {
+            ...rest,
+            customer: customerId,
+            lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
+        };
+        const updatedInvoice = await Invoice.findByIdAndUpdate(req.params.id, updatedData, { new: true })
+            .populate('customer')
+            .populate('lorryReceipts');
+
+        if (updatedInvoice == null) {
+            return res.status(404).json({ message: 'Cannot find invoice' });
+        }
+        res.json(updatedInvoice);
+    } catch (err: any) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+export const deleteInvoice = async (req: Request, res: Response) => {
+    try {
+        const invoice = await Invoice.findByIdAndDelete(req.params.id);
+        if (invoice == null) {
+            return res.status(404).json({ message: 'Cannot find invoice' });
+        }
+        res.json({ message: 'Deleted Invoice' });
+    } catch (err: any) {
+        res.status(500).json({ message: err.message });
+    }
 };
