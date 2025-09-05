@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { LorryReceipt, Customer, Vehicle } from '../types';
-import { GstPayableBy, LorryReceiptStatus } from '../types';
+import { GstPayableBy } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { getCurrentDate, fetchGstDetails } from '../services/utils';
@@ -10,7 +10,7 @@ import { Textarea } from './ui/Textarea';
 import { indianStates } from '../constants';
 
 interface LorryReceiptFormProps {
-  onSave: (lr: Omit<LorryReceipt, 'id' | '_id' | 'status'> & { _id?: string }) => Promise<void>;
+  onSave: (lr: Partial<LorryReceipt>) => Promise<void>;
   onCancel: () => void;
   customers: Customer[];
   vehicles: Vehicle[];
@@ -19,6 +19,9 @@ interface LorryReceiptFormProps {
   lorryReceipts: LorryReceipt[];
   onSaveVehicle: (vehicle: Omit<Vehicle, 'id' | '_id'>) => Promise<Vehicle>;
 }
+
+type LorryReceiptFormData = Omit<LorryReceipt, '_id' | 'id' | 'status' | 'consignor' | 'consignee' | 'vehicle'>;
+
 
 const Tooltip: React.FC<{ text: string }> = ({ text }) => (
     <span className="ml-1.5 group relative cursor-help">
@@ -144,10 +147,9 @@ const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => vo
     return null;
 };
 
-
 export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCancel, customers, vehicles, existingLr, onSaveCustomer, lorryReceipts, onSaveVehicle }) => {
   
-  const initialState: Omit<LorryReceipt, 'id' | 'status'> = {
+  const getInitialState = (): LorryReceiptFormData => ({
     date: getCurrentDate(),
     consignorId: '',
     consigneeId: '',
@@ -165,14 +167,14 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     sealNo: '',
     reportingDate: '',
     deliveryDate: '',
-  };
+  });
     
-  const [lr, setLr] = useState(existingLr ? { ...existingLr } : initialState);
+  const [lr, setLr] = useState<Partial<LorryReceipt>>(existingLr ? { ...existingLr } : getInitialState());
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
   const [vehicleNumber, setVehicleNumber] = useState(() => {
-    if (existingLr) {
-        return vehicles.find(v => v._id === existingLr.vehicleId)?.number || '';
+    if (existingLr && existingLr.vehicle) {
+        return existingLr.vehicle.number;
     }
     return '';
   });
@@ -187,7 +189,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   }, [lorryReceipts]);
 
   const calculateTotal = useCallback(() => {
-    const { freight, aoc, hamali, bCh, trCh, detentionCh } = lr.charges;
+    if (!lr.charges) return 0;
+    const { freight = 0, aoc = 0, hamali = 0, bCh = 0, trCh = 0, detentionCh = 0 } = lr.charges;
     return freight + aoc + hamali + bCh + trCh + detentionCh;
   }, [lr.charges]);
 
@@ -196,7 +199,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   }, [lr.charges, calculateTotal]);
 
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
     if (name.startsWith('charges.')) {
@@ -217,7 +220,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   
   const handlePackageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-    const newPackages = [...lr.packages];
+    const newPackages = [...(lr.packages || [])];
     (newPackages[index] as any)[name] = type === 'number' ? parseFloat(value) || 0 : value;
     setLr(prev => ({...prev, packages: newPackages}));
   }
@@ -230,7 +233,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     if (!lr.to) newErrors.to = 'Destination is required.';
     if (!lr.consignorId) newErrors.consignorId = 'Consignor is required.';
     if (!lr.consigneeId) newErrors.consigneeId = 'Consignee is required.';
-    if (lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
+    if (!lr.packages || lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
         newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
     }
     setErrors(newErrors);
@@ -260,8 +263,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     }
   };
   
-  const selectedConsignor = customers.find(c => c._id === lr.consignorId);
-  const selectedConsignee = customers.find(c => c._id === lr.consigneeId);
+  const selectedConsignor = existingLr?.consignor || customers.find(c => c._id === lr.consignorId);
+  const selectedConsignee = existingLr?.consignee || customers.find(c => c._id === lr.consigneeId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -276,13 +279,13 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">{existingLr ? `Edit Lorry Receipt #${existingLr.id}` : 'Create Lorry Receipt'}</h2>
         <div className="flex items-center space-x-2">
-            <span className="font-bold text-lg">Total: ₹{lr.totalAmount.toLocaleString('en-IN')}</span>
+            <span className="font-bold text-lg">Total: ₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</span>
         </div>
       </div>
       
       <Card title="Shipment Details">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Input label="Date" type="date" name="date" value={lr.date} onChange={handleChange} required error={errors.date} />
+            <Input label="Date" type="date" name="date" value={lr.date || ''} onChange={handleChange} required error={errors.date} />
             <Input
               label="Vehicle No."
               name="vehicleNumber"
@@ -292,8 +295,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
               error={errors.vehicleId}
               list="vehicles-list"
             />
-            <Input label="From" name="from" value={lr.from} onChange={handleChange} required error={errors.from} list="locations-list" />
-            <Input label="To" name="to" value={lr.to} onChange={handleChange} required error={errors.to} list="locations-list" />
+            <Input label="From" name="from" value={lr.from || ''} onChange={handleChange} required error={errors.from} list="locations-list" />
+            <Input label="To" name="to" value={lr.to || ''} onChange={handleChange} required error={errors.to} list="locations-list" />
         </div>
       </Card>
 
@@ -301,7 +304,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         <Card title="Consignor">
             <div className="relative">
                 <div className="flex items-center">
-                    <Select name="consignorId" label="Select Consignor" value={lr.consignorId} onChange={handleChange} required error={errors.consignorId}>
+                    <Select name="consignorId" label="Select Consignor" value={lr.consignorId || ''} onChange={handleChange} required error={errors.consignorId}>
                         <option value="" disabled>Select Consignor</option>
                         {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
                     </Select>
@@ -329,7 +332,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         <Card title="Consignee">
            <div className="relative">
                 <div className="flex items-center">
-                    <Select name="consigneeId" label="Select Consignee" value={lr.consigneeId} onChange={handleChange} required error={errors.consigneeId}>
+                    <Select name="consigneeId" label="Select Consignee" value={lr.consigneeId || ''} onChange={handleChange} required error={errors.consigneeId}>
                         <option value="" disabled>Select Consignee</option>
                         {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
                     </Select>
@@ -358,10 +361,10 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       
       <Card title="Insurance">
         <div className="flex items-center mb-2">
-            <input type="checkbox" id="hasInsured" name="insurance.hasInsured" checked={lr.insurance.hasInsured} onChange={handleChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+            <input type="checkbox" id="hasInsured" name="insurance.hasInsured" checked={lr.insurance?.hasInsured || false} onChange={handleChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
             <label htmlFor="hasInsured" className="ml-3 block text-sm text-gray-900">The client has stated that they have insured the consignment.</label>
         </div>
-        {lr.insurance.hasInsured && (
+        {lr.insurance?.hasInsured && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
                 <Input label="Company" name="insurance.company" value={lr.insurance.company || ''} onChange={handleChange} />
                 <Input label="Policy No." name="insurance.policyNo" value={lr.insurance.policyNo || ''} onChange={handleChange} />
@@ -373,7 +376,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       </Card>
 
       <Card title="Packages">
-        {lr.packages.map((pkg, index) => (
+        {(lr.packages || []).map((pkg, index) => (
           <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4 border-b pb-4 last:border-b-0 last:pb-0">
               <Input label="No. of Pkgs" type="number" name="count" value={pkg.count} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
               <Input label="Method of Packing" name="packingMethod" value={pkg.packingMethod} onChange={e => handlePackageChange(index, e)} />
@@ -388,28 +391,27 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card title="Other Details">
             <div className="space-y-4">
-                 <Input label="E-Way Bill No." name="eWayBillNo" value={lr.eWayBillNo} onChange={handleChange} />
-                 <Input label="Value of Goods" type="number" name="valueGoods" value={lr.valueGoods} onChange={handleChange} onFocus={e => e.target.select()} />
-                 <Input label="Invoice No." name="invoiceNo" value={lr.invoiceNo} onChange={handleChange} />
-                 <Input label="Seal No." name="sealNo" value={lr.sealNo} onChange={handleChange} />
+                 <Input label="E-Way Bill No." name="eWayBillNo" value={lr.eWayBillNo || ''} onChange={handleChange} />
+                 <Input label="Value of Goods" type="number" name="valueGoods" value={lr.valueGoods || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                 <Input label="Invoice No." name="invoiceNo" value={lr.invoiceNo || ''} onChange={handleChange} />
+                 <Input label="Seal No." name="sealNo" value={lr.sealNo || ''} onChange={handleChange} />
                  <div className="grid grid-cols-2 gap-4">
                     <Input label="Reporting Date" type="date" name="reportingDate" value={lr.reportingDate || ''} onChange={handleChange} />
                     <Input label="Delivery Date" type="date" name="deliveryDate" value={lr.deliveryDate || ''} onChange={handleChange} />
                  </div>
-                 <Select label="GST Payable By" name="gstPayableBy" value={lr.gstPayableBy} onChange={handleChange}>
+                 <Select label="GST Payable By" name="gstPayableBy" value={lr.gstPayableBy || GstPayableBy.CONSIGNOR} onChange={handleChange}>
                     {Object.values(GstPayableBy).map(val => <option key={val} value={val}>{val}</option>)}
                  </Select>
             </div>
         </Card>
         <Card title="Charges">
             <div className="space-y-4">
-                {/* FIX: Corrected typo from `freIGHT` to `freight` */}
-                <Input label="Freight" type="number" name="charges.freight" value={lr.charges.freight} onChange={handleChange} onFocus={e => e.target.select()} />
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="AOC" type="number" name="charges.aoc" value={lr.charges.aoc} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Additional Operating Charges" /></div>
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Hamali" type="number" name="charges.hamali" value={lr.charges.hamali} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Loading/Unloading Charges" /></div>
-                <Input label="B. Ch." type="number" name="charges.bCh" value={lr.charges.bCh} onChange={handleChange} onFocus={e => e.target.select()} />
-                <Input label="Tr. Ch." type="number" name="charges.trCh" value={lr.charges.trCh} onChange={handleChange} onFocus={e => e.target.select()} />
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Detention Ch." type="number" name="charges.detentionCh" value={lr.charges.detentionCh} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Detention Charges" /></div>
+                <Input label="Freight" type="number" name="charges.freight" value={lr.charges?.freight || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="AOC" type="number" name="charges.aoc" value={lr.charges?.aoc || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Additional Operating Charges" /></div>
+                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Hamali" type="number" name="charges.hamali" value={lr.charges?.hamali || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Loading/Unloading Charges" /></div>
+                <Input label="B. Ch." type="number" name="charges.bCh" value={lr.charges?.bCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                <Input label="Tr. Ch." type="number" name="charges.trCh" value={lr.charges?.trCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Detention Ch." type="number" name="charges.detentionCh" value={lr.charges?.detentionCh || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Detention Charges" /></div>
             </div>
         </Card>
       </div>
