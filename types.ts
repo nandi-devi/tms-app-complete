@@ -53,9 +53,12 @@ export interface LorryReceipt {
   date: string;
   reportingDate?: string;
   deliveryDate?: string;
-  consignor: Customer;
-  consignee: Customer;
-  vehicle: Vehicle;
+  consignorId: string;
+  consignor?: Customer;
+  consigneeId: string;
+  consignee?: Customer;
+  vehicleId: string;
+  vehicle?: Vehicle;
   from: string;
   to: string;
   packages: {
