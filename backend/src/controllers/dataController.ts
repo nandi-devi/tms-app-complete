@@ -5,7 +5,7 @@ import LorryReceipt from '../models/lorryReceipt';
 import Invoice from '../models/invoice';
 import Payment from '../models/payment';
 import Counter from '../models/counter';
-import { mockCustomers, mockVehicles, mockLorryReceipts, mockInvoices, mockPayments } from '../../mockData'; // Assuming mockData is in the root
+import { mockCustomers, mockVehicles } from '../mockData';
 
 export const resetData = async (req: Request, res: Response) => {
     try {
@@ -31,18 +31,11 @@ export const loadMockData = async (req: Request, res: Response) => {
         await Payment.deleteMany({});
         await Counter.deleteMany({});
 
-        // NOTE: This is a simplified mock data loading. It does not handle relationships correctly
-        // (e.g., consignorId in mock LRs won't match the new mock Customer _ids).
-        // A more advanced implementation would create customers, get their new _ids, and then
-        // create LRs using those _ids. For now, this will just insert the raw mock data.
-        // This will be fixed later if needed.
-
         await Customer.insertMany(mockCustomers);
         await Vehicle.insertMany(mockVehicles);
-        // We will not load mock LRs, Invoices, or Payments for now as their relational
-        // IDs (_id, customerId, etc.) are hardcoded and will not match the newly
-        // inserted mock customers/vehicles. This prevents application errors.
-        // The sequential ID counter will also be reset.
+
+        // Note: We are not loading mock LRs/Invoices as their relational IDs are hardcoded
+        // and would not match the newly inserted customers/vehicles.
 
         res.status(200).json({ message: 'Successfully loaded mock customers and vehicles. Other data is reset.' });
     } catch (err: any) {
