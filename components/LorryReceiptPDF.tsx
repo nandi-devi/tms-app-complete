@@ -111,14 +111,27 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                         <div className="border-2 border-black border-t-0 p-1">
                             <p className="font-bold">INSURANCE</p>
                             <p className="text-[10px]">The Customer has stated that :</p>
-                            <div className="flex items-center">
-                                <div className="w-3 h-3 border border-black mr-1">{!lorryReceipt.insurance.hasInsured ? 'X':''}</div> <span className="text-[10px]">He has not insured the Consignment</span>
-                                <span className="mx-2">OR</span>
-                                <div className="w-3 h-3 border border-black mr-1">{lorryReceipt.insurance.hasInsured ? 'X':''}</div> <span className="text-[10px]">He has insured the Consignment</span>
-                            </div>
-                            <p className="text-[10px]">Company........ {lorryReceipt.insurance.company || ''}</p>
-                            <p className="text-[10px]">Policy No....... {lorryReceipt.insurance.policyNo || ''} .Date....... {lorryReceipt.insurance.date ? formatDate(lorryReceipt.insurance.date) : ''}</p>
-                            <p className="text-[10px]">Amount......... {lorryReceipt.insurance.amount || ''} .Risk.......... {lorryReceipt.insurance.risk || ''}</p>
+                            {lorryReceipt.insurance?.hasInsured ? (
+                                <>
+                                    <div className="flex items-center">
+                                        <div className="w-3 h-3 border border-black mr-1"></div> <span className="text-[10px]">He has not insured the Consignment</span>
+                                        <span className="mx-2">OR</span>
+                                        <div className="w-3 h-3 border border-black mr-1">X</div> <span className="text-[10px]">He has insured the Consignment</span>
+                                    </div>
+                                    <p className="text-[10px]">Company........ {lorryReceipt.insurance.company || 'N/A'}</p>
+                                    <p className="text-[10px]">Policy No....... {lorryReceipt.insurance.policyNo || 'N/A'} .Date....... {lorryReceipt.insurance.date ? formatDate(lorryReceipt.insurance.date) : 'N/A'}</p>
+                                    <p className="text-[10px]">Amount......... {lorryReceipt.insurance.amount || 'N/A'} .Risk.......... {lorryReceipt.insurance.risk || 'N/A'}</p>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex items-center">
+                                        <div className="w-3 h-3 border border-black mr-1">X</div> <span className="text-[10px]">He has not insured the Consignment</span>
+                                        <span className="mx-2">OR</span>
+                                        <div className="w-3 h-3 border border-black mr-1"></div> <span className="text-[10px]">He has insured the Consignment</span>
+                                    </div>
+                                    <p className="text-[10px] italic mt-2">-- Consignment Not Insured --</p>
+                                </>
+                            )}
                             <p className="text-[10px]">Invoice No........ {lorryReceipt.invoiceNo || ''}</p>
                         </div>
                          <div className="border-2 border-black border-t-0 p-1 text-center">
