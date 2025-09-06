@@ -1,7 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 import { Customer as ICustomerType } from '../types';
 
-export interface ICustomer extends ICustomerType, Document {}
+export interface ICustomer extends Omit<ICustomerType, '_id'>, Document {}
 
 const CustomerSchema = new Schema({
   name: { type: String, required: true },
