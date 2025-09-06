@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
-import { GstType } from '../types';
+import { GstType, InvoiceStatus } from '../types';
 
 export interface IInvoice extends Document {
   invoiceNumber: number;
@@ -18,6 +18,7 @@ export interface IInvoice extends Document {
   grandTotal: number;
   isRcm: boolean;
   isManualGst: boolean;
+  status: InvoiceStatus;
 }
 
 const InvoiceSchema = new Schema({
@@ -37,6 +38,7 @@ const InvoiceSchema = new Schema({
   grandTotal: { type: Number, required: true },
   isRcm: { type: Boolean, default: false },
   isManualGst: { type: Boolean, default: false },
+  status: { type: String, enum: Object.values(InvoiceStatus), default: InvoiceStatus.UNPAID },
 });
 
 export default model<IInvoice>('Invoice', InvoiceSchema);

@@ -1,11 +1,19 @@
 import { Schema, model, Document } from 'mongoose';
-import { Payment as IPaymentType, PaymentType, PaymentMode } from '../types';
+import { PaymentType, PaymentMode } from '../types';
 
-export interface IPayment extends Omit<IPaymentType, '_id' | 'customer' | 'customerId'>, Document {
+export interface IPayment extends Document {
+  invoice?: Schema.Types.ObjectId;
   customer: Schema.Types.ObjectId;
+  date: string;
+  amount: number;
+  type: PaymentType;
+  mode: PaymentMode;
+  referenceNo?: string;
+  notes?: string;
 }
 
 const PaymentSchema = new Schema({
+  invoice: { type: Schema.Types.ObjectId, ref: 'Invoice' },
   customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
   date: { type: String, required: true },
   amount: { type: Number, required: true },

@@ -10,7 +10,7 @@ export const getPayments = async (): Promise<Payment[]> => {
     return response.json();
 };
 
-export const createPayment = async (payment: Omit<Payment, 'id' | '_id'>): Promise<Payment> => {
+export const createPayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>): Promise<Payment> => {
     const response = await fetch(`${API_BASE_URL}/payments`, {
         method: 'POST',
         headers: {

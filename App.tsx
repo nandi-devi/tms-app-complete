@@ -184,7 +184,7 @@ const App: React.FC = () => {
     }
   };
 
-  const savePayment = async (payment: Omit<Payment, '_id'>) => {
+  const savePayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => {
     try {
       await createPayment(payment);
       await fetchAllData();
@@ -300,6 +300,7 @@ const App: React.FC = () => {
         return <Dashboard 
                  lorryReceipts={lorryReceipts} 
                  invoices={invoices}
+                 payments={payments}
                  customers={customers}
                  vehicles={vehicles}
                  companyInfo={companyInfo}
@@ -307,6 +308,7 @@ const App: React.FC = () => {
                  onUpdateLrStatus={updateLrStatus}
                  onDeleteLr={deleteLr}
                  onDeleteInvoice={deleteInvoice}
+                 onSavePayment={savePayment}
                />;
     }
   };

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Invoice from '../models/invoice';
 import { getNextSequenceValue } from '../utils/sequence';
+import { InvoiceStatus } from '../types';
 
 export const getInvoices = async (req: Request, res: Response) => {
   try {
@@ -52,6 +53,7 @@ export const createInvoice = async (req: Request, res: Response) => {
       invoiceNumber: nextInvoiceNumber,
       customer: customerId,
       lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
+      status: InvoiceStatus.UNPAID,
     });
 
     const newInvoice = await invoice.save();
