@@ -1,4 +1,4 @@
-import { LorryReceipt, Invoice, Payment, LorryReceiptStatus, GstPayableBy, GstType, PaymentType, PaymentMode } from './types';
+import { LorryReceipt, Invoice, Payment, LorryReceiptStatus, GstPayableBy, GstType, PaymentType, PaymentMode } from '../../types';
 
 export const mockLorryReceipts: LorryReceipt[] = [
   {
