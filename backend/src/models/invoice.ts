@@ -1,8 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 import { Invoice as IInvoiceType, GstType } from '../types';
 
-export interface IInvoice extends Omit<IInvoiceType, '_id' | 'id' | 'customer' | 'lorryReceipts'>, Document {
-  id: number;
+export interface IInvoice extends Omit<IInvoiceType, '_id'>, Document {
   customer: Schema.Types.ObjectId;
   lorryReceipts: Schema.Types.ObjectId[];
 }
