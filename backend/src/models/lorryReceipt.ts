@@ -1,9 +1,46 @@
 import { Schema, model, Document } from 'mongoose';
-import { LorryReceipt as ILorryReceiptType, LorryReceiptStatus, GstPayableBy } from '../types';
+import { LorryReceiptStatus, GstPayableBy } from '../types';
 
+export interface ILorryReceipt extends Document {
+  lrNumber: number;
+  date: string;
+  reportingDate?: string;
+  deliveryDate?: string;
   consignor: Schema.Types.ObjectId;
   consignee: Schema.Types.ObjectId;
   vehicle: Schema.Types.ObjectId;
+  from: string;
+  to: string;
+  packages: {
+    count: number;
+    packingMethod: string;
+    description: string;
+    actualWeight: number;
+    chargedWeight: number;
+  }[];
+  charges: {
+    freight: number;
+    aoc: number;
+    hamali: number;
+    bCh: number;
+    trCh: number;
+    detentionCh: number;
+  };
+  totalAmount: number;
+  eWayBillNo: string;
+  valueGoods: number;
+  gstPayableBy: GstPayableBy;
+  status: LorryReceiptStatus;
+  insurance: {
+    hasInsured: boolean;
+    company?: string;
+    policyNo?: string;
+    date?: string;
+    amount?: number;
+    risk?: string;
+  };
+  invoiceNo: string;
+  sealNo: string;
 }
 
 const LorryReceiptSchema = new Schema({
