@@ -17,6 +17,12 @@ export enum GstType {
     IGST = 'IGST',
 }
 
+export enum InvoiceStatus {
+    UNPAID = 'Unpaid',
+    PARTIALLY_PAID = 'Partially Paid',
+    PAID = 'Paid',
+}
+
 export enum PaymentType {
     ADVANCE = 'Advance',
     RECEIPT = 'Receipt',
@@ -112,6 +118,7 @@ export interface Invoice {
   grandTotal: number;
   isRcm: boolean;
   isManualGst: boolean;
+  status: InvoiceStatus;
 }
 
 export interface CompanyInfo {
@@ -131,6 +138,8 @@ export interface CompanyInfo {
 
 export interface Payment {
     _id: string;
+    invoiceId: string;
+    invoice?: Invoice;
     customerId: string;
     customer?: Customer;
     date: string;

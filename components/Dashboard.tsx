@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo } from '../types';
-import { LorryReceiptStatus } from '../types';
+import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment } from '../types';
+import { LorryReceiptStatus, InvoiceStatus } from '../types';
 import type { View } from '../App';
+import { PaymentForm } from './PaymentForm';
 import { formatDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Card } from './ui/Card';
@@ -13,6 +14,7 @@ import { LorryReceiptView } from './LorryReceiptPDF';
 interface DashboardProps {
   lorryReceipts: LorryReceipt[];
   invoices: Invoice[];
+  payments: Payment[];
   customers: Customer[];
   vehicles: Vehicle[];
   companyInfo: CompanyInfo;
@@ -20,6 +22,7 @@ interface DashboardProps {
   onUpdateLrStatus: (id: string, status: LorryReceiptStatus) => void;
   onDeleteLr: (id: string) => void;
   onDeleteInvoice: (id: string) => void;
+  onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
 }
 
 const statusColors: { [key in LorryReceiptStatus]: string } = {
@@ -28,6 +31,12 @@ const statusColors: { [key in LorryReceiptStatus]: string } = {
   [LorryReceiptStatus.DELIVERED]: 'bg-green-100 text-green-800',
   [LorryReceiptStatus.INVOICED]: 'bg-purple-100 text-purple-800',
   [LorryReceiptStatus.PAID]: 'bg-pink-100 text-pink-800',
+};
+
+const invoiceStatusColors: { [key in InvoiceStatus]: string } = {
+    [InvoiceStatus.UNPAID]: 'bg-red-100 text-red-800',
+    [InvoiceStatus.PARTIALLY_PAID]: 'bg-yellow-100 text-yellow-800',
+    [InvoiceStatus.PAID]: 'bg-green-100 text-green-800',
 };
 
 
@@ -103,13 +112,14 @@ const PreviewModal: React.FC<{
 };
 
 
-export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, customers, vehicles, companyInfo, onViewChange, onUpdateLrStatus, onDeleteLr, onDeleteInvoice }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, payments, customers, vehicles, companyInfo, onViewChange, onUpdateLrStatus, onDeleteLr, onDeleteInvoice, onSavePayment }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | {type: 'INVOICE', data: Invoice} | null>(null);
+  const [isPaymentFormVisible, setIsPaymentFormVisible] = useState(false);
 
   const filteredLrs = useMemo(() => {
     return lorryReceipts
@@ -270,8 +280,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
       </Card>
 
       <Card>
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Invoices</h3>
-         <div className="overflow-x-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-gray-800">Invoices</h3>
+          <button onClick={() => setIsPaymentFormVisible(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Add Payment
+          </button>
+        </div>
+        {isPaymentFormVisible && (
+            <PaymentForm
+                invoices={invoices}
+                customers={customers}
+                payments={payments}
+                onSave={onSavePayment}
+                onCancel={() => setIsPaymentFormVisible(false)}
+            />
+        )}
+         <div className="overflow-x-auto mt-4">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>
@@ -279,6 +303,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -289,6 +314,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{inv.grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${invoiceStatusColors[inv.status]}`}>
+                      {inv.status}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                      <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_INVOICE', id: inv._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
                      <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_INVOICE', id: inv._id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>

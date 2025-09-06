@@ -6,60 +6,14 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Card } from './ui/Card';
+import { PaymentForm } from './PaymentForm';
 
 interface LedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
-  onSavePayment: (payment: Omit<Payment, '_id'>) => Promise<void>;
+  onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
 }
-
-const AddPaymentForm: React.FC<{
-    customerId: string;
-    onSave: (payment: Omit<Payment, '_id'>) => Promise<void>;
-    onCancel: () => void;
-}> = ({ customerId, onSave, onCancel }) => {
-    const initialState: Omit<Payment, '_id' | 'customer'> = {
-        customerId, date: getCurrentDate(), amount: 0, type: PaymentType.RECEIPT,
-        mode: PaymentMode.CASH, referenceNo: '', notes: '',
-    };
-    const [payment, setPayment] = useState(initialState);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        setPayment(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (payment.amount <= 0) { alert('Payment amount must be greater than zero.'); return; }
-        await onSave(payment);
-        setPayment(initialState);
-    };
-    
-    return (
-        <Card title="Add Payment Record">
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input label="Date" type="date" name="date" value={payment.date} onChange={handleChange} required />
-                    <Input label="Amount" type="number" name="amount" value={payment.amount} onChange={handleChange} required onFocus={e => e.target.select()} />
-                    <Select label="Payment Type" name="type" value={payment.type} onChange={handleChange}>
-                        {Object.values(PaymentType).map(t => <option key={t} value={t}>{t}</option>)}
-                    </Select>
-                    <Select label="Payment Mode" name="mode" value={payment.mode} onChange={handleChange}>
-                        {Object.values(PaymentMode).map(m => <option key={m} value={m}>{m}</option>)}
-                    </Select>
-                    <Input label="Reference No." name="referenceNo" value={payment.referenceNo || ''} onChange={handleChange} placeholder="Cheque No, Txn ID..." />
-                    <Input label="Notes" name="notes" value={payment.notes || ''} onChange={handleChange} wrapperClassName="md:col-span-3" />
-                </div>
-                <div className="flex justify-end space-x-2 pt-4 border-t">
-                    <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-                    <Button type="submit">Save Payment</Button>
-                </div>
-            </form>
-        </Card>
-    );
-};
 
 export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, onSavePayment }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(customers[0]?._id || null);
@@ -84,14 +38,18 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
 
     const customerPayments = payments
       .filter(p => p.customerId === selectedCustomerId)
-      .map(p => ({
-        type: 'payment' as const,
-        date: p.date,
-        id: `pay-${p._id}`,
-        particulars: `${p.type} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`,
-        debit: 0,
-        credit: p.amount
-    }));
+      .map(p => {
+        const invoiceNumber = invoices.find(inv => inv._id === p.invoiceId)?.invoiceNumber;
+        const particulars = `Payment for INV-${invoiceNumber} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`;
+        return {
+          type: 'payment' as const,
+          date: p.date,
+          id: `pay-${p._id}`,
+          particulars,
+          debit: 0,
+          credit: p.amount
+        }
+      });
 
     const allTransactions = [...customerInvoices, ...customerPayments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || (a.type === 'invoice' ? -1 : 1));
 
@@ -122,11 +80,6 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
 
     return { transactions: filteredTransactions, totalDebit, totalCredit, finalBalance };
   }, [selectedCustomerId, invoices, payments, startDate, endDate, transactionType]);
-
-  const handleSavePayment = async (payment: Omit<Payment, '_id'>) => {
-    await onSavePayment(payment);
-    setIsPaymentFormVisible(false);
-  }
 
   return (
     <div className="space-y-6">
@@ -166,12 +119,21 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
                     <p className={`text-2xl font-bold ${transactionData.finalBalance >= 0 ? 'text-indigo-900' : 'text-green-800'}`}>₹{Math.abs(transactionData.finalBalance).toLocaleString('en-IN')} {transactionData.finalBalance >= 0 ? 'Dr' : 'Cr'}</p>
                 </div>
             </div>
-            
-             <div className="mb-4">
-                {!isPaymentFormVisible && (<Button onClick={() => setIsPaymentFormVisible(true)}>Add Payment Record</Button>)}
-                {isPaymentFormVisible && selectedCustomerId && (<AddPaymentForm customerId={selectedCustomerId} onSave={handleSavePayment} onCancel={() => setIsPaymentFormVisible(false)} />)}
+            <div className="mb-4">
+                <Button onClick={() => setIsPaymentFormVisible(true)}>Add Payment Record</Button>
+                {isPaymentFormVisible && (
+                    <PaymentForm
+                        invoices={invoices.filter(inv => inv.customerId === selectedCustomerId)}
+                        customers={customers}
+                        payments={payments}
+                        onSave={async (p) => {
+                            await onSavePayment(p as any); // TODO: Fix type
+                            setIsPaymentFormVisible(false);
+                        }}
+                        onCancel={() => setIsPaymentFormVisible(false)}
+                    />
+                )}
             </div>
-
             <Card>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
