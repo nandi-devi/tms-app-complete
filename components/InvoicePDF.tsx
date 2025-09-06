@@ -20,7 +20,7 @@ interface InvoiceViewProps {
 }
 
 export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, customers }) => {
-    const client = customers.find(c => c._id === invoice.customerId);
+    const client = invoice.customer;
 
     const totalPacks = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.count, 0), 0);
     const totalWeight = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.chargedWeight, 0), 0);
@@ -60,7 +60,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                         <p><span className="font-bold w-16 inline-block">GSTIN/- :</span> {client?.gstin}</p>
                     </div>
                     <div className="text-right">
-                        <p><span className="font-bold">Invoice No :</span> {invoice.id}</p>
+                        <p><span className="font-bold">Invoice No :</span> {invoice.invoiceNumber}</p>
                         <p><span className="font-bold">Date :</span> {formatDate(invoice.date)}</p>
                     </div>
                 </div>
@@ -87,13 +87,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     </thead>
                     <tbody>
                         {invoice.lorryReceipts.map(lr => {
-                            const consignee = customers.find(c => c._id === lr.consigneeId);
+                            const consignee = lr.consignee;
                             const packs = lr.packages.reduce((sum, p) => sum + p.count, 0);
                             const weight = lr.packages.reduce((sum, p) => sum + p.chargedWeight, 0);
                             const otherCharges = lr.charges.aoc + lr.charges.hamali + lr.charges.bCh + lr.charges.trCh + lr.charges.detentionCh;
                             return (
                                 <tr key={lr._id} className="border-b border-gray-300">
-                                    <td className="p-1 border border-gray-300">{lr.id}</td>
+                                    <td className="p-1 border border-gray-300">{lr.lrNumber}</td>
                                     <td className="p-1 border border-gray-300">{formatDate(lr.date)}</td>
                                     <td className="p-1 border border-gray-300">{lr.to}</td>
                                     <td className="p-1 border border-gray-300">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
@@ -200,7 +200,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
     return (
         <div>
             <div className="mb-4 flex justify-end">
-                <Button onClick={() => generatePdf('invoice-pdf-container', `Invoice-${invoice.id}`)}>
+                <Button onClick={() => generatePdf('invoice-pdf-container', `Invoice-${invoice.invoiceNumber}`)}>
                     Download PDF
                 </Button>
             </div>

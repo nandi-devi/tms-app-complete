@@ -11,15 +11,15 @@ interface LedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
-  onSavePayment: (payment: Omit<Payment, 'id' | '_id'>) => Promise<void>;
+  onSavePayment: (payment: Omit<Payment, '_id'>) => Promise<void>;
 }
 
 const AddPaymentForm: React.FC<{
     customerId: string;
-    onSave: (payment: Omit<Payment, 'id' | '_id'>) => Promise<void>;
+    onSave: (payment: Omit<Payment, '_id'>) => Promise<void>;
     onCancel: () => void;
 }> = ({ customerId, onSave, onCancel }) => {
-    const initialState = {
+    const initialState: Omit<Payment, '_id' | 'customer'> = {
         customerId, date: getCurrentDate(), amount: 0, type: PaymentType.RECEIPT,
         mode: PaymentMode.CASH, referenceNo: '', notes: '',
     };
@@ -70,20 +70,37 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
 
   const transactionData = useMemo(() => {
     if (!selectedCustomerId) return null;
-    const customerInvoices = invoices.filter(inv => inv.customerId === selectedCustomerId).map(inv => ({
-        type: 'invoice' as const, date: inv.date, id: `inv-${inv._id}`, particulars: `Invoice No: ${inv.id} (LRs: ${inv.lorryReceipts.map(lr => lr.id).join(', ')})`,
-        debit: inv.grandTotal, credit: 0
+
+    const customerInvoices = invoices
+      .filter(inv => inv.customerId === selectedCustomerId)
+      .map(inv => ({
+        type: 'invoice' as const,
+        date: inv.date,
+        id: `inv-${inv._id}`,
+        particulars: `Invoice No: ${inv.invoiceNumber} (LRs: ${(inv.lorryReceipts || []).map(lr => lr.lrNumber).join(', ')})`,
+        debit: inv.grandTotal,
+        credit: 0
     }));
-    const customerPayments = payments.filter(p => p.customerId === selectedCustomerId).map(p => ({
-        type: 'payment' as const, date: p.date, id: `pay-${p._id}`, particulars: `${p.type} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`,
-        debit: 0, credit: p.amount
+
+    const customerPayments = payments
+      .filter(p => p.customerId === selectedCustomerId)
+      .map(p => ({
+        type: 'payment' as const,
+        date: p.date,
+        id: `pay-${p._id}`,
+        particulars: `${p.type} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`,
+        debit: 0,
+        credit: p.amount
     }));
+
     const allTransactions = [...customerInvoices, ...customerPayments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || (a.type === 'invoice' ? -1 : 1));
+
     let runningBalance = 0;
     const allTransactionsWithBalance = allTransactions.map(tx => {
         runningBalance += (tx.debit - tx.credit);
         return { ...tx, balance: runningBalance };
     });
+
     const filteredTransactions = allTransactionsWithBalance.filter(tx => {
         const txDate = new Date(tx.date); txDate.setHours(0,0,0,0);
         const start = startDate ? new Date(startDate) : null; if(start) start.setHours(0,0,0,0);
@@ -92,18 +109,21 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
         const matchesType = transactionType === 'all' || tx.type === transactionType;
         return matchesDate && matchesType;
     });
+
     const totalDebit = filteredTransactions.reduce((sum, tx) => sum + tx.debit, 0);
     const totalCredit = filteredTransactions.reduce((sum, tx) => sum + tx.credit, 0);
+
     const endFilterDate = endDate ? new Date(endDate) : null; if(endFilterDate) endFilterDate.setHours(0,0,0,0);
     const relevantTransactionsForBalance = allTransactionsWithBalance.filter(tx => {
         const txDate = new Date(tx.date); txDate.setHours(0,0,0,0);
         return !endFilterDate || txDate <= endFilterDate;
     });
     const finalBalance = relevantTransactionsForBalance.length > 0 ? relevantTransactionsForBalance[relevantTransactionsForBalance.length - 1].balance : 0;
+
     return { transactions: filteredTransactions, totalDebit, totalCredit, finalBalance };
   }, [selectedCustomerId, invoices, payments, startDate, endDate, transactionType]);
 
-  const handleSavePayment = async (payment: Omit<Payment, 'id' | '_id'>) => {
+  const handleSavePayment = async (payment: Omit<Payment, '_id'>) => {
     await onSavePayment(payment);
     setIsPaymentFormVisible(false);
   }
@@ -149,7 +169,7 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
             
              <div className="mb-4">
                 {!isPaymentFormVisible && (<Button onClick={() => setIsPaymentFormVisible(true)}>Add Payment Record</Button>)}
-                {isPaymentFormVisible && (<AddPaymentForm customerId={selectedCustomerId} onSave={handleSavePayment} onCancel={() => setIsPaymentFormVisible(false)} />)}
+                {isPaymentFormVisible && selectedCustomerId && (<AddPaymentForm customerId={selectedCustomerId} onSave={handleSavePayment} onCancel={() => setIsPaymentFormVisible(false)} />)}
             </div>
 
             <Card>

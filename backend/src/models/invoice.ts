@@ -1,28 +1,13 @@
 import { Schema, model, Document } from 'mongoose';
-export enum GstType {
-    CGST_SGST = 'CGST/SGST',
-    IGST = 'IGST',
-}
+import { Invoice as IInvoiceType, GstType } from '../types';
 
-export interface IInvoice extends Document {
-  date: string;
+export interface IInvoice extends Omit<IInvoiceType, '_id' | 'invoiceNumber' | 'customer' | 'customerId' | 'lorryReceipts'>, Document {
   customer: Schema.Types.ObjectId;
   lorryReceipts: Schema.Types.ObjectId[];
-  totalAmount: number;
-  remarks: string;
-  gstType: GstType;
-  cgstRate: number;
-  sgstRate: number;
-  igstRate: number;
-  cgstAmount: number;
-  sgstAmount: number;
-  igstAmount: number;
-  grandTotal: number;
-  isRcm: boolean;
-  isManualGst: boolean;
 }
 
 const InvoiceSchema = new Schema({
+  invoiceNumber: { type: Number, unique: true },
   date: { type: String, required: true },
   customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
   lorryReceipts: [{ type: Schema.Types.ObjectId, ref: 'LorryReceipt' }],

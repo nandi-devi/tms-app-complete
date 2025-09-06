@@ -9,13 +9,12 @@ import { Card } from './ui/Card';
 import { numberToWords, formatDate, getCurrentDate } from '../services/utils';
 
 interface InvoiceFormProps {
-  onSave: (invoice: Omit<Invoice, 'id'> & { id?: number }) => void;
+  onSave: (invoice: Partial<Invoice>) => void;
   onCancel: () => void;
   availableLrs: LorryReceipt[];
   customers: Customer[];
   companyInfo: CompanyInfo;
   existingInvoice?: Invoice;
-  nextInvoiceNumber: number;
   preselectedLr?: LorryReceipt;
 }
 
@@ -30,32 +29,29 @@ const ToggleSwitch: React.FC<{ label: string; checked: boolean; onChange: (check
     </label>
 );
 
-export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, companyInfo, existingInvoice, nextInvoiceNumber, preselectedLr }) => {
+export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, companyInfo, existingInvoice, preselectedLr }) => {
 
-  const getInitialState = (): Omit<Invoice, 'id'> => {
-    if (existingInvoice) {
-      return { ...existingInvoice };
-    }
-    return {
-      date: getCurrentDate(),
-      customerId: '',
-      lorryReceipts: [],
-      totalAmount: 0,
-      remarks: '',
-      gstType: GstType.IGST,
-      cgstRate: 9,
-      sgstRate: 9,
-      igstRate: 18,
-      cgstAmount: 0,
-      sgstAmount: 0,
-      igstAmount: 0,
-      grandTotal: 0,
-      isRcm: false,
-      isManualGst: false,
-    };
-  };
-
-  const [invoice, setInvoice] = useState(getInitialState);
+  const [invoice, setInvoice] = useState<Partial<Invoice>>(
+    existingInvoice
+    ? { ...existingInvoice }
+    : {
+        date: getCurrentDate(),
+        customerId: '',
+        lorryReceipts: [],
+        totalAmount: 0,
+        remarks: '',
+        gstType: GstType.IGST,
+        cgstRate: 9,
+        sgstRate: 9,
+        igstRate: 18,
+        cgstAmount: 0,
+        sgstAmount: 0,
+        igstAmount: 0,
+        grandTotal: 0,
+        isRcm: false,
+        isManualGst: false,
+      }
+  );
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [selectedLrs, setSelectedLrs] = useState<Set<string>>(
     new Set(existingInvoice?.lorryReceipts.map(lr => lr._id) || [])
@@ -72,11 +68,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     }
   }, [invoice.customerId, invoice.isManualGst, customers, companyInfo.state]);
 
+  // Handle pre-selection of an LR when creating an invoice from it
   useEffect(() => {
     if (preselectedLr) {
-      // Bill to consignor by default when creating from an LR.
-      const billToId = preselectedLr.consignorId;
-      setInvoice(prev => ({ ...prev, customerId: billToId as any }));
+      const billToId = preselectedLr.consignor._id;
+      setInvoice(prev => ({ ...prev, customerId: billToId }));
       setSelectedLrs(new Set([preselectedLr._id]));
     }
   }, [preselectedLr]);
@@ -90,16 +86,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
       if (invoice.isRcm) {
         // All tax is 0 under RCM
       } else if (invoice.isManualGst) {
-          cgst = invoice.cgstAmount;
-          sgst = invoice.sgstAmount;
-          igst = invoice.igstAmount;
+          cgst = invoice.cgstAmount || 0;
+          sgst = invoice.sgstAmount || 0;
+          igst = invoice.igstAmount || 0;
           grandTotal = subtotal + cgst + sgst + igst;
       } else {
         if (invoice.gstType === GstType.CGST_SGST) {
-            cgst = subtotal * (invoice.cgstRate / 100);
-            sgst = subtotal * (invoice.sgstRate / 100);
+            cgst = subtotal * ((invoice.cgstRate || 0) / 100);
+            sgst = subtotal * ((invoice.sgstRate || 0) / 100);
         } else if (invoice.gstType === GstType.IGST) {
-            igst = subtotal * (invoice.igstRate / 100);
+            igst = subtotal * ((invoice.igstRate || 0) / 100);
         }
         grandTotal = subtotal + cgst + sgst + igst;
       }
@@ -162,29 +158,29 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSave({ ...invoice, _id: existingInvoice?._id });
+      onSave(invoice);
     }
   };
   
-  const customerLrs = availableLrs.filter(lr => lr.consignorId === invoice.customerId || lr.consigneeId === invoice.customerId);
+  const customerLrs = availableLrs.filter(lr => lr.consignor?._id === invoice.customerId || lr.consignee?._id === invoice.customerId);
   const customer = customers.find(c => c._id === invoice.customerId);
   const manualTaxFromRate = invoice.gstType === GstType.IGST 
-    ? (invoice.totalAmount * invoice.igstRate / 100) 
-    : (invoice.totalAmount * (invoice.cgstRate + invoice.sgstRate) / 100);
-  const manualTaxEntered = invoice.igstAmount + invoice.cgstAmount + invoice.sgstAmount;
+    ? ((invoice.totalAmount || 0) * (invoice.igstRate || 0) / 100)
+    : ((invoice.totalAmount || 0) * ((invoice.cgstRate || 0) + (invoice.sgstRate || 0)) / 100);
+  const manualTaxEntered = (invoice.igstAmount || 0) + (invoice.cgstAmount || 0) + (invoice.sgstAmount || 0);
   const manualTaxMismatch = invoice.isManualGst && !invoice.isRcm && Math.abs(manualTaxFromRate - manualTaxEntered) > 0.01;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-800">{existingInvoice ? `Edit Invoice #${existingInvoice.id}` : `Create Invoice #${nextInvoiceNumber}`}</h2>
+      <h2 className="text-3xl font-bold text-gray-800">{existingInvoice ? `Edit Invoice #${existingInvoice.invoiceNumber}` : 'Create Invoice'}</h2>
 
       <Card title="Invoice Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Select label="Client" name="customerId" value={invoice.customerId} onChange={handleChange} required error={errors.customerId}>
+          <Select label="Client" name="customerId" value={invoice.customerId || ''} onChange={handleChange} required error={errors.customerId}>
             <option value="" disabled>Select Client</option>
             {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </Select>
-          <Input label="Invoice Date" type="date" name="date" value={invoice.date} onChange={handleChange} required error={errors.date} />
+          <Input label="Invoice Date" type="date" name="date" value={invoice.date || ''} onChange={handleChange} required error={errors.date} />
         </div>
         {customer && <p className="text-sm text-gray-500 mt-2">Client State: <span className="font-medium text-gray-700">{customer.state}</span></p>}
       </Card>
@@ -211,7 +207,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
               {customerLrs.map(lr => (
                 <tr key={lr._id} className="border-b last:border-0 hover:bg-slate-50">
                   <td className="p-3"><input type="checkbox" checked={selectedLrs.has(lr._id)} onChange={() => handleLrSelectionChange(lr._id)} /></td>
-                  <td className="p-3 text-sm">{lr.id}</td>
+                  <td className="p-3 text-sm">{lr.lrNumber}</td>
                   <td className="p-3 text-sm">{formatDate(lr.date)}</td>
                   <td className="p-3 text-sm">{lr.to}</td>
                   <td className="p-3 text-right text-sm">₹{lr.totalAmount.toLocaleString('en-IN')}</td>
@@ -230,8 +226,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
         <Card title="GST Details">
             <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:space-x-8 space-y-3 sm:space-y-0">
-                   <ToggleSwitch label="Enable Reverse Charge (RCM)" checked={invoice.isRcm} onChange={v => handleToggle('isRcm', v)} />
-                   <ToggleSwitch label="Manual GST Entry" checked={invoice.isManualGst} onChange={v => handleToggle('isManualGst', v)} disabled={invoice.isRcm} />
+                   <ToggleSwitch label="Enable Reverse Charge (RCM)" checked={invoice.isRcm || false} onChange={v => handleToggle('isRcm', v)} />
+                   <ToggleSwitch label="Manual GST Entry" checked={invoice.isManualGst || false} onChange={v => handleToggle('isManualGst', v)} disabled={invoice.isRcm} />
                 </div>
 
                 {invoice.isRcm ? (
@@ -248,15 +244,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
                     </div>
                     {invoice.gstType === GstType.CGST_SGST ? (
                         <div className="grid grid-cols-2 gap-4">
-                            <Input label="CGST Rate (%)" type="number" name="cgstRate" value={invoice.cgstRate} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
-                            <Input label="SGST Rate (%)" type="number" name="sgstRate" value={invoice.sgstRate} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
-                            <Input label="CGST Amount" type="number" name="cgstAmount" value={invoice.cgstAmount} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
-                            <Input label="SGST Amount" type="number" name="sgstAmount" value={invoice.sgstAmount} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
+                            <Input label="CGST Rate (%)" type="number" name="cgstRate" value={invoice.cgstRate || 0} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
+                            <Input label="SGST Rate (%)" type="number" name="sgstRate" value={invoice.sgstRate || 0} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
+                            <Input label="CGST Amount" type="number" name="cgstAmount" value={invoice.cgstAmount || 0} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
+                            <Input label="SGST Amount" type="number" name="sgstAmount" value={invoice.sgstAmount || 0} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 gap-4">
-                            <Input label="IGST Rate (%)" type="number" name="igstRate" value={invoice.igstRate} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
-                            <Input label="IGST Amount" type="number" name="igstAmount" value={invoice.igstAmount} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
+                            <Input label="IGST Rate (%)" type="number" name="igstRate" value={invoice.igstRate || 0} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
+                            <Input label="IGST Amount" type="number" name="igstAmount" value={invoice.igstAmount || 0} onChange={handleChange} onFocus={e => e.target.select()} disabled={!invoice.isManualGst} />
                         </div>
                     )}
                     {manualTaxMismatch && (
@@ -270,36 +266,36 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
         <div className="p-6 space-y-2">
             <div className="flex justify-between text-lg">
                 <span className="text-gray-600">Subtotal:</span>
-                <span className="font-medium">₹{invoice.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-medium">₹{(invoice.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
              {invoice.gstType === GstType.CGST_SGST && !invoice.isRcm && (
                 <>
                     <div className="flex justify-between text-md text-gray-600">
-                        <span>CGST ({invoice.cgstRate}%):</span>
-                        <span>+ ₹{invoice.cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>CGST ({(invoice.cgstRate || 0)}%):</span>
+                        <span>+ ₹{(invoice.cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                      <div className="flex justify-between text-md text-gray-600">
-                        <span>SGST ({invoice.sgstRate}%):</span>
-                        <span>+ ₹{invoice.sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>SGST ({(invoice.sgstRate || 0)}%):</span>
+                        <span>+ ₹{(invoice.sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 </>
              )}
              {invoice.gstType === GstType.IGST && !invoice.isRcm && (
                  <div className="flex justify-between text-md text-gray-600">
-                    <span>IGST ({invoice.igstRate}%):</span>
-                    <span>+ ₹{invoice.igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>IGST ({(invoice.igstRate || 0)}%):</span>
+                    <span>+ ₹{(invoice.igstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
              )}
             <div className="border-t pt-2 mt-2 flex justify-between text-2xl font-bold">
                 <span>Grand Total:</span>
-                <span>₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>₹{(invoice.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-            <div className="text-gray-500 text-sm text-right mt-1">In words: {numberToWords(Math.round(invoice.grandTotal))} Only /-</div>
+            <div className="text-gray-500 text-sm text-right mt-1">In words: {numberToWords(Math.round(invoice.grandTotal || 0))} Only /-</div>
         </div>
       </div>
 
       <Card title="Additional Information">
-        <Textarea label="Remarks" name="remarks" value={invoice.remarks} onChange={handleChange} rows={3}/>
+        <Textarea label="Remarks" name="remarks" value={invoice.remarks || ''} onChange={handleChange} rows={3}/>
       </Card>
 
       <div className="flex justify-end space-x-4 pt-4 border-t">

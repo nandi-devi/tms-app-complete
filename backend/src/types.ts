@@ -49,7 +49,7 @@ export interface Vehicle {
 
 export interface LorryReceipt {
   _id: string;
-  lrNumber: number;
+  id: number; // Sequential ID
   date: string;
   reportingDate?: string;
   deliveryDate?: string;
@@ -95,7 +95,7 @@ export interface LorryReceipt {
 
 export interface Invoice {
   _id: string;
-  invoiceNumber: number;
+  id: number; // Sequential ID
   date: string;
   customerId: string;
   customer?: Customer;
