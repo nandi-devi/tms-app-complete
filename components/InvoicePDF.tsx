@@ -60,7 +60,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                         <p><span className="font-bold w-16 inline-block">GSTIN/- :</span> {client?.gstin}</p>
                     </div>
                     <div className="text-right">
-                        <p><span className="font-bold">Invoice No :</span> {invoice.id}</p>
+                        <p><span className="font-bold">Invoice No :</span> {invoice.invoiceNumber}</p>
                         <p><span className="font-bold">Date :</span> {formatDate(invoice.date)}</p>
                     </div>
                 </div>
@@ -93,7 +93,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             const otherCharges = lr.charges.aoc + lr.charges.hamali + lr.charges.bCh + lr.charges.trCh + lr.charges.detentionCh;
                             return (
                                 <tr key={lr._id} className="border-b border-gray-300">
-                                    <td className="p-1 border border-gray-300">{lr.id}</td>
+                                    <td className="p-1 border border-gray-300">{lr.lrNumber}</td>
                                     <td className="p-1 border border-gray-300">{formatDate(lr.date)}</td>
                                     <td className="p-1 border border-gray-300">{lr.to}</td>
                                     <td className="p-1 border border-gray-300">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
@@ -200,7 +200,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
     return (
         <div>
             <div className="mb-4 flex justify-end">
-                <Button onClick={() => generatePdf('invoice-pdf-container', `Invoice-${invoice.id}`)}>
+                <Button onClick={() => generatePdf('invoice-pdf-container', `Invoice-${invoice.invoiceNumber}`)}>
                     Download PDF
                 </Button>
             </div>

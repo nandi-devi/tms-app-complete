@@ -1,13 +1,13 @@
 import { Schema, model, Document } from 'mongoose';
 import { Invoice as IInvoiceType, GstType } from '../types';
 
-export interface IInvoice extends Omit<IInvoiceType, '_id'>, Document {
+export interface IInvoice extends Omit<IInvoiceType, '_id' | 'customer' | 'customerId' | 'lorryReceipts'>, Document {
   customer: Schema.Types.ObjectId;
   lorryReceipts: Schema.Types.ObjectId[];
 }
 
 const InvoiceSchema = new Schema({
-  id: { type: Number, unique: true },
+  invoiceNumber: { type: Number, unique: true },
   date: { type: String, required: true },
   customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
   lorryReceipts: [{ type: Schema.Types.ObjectId, ref: 'LorryReceipt' }],
