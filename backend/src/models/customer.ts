@@ -1,15 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
+import { Customer as ICustomerType } from '../types';
 
-export interface ICustomer extends Document {
-  name: string;
-  tradeName?: string;
-  address: string;
-  state: string;
-  gstin?: string;
-  contactPerson?: string;
-  contactPhone?: string;
-  contactEmail?: string;
-}
+export interface ICustomer extends ICustomerType, Document {}
 
 const CustomerSchema = new Schema({
   name: { type: String, required: true },

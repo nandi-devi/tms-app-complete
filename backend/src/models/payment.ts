@@ -1,25 +1,8 @@
 import { Schema, model, Document } from 'mongoose';
-export enum PaymentType {
-    ADVANCE = 'Advance',
-    RECEIPT = 'Receipt',
-}
+import { Payment as IPaymentType, PaymentType, PaymentMode } from '../types';
 
-export enum PaymentMode {
-    CASH = 'Cash',
-    CHEQUE = 'Cheque',
-    NEFT = 'NEFT',
-    RTGS = 'RTGS',
-    UPI = 'UPI',
-}
-
-export interface IPayment extends Document {
+export interface IPayment extends Omit<IPaymentType, '_id' | 'customer' | 'customerId'>, Document {
   customer: Schema.Types.ObjectId;
-  date: string;
-  amount: number;
-  type: PaymentType;
-  mode: PaymentMode;
-  referenceNo?: string;
-  notes?: string;
 }
 
 const PaymentSchema = new Schema({
