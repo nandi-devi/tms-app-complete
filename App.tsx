@@ -283,7 +283,7 @@ const App: React.FC = () => {
                 /> : <div>LR not found</div>;
       case 'VIEW_LR':
         const lrToView = lorryReceipts.find(lr => lr._id === view.id);
-        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} customers={customers} vehicles={vehicles} /> : <div>LR not found</div>;
+        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
         const availableLrs = lorryReceipts.filter(lr => 
