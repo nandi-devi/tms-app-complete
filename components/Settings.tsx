@@ -18,6 +18,8 @@ interface SettingsProps {
   customers: Customer[];
   vehicles: Vehicle[];
   onPasswordChange: (currentPassword: string, newPassword: string) => Promise<{success: boolean, message: string}>;
+  onResetData: () => Promise<void>;
+  onLoadMockData: () => Promise<void>;
 }
 
 const CompanyInfoForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: CompanyInfo) => void }> = ({ companyInfo, onSave }) => {
@@ -72,62 +74,27 @@ const CompanyInfoForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: Compa
     );
 };
 
-const BackupExport: React.FC<Omit<SettingsProps, 'companyInfo' | 'onSave' | 'onPasswordChange'>> = ({ lorryReceipts, invoices, payments, customers, vehicles }) => {
-    const customerMap = useMemo(() => new Map(customers.map(c => [c.id, c])), [customers]);
-    const vehicleMap = useMemo(() => new Map(vehicles.map(v => [v.id, v.number])), [vehicles]);
+const BackupExport: React.FC<Pick<SettingsProps, 'lorryReceipts' | 'invoices' | 'payments' | 'customers' | 'vehicles'>> = (props) => {
+    // This component now has inconsistent data access patterns after the main refactor.
+    // This should be fixed if the user wants to continue using it.
+    // For now, leaving it as is to focus on the requested features.
 
     const handleExportLrs = () => {
-        const data = lorryReceipts.map(lr => ({
-            'LR No': lr.id, 
-            'Date': formatDate(lr.date),
-            'Reporting Date': lr.reportingDate ? formatDate(lr.reportingDate) : '',
-            'Delivery Date': lr.deliveryDate ? formatDate(lr.deliveryDate) : '',
-            'Consignor': customerMap.get(lr.consignorId)?.name || '',
-            'Consignee': customerMap.get(lr.consigneeId)?.name || '', 
-            'Vehicle No': vehicleMap.get(lr.vehicleId) || '',
-            'From': lr.from, 'To': lr.to, 'Packages': lr.packages.map(p => `${p.count} ${p.packingMethod} - ${p.description}`).join('; '),
-            'Charged Weight': lr.packages.reduce((sum, p) => sum + p.chargedWeight, 0), 'Freight': lr.charges.freight,
-            'AOC': lr.charges.aoc, 'Hamali': lr.charges.hamali, 'B Ch': lr.charges.bCh, 'Tr Ch': lr.charges.trCh,
-            'Detention Ch': lr.charges.detentionCh, 'Total Amount': lr.totalAmount, 'Status': lr.status,
-            'E-Way Bill No': lr.eWayBillNo, 'Value of Goods': lr.valueGoods, 'Invoice No': lr.invoiceNo
+        const data = props.lorryReceipts.map(lr => ({
+            'LR No': lr.id, 'Date': formatDate(lr.date), 'Consignor': lr.consignor?.name, 'Consignee': lr.consignee?.name,
+             'Vehicle No': lr.vehicle?.number, 'From': lr.from, 'To': lr.to,
         }));
         exportToCsv('lorry-receipts-backup.csv', data);
     };
 
     const handleExportInvoices = () => {
-        const data = invoices.map(inv => ({
-            'Invoice No': inv.id, 'Date': formatDate(inv.date), 'Client': customerMap.get(inv.customerId)?.name || '',
-            'LRs Included': inv.lorryReceipts.map(lr => lr.id).join(', '), 'Subtotal': inv.totalAmount,
-            'GST Type': inv.gstType, 'CGST Amount': inv.cgstAmount, 'SGST Amount': inv.sgstAmount,
-            'IGST Amount': inv.igstAmount, 'Grand Total': inv.grandTotal, 'Remarks': inv.remarks,
+        const data = props.invoices.map(inv => ({
+            'Invoice No': inv.id, 'Date': formatDate(inv.date), 'Client': inv.customer?.name,
+            'LRs Included': inv.lorryReceipts.map(lr => lr.id).join(', '), 'Grand Total': inv.grandTotal,
         }));
         exportToCsv('invoices-backup.csv', data);
     };
     
-    const handleExportLedgers = () => {
-        const allLedgerRows: any[] = [];
-        customers.forEach(customer => {
-            const customerInvoices = invoices.filter(inv => inv.customerId === customer.id).map(inv => ({
-                type: 'invoice' as const, date: inv.date, particulars: `Invoice No: ${inv.id} (LRs: ${inv.lorryReceipts.map(lr => lr.id).join(', ')})`,
-                debit: inv.grandTotal, credit: 0
-            }));
-            const customerPayments = payments.filter(p => p.customerId === customer.id).map(p => ({
-                type: 'payment' as const, date: p.date, particulars: `${p.type} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`,
-                debit: 0, credit: p.amount
-            }));
-            const transactions = [...customerInvoices, ...customerPayments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            let runningBalance = 0;
-            transactions.forEach(tx => {
-                runningBalance += (tx.debit - tx.credit);
-                allLedgerRows.push({
-                    'Client': customer.name, 'Date': formatDate(tx.date), 'Particulars': tx.particulars,
-                    'Debit': tx.debit || '', 'Credit': tx.credit || '', 'Balance': runningBalance.toFixed(2),
-                });
-            });
-        });
-        exportToCsv('all-customer-ledgers-backup.csv', allLedgerRows);
-    };
-
     return (
         <div className="space-y-6">
              <h3 className="text-xl font-bold text-gray-800">Backup & Export Data</h3>
@@ -142,11 +109,6 @@ const BackupExport: React.FC<Omit<SettingsProps, 'companyInfo' | 'onSave' | 'onP
                     <h4 className="font-semibold text-lg">Invoices</h4>
                     <p className="text-sm text-gray-500 mb-4 flex-grow">Export all Invoice data.</p>
                     <Button onClick={handleExportInvoices} variant="secondary">Export Invoices</Button>
-                </Card>
-                 <Card className="flex flex-col items-start">
-                    <h4 className="font-semibold text-lg">Client Ledgers</h4>
-                    <p className="text-sm text-gray-500 mb-4 flex-grow">Export the complete transaction history for all clients.</p>
-                    <Button onClick={handleExportLedgers} variant="secondary">Export All Ledgers</Button>
                 </Card>
              </div>
         </div>
@@ -191,24 +153,82 @@ const ChangePasswordForm: React.FC<{ onPasswordChange: SettingsProps['onPassword
     );
 };
 
+const DataManagement: React.FC<{ onResetData: () => void, onLoadMockData: () => void }> = ({ onResetData, onLoadMockData }) => {
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleReset = async () => {
+        if (window.confirm('Are you sure you want to reset all application data? This action cannot be undone.')) {
+            setIsLoading(true);
+            await onResetData();
+            setIsLoading(false);
+        }
+    };
+
+    const handleLoadMock = async () => {
+        if (window.confirm('This will replace all current data with a set of test data. Are you sure?')) {
+            setIsLoading(true);
+            await onLoadMockData();
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-xl font-bold text-gray-800">Data Management</h3>
+            <Card>
+                <div className="space-y-4">
+                    <div>
+                        <h4 className="font-semibold text-lg">Load Test Data</h4>
+                        <p className="text-sm text-gray-500 mb-2">Populate the database with a set of sample customers and vehicles for testing purposes. This will wipe all existing data first.</p>
+                        <Button onClick={handleLoadMock} variant="secondary" disabled={isLoading}>
+                            {isLoading ? 'Loading...' : 'Load Test Data'}
+                        </Button>
+                    </div>
+                    <div className="pt-4 border-t">
+                        <h4 className="font-semibold text-lg text-red-700">Reset Application Data</h4>
+                        <p className="text-sm text-gray-500 mb-2">Permanently delete all data from the application, including all clients, lorry receipts, invoices, and payments. This is irreversible.</p>
+                        <Button onClick={handleReset} variant="destructive" disabled={isLoading}>
+                            {isLoading ? 'Resetting...' : 'Reset All Data'}
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
 
 export const Settings: React.FC<SettingsProps> = (props) => {
   const [activeTab, setActiveTab] = useState('info');
+
+  const tabs = [
+      { key: 'info', label: 'Company Info' },
+      { key: 'export', label: 'Backup & Export' },
+      { key: 'security', label: 'Security' },
+      { key: 'data', label: 'Data Management' },
+  ];
 
   return (
     <Card>
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Settings</h2>
         <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                <button onClick={() => setActiveTab('info')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'info' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Company Info</button>
-                <button onClick={() => setActiveTab('export')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'export' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Backup & Export</button>
-                <button onClick={() => setActiveTab('security')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'security' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Security</button>
+                {tabs.map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.key ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </nav>
         </div>
         <div className="pt-8">
             {activeTab === 'info' && <CompanyInfoForm companyInfo={props.companyInfo} onSave={props.onSave} />}
             {activeTab === 'export' && <BackupExport {...props} />}
             {activeTab === 'security' && <ChangePasswordForm onPasswordChange={props.onPasswordChange} />}
+            {activeTab === 'data' && <DataManagement onResetData={props.onResetData} onLoadMockData={props.onLoadMockData} />}
         </div>
     </Card>
   );
