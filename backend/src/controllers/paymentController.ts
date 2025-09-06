@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import Payment from '../models/payment';
 
 export const getPayments = async (req: Request, res: Response) => {
@@ -24,9 +25,14 @@ export const getPaymentById = async (req: Request, res: Response) => {
 
 export const createPayment = async (req: Request, res: Response) => {
   const { customerId, ...rest } = req.body;
+
+  if (!Types.ObjectId.isValid(customerId)) {
+    return res.status(400).json({ message: 'Invalid customer ID' });
+  }
+
   const payment = new Payment({
     ...rest,
-    customer: customerId,
+    customer: new Types.ObjectId(customerId),
   });
 
   try {
@@ -41,10 +47,16 @@ export const createPayment = async (req: Request, res: Response) => {
 export const updatePayment = async (req: Request, res: Response) => {
     try {
         const { customerId, ...rest } = req.body;
+
+        if (customerId && !Types.ObjectId.isValid(customerId)) {
+            return res.status(400).json({ message: 'Invalid customer ID' });
+        }
+
         const updatedData = {
             ...rest,
-            customer: customerId,
+            ...(customerId && { customer: new Types.ObjectId(customerId) }),
         };
+
         const updatedPayment = await Payment.findByIdAndUpdate(req.params.id, updatedData, { new: true }).populate('customer');
 
         if (updatedPayment == null) {
