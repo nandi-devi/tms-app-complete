@@ -1,8 +1,23 @@
 import { Schema, model, Document } from 'mongoose';
-import { Invoice as IInvoiceType, GstType } from '../types';
+import { GstType } from '../types';
 
+export interface IInvoice extends Document {
+  invoiceNumber: number;
+  date: string;
   customer: Schema.Types.ObjectId;
   lorryReceipts: Schema.Types.ObjectId[];
+  totalAmount: number;
+  remarks: string;
+  gstType: GstType;
+  cgstRate: number;
+  sgstRate: number;
+  igstRate: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
+  grandTotal: number;
+  isRcm: boolean;
+  isManualGst: boolean;
 }
 
 const InvoiceSchema = new Schema({
