@@ -6,8 +6,8 @@ import { formatDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Card } from './ui/Card';
 import { Select } from './ui/Select';
-import { LorryReceiptView } from './LorryReceiptPDF';
 import { InvoiceView } from './InvoicePDF';
+import { LorryReceiptView } from './LorryReceiptPDF';
 
 
 interface DashboardProps {
@@ -35,7 +35,7 @@ const PreviewModal: React.FC<{
   item: { type: 'LR', data: LorryReceipt } | { type: 'INVOICE', data: Invoice };
   onClose: () => void;
   companyInfo: CompanyInfo;
-  customers: Customer[];
+  customers: Customer[]; // Keep customers prop for now, might be needed by PDF views
   vehicles: Vehicle[];
 }> = ({ item, onClose, companyInfo, customers, vehicles }) => {
   const [isClosing, setIsClosing] = useState(false);
@@ -82,21 +82,17 @@ const PreviewModal: React.FC<{
         </div>
         <div className="overflow-y-auto bg-gray-200">
            <div className="p-4 sm:p-8 flex justify-center">
-             {item.type === 'LR' && (
+             {item.type === 'LR' && item.data.consignor && ( // Ensure data is populated
               <LorryReceiptView 
                 lorryReceipt={item.data as LorryReceipt}
                 companyInfo={companyInfo}
-                customers={customers}
-                vehicles={vehicles}
-                copyType="PREVIEW"
-                hideCharges={false}
               />
             )}
-            {item.type === 'INVOICE' && (
+            {item.type === 'INVOICE' && item.data.customer && ( // Ensure data is populated
               <InvoiceView 
                 invoice={item.data as Invoice}
                 companyInfo={companyInfo}
-                customers={customers}
+                customers={customers} // InvoiceView still uses this, can be refactored later
               />
             )}
            </div>
@@ -115,20 +111,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
   const [selectedStatus, setSelectedStatus] = useState('');
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | {type: 'INVOICE', data: Invoice} | null>(null);
 
-  const customerMap = useMemo(() => new Map(customers.map(c => [c._id, c.name])), [customers]);
-
   const filteredLrs = useMemo(() => {
     return lorryReceipts
       .filter(lr => {
-        const consignorName = customerMap.get(lr.consignorId) || '';
-        const consigneeName = customerMap.get(lr.consigneeId) || '';
+        const consignorName = lr.consignor?.name || '';
+        const consigneeName = lr.consignee?.name || '';
+
+        const searchLower = searchTerm.toLowerCase();
 
         const matchesSearch = searchTerm === '' ||
           lr.id.toString().includes(searchTerm) ||
-          lr.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          lr.to.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          consignorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          consigneeName.toLowerCase().includes(searchTerm.toLowerCase());
+          lr.from.toLowerCase().includes(searchLower) ||
+          lr.to.toLowerCase().includes(searchLower) ||
+          consignorName.toLowerCase().includes(searchLower) ||
+          consigneeName.toLowerCase().includes(searchLower);
 
         const lrDate = new Date(lr.date);
         lrDate.setHours(0, 0, 0, 0);
@@ -141,23 +137,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
         const matchesStartDate = !start || lrDate >= start;
         const matchesEndDate = !end || lrDate <= end;
         const matchesCustomer = selectedCustomerId === '' || 
-          lr.consignorId === selectedCustomerId ||
-          lr.consigneeId === selectedCustomerId;
+          lr.consignor?._id === selectedCustomerId ||
+          lr.consignee?._id === selectedCustomerId;
         const matchesStatus = selectedStatus === '' || lr.status === selectedStatus;
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus;
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || (b._id > a._id ? -1 : 1));
-  }, [lorryReceipts, searchTerm, startDate, endDate, selectedCustomerId, selectedStatus, customerMap]);
+      .sort((a, b) => b.id - a.id); // Sort by new sequential ID
+  }, [lorryReceipts, searchTerm, startDate, endDate, selectedCustomerId, selectedStatus]);
 
   const filteredInvoices = useMemo(() => {
     return invoices
       .filter(inv => {
-        const customerName = customerMap.get(inv.customerId) || '';
+        const customerName = inv.customer?.name || '';
+        const searchLower = searchTerm.toLowerCase();
+
         const matchesSearch = searchTerm === '' ||
           inv.id.toString().includes(searchTerm) ||
-          customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          inv.lorryReceipts.some(lr => lr.id.includes(searchTerm));
+          customerName.toLowerCase().includes(searchLower) ||
+          inv.lorryReceipts.some(lr => lr.id.toString().includes(searchTerm));
 
         const invDate = new Date(inv.date);
         invDate.setHours(0, 0, 0, 0);
@@ -169,12 +167,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
         
         const matchesStartDate = !start || invDate >= start;
         const matchesEndDate = !end || invDate <= end;
-        const matchesCustomer = selectedCustomerId === '' || inv.customerId === selectedCustomerId;
+        const matchesCustomer = selectedCustomerId === '' || inv.customer?._id === selectedCustomerId;
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer;
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || (b._id > a._id ? -1 : 1));
-  }, [invoices, searchTerm, startDate, endDate, selectedCustomerId, customerMap]);
+      .sort((a, b) => b.id - a.id); // Sort by new sequential ID
+  }, [invoices, searchTerm, startDate, endDate, selectedCustomerId]);
 
   return (
     <div className="space-y-8">
@@ -240,8 +238,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
                 <tr key={lr._id} onClick={() => setPreviewItem({ type: 'LR', data: lr })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lr.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(lr.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customerMap.get(lr.consignorId)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customerMap.get(lr.consigneeId)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignor?.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.from} to {lr.to}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{lr.totalAmount.toLocaleString('en-IN')}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -258,7 +256,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     {[LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) && (
-                        <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'CREATE_INVOICE_FROM_LR', lrId: lr.id as any }); }} className="text-blue-600 hover:text-blue-900 transition-colors">Create Invoice</button>
+                        <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'CREATE_INVOICE_FROM_LR', lrId: lr._id }); }} className="text-blue-600 hover:text-blue-900 transition-colors">Create Invoice</button>
                     )}
                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_LR', id: lr._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_LR', id: lr._id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
@@ -289,7 +287,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
                 <tr key={inv._id} onClick={() => setPreviewItem({ type: 'INVOICE', data: inv })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inv.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customerMap.get(inv.customerId)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{inv.grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                      <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_INVOICE', id: inv._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>

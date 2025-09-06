@@ -45,9 +45,6 @@ const App: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo>('companyInfo', initialCompanyInfo);
 
-  const [nextLrNumber, setNextLrNumber] = useState(0);
-  const [nextInvoiceNumber, setNextInvoiceNumber] = useState(0);
-    
   // Auth state
   const [passwordHash, setPasswordHash] = useLocalStorage<string | null>('app_password_hash', null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -112,7 +109,7 @@ const App: React.FC = () => {
       return { success: true, message: "Password updated successfully." };
   };
 
-  const saveLorryReceipt = async (lr: Omit<LorryReceipt, 'id' | '_id' | 'status'> & { _id?: string }) => {
+  const saveLorryReceipt = async (lr: Partial<LorryReceipt>) => {
     try {
       if (lr._id) {
         const updatedLr = await updateLorryReceipt(lr._id, lr);
@@ -186,7 +183,7 @@ const App: React.FC = () => {
     }
   };
 
-  const saveInvoice = async (invoice: Omit<Invoice, 'id' | '_id'> & { _id?: string }) => {
+  const saveInvoice = async (invoice: Partial<Invoice>) => {
     try {
       let savedInvoice;
       if (invoice._id) {
@@ -268,7 +265,6 @@ const App: React.FC = () => {
                   onCancel={() => setView({ name: 'DASHBOARD' })} 
                   customers={customers}
                   vehicles={vehicles}
-                  nextLrNumber={nextLrNumber}
                   onSaveCustomer={saveCustomer}
                   lorryReceipts={lorryReceipts}
                   onSaveVehicle={saveVehicle}
@@ -281,14 +277,13 @@ const App: React.FC = () => {
                   customers={customers}
                   vehicles={vehicles}
                   existingLr={lrToEdit}
-                  nextLrNumber={0} // Not used anymore
                   onSaveCustomer={saveCustomer}
                   lorryReceipts={lorryReceipts}
                   onSaveVehicle={saveVehicle}
                 /> : <div>LR not found</div>;
       case 'VIEW_LR':
         const lrToView = lorryReceipts.find(lr => lr._id === view.id);
-        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} customers={customers} vehicles={vehicles} /> : <div>LR not found</div>;
+        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
         const availableLrs = lorryReceipts.filter(lr => 
@@ -301,7 +296,6 @@ const App: React.FC = () => {
                   onCancel={() => setView({ name: 'DASHBOARD' })}
                   availableLrs={availableLrs}
                   customers={customers}
-                  nextInvoiceNumber={nextInvoiceNumber}
                   companyInfo={companyInfo}
                 />;
       case 'CREATE_INVOICE_FROM_LR':
@@ -318,7 +312,6 @@ const App: React.FC = () => {
                   onCancel={() => setView({ name: 'DASHBOARD' })}
                   availableLrs={availableLrsForNewInvoice}
                   customers={customers}
-                  nextInvoiceNumber={nextInvoiceNumber}
                   preselectedLr={lrToInvoice}
                   companyInfo={companyInfo}
                 />;
@@ -334,7 +327,6 @@ const App: React.FC = () => {
                    availableLrs={lrsForEdit}
                    customers={customers}
                    existingInvoice={invoiceToEdit}
-                   nextInvoiceNumber={0}
                    companyInfo={companyInfo}
                  /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':

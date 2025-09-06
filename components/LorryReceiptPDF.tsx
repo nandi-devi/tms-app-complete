@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { LorryReceipt, CompanyInfo, Customer, Vehicle } from '../types';
+import type { LorryReceipt, CompanyInfo } from '../types';
 import { generateMultiPagePdf } from '../services/pdfService';
 import { Button } from './ui/Button';
 import { formatDate, numberToWords } from '../services/utils';
@@ -8,15 +8,11 @@ import { Card } from './ui/Card';
 interface LorryReceiptPDFProps {
   lorryReceipt: LorryReceipt;
   companyInfo: CompanyInfo;
-  customers: Customer[];
-  vehicles: Vehicle[];
 }
 
 interface LorryReceiptViewProps {
     lorryReceipt: LorryReceipt;
     companyInfo: CompanyInfo;
-    customers: Customer[];
-    vehicles: Vehicle[];
     copyType: string;
     hideCharges: boolean;
 }
@@ -28,10 +24,8 @@ const copyTypes = [
   'Office Copy'
 ];
 
-export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt, companyInfo, customers, vehicles, copyType, hideCharges }) => {
-    const consignor = customers.find(c => c._id === lorryReceipt.consignorId);
-    const consignee = customers.find(c => c._id === lorryReceipt.consigneeId);
-    const vehicle = vehicles.find(v => v._id === lorryReceipt.vehicleId);
+export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt, companyInfo, copyType, hideCharges }) => {
+    const { consignor, consignee, vehicle } = lorryReceipt;
 
     const charges = [
         { label: 'Freight', value: lorryReceipt.charges.freight },
@@ -225,7 +219,7 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
     );
 };
 
-export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, companyInfo, customers, vehicles }) => {
+export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, companyInfo }) => {
     
     const [selections, setSelections] = useState(
         copyTypes.map(type => ({
@@ -289,8 +283,6 @@ export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, 
                         key={copyType}
                         lorryReceipt={lorryReceipt} 
                         companyInfo={companyInfo}
-                        customers={customers}
-                        vehicles={vehicles}
                         copyType={copyType}
                         hideCharges={hideCharges}
                     />

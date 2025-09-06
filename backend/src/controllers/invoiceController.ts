@@ -1,11 +1,20 @@
 import { Request, Response } from 'express';
 import Invoice from '../models/invoice';
+import { getNextSequenceValue } from '../utils/sequence';
 
 export const getInvoices = async (req: Request, res: Response) => {
   try {
     const invoices = await Invoice.find()
       .populate('customer')
-      .populate('lorryReceipts');
+      .populate({
+          path: 'lorryReceipts',
+          populate: [
+              { path: 'consignor' },
+              { path: 'consignee' },
+              { path: 'vehicle' }
+          ]
+      })
+      .sort({ id: -1 });
     res.json(invoices);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -16,7 +25,14 @@ export const getInvoiceById = async (req: Request, res: Response) => {
     try {
         const invoice = await Invoice.findById(req.params.id)
             .populate('customer')
-            .populate('lorryReceipts');
+            .populate({
+                path: 'lorryReceipts',
+                populate: [
+                    { path: 'consignor' },
+                    { path: 'consignee' },
+                    { path: 'vehicle' }
+                ]
+            });
         if (invoice == null) {
             return res.status(404).json({ message: 'Cannot find invoice' });
         }
@@ -28,17 +44,27 @@ export const getInvoiceById = async (req: Request, res: Response) => {
 
 export const createInvoice = async (req: Request, res: Response) => {
   const { customerId, lorryReceipts, ...rest } = req.body;
-  const invoice = new Invoice({
-    ...rest,
-    customer: customerId,
-    lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
-  });
 
   try {
+    const nextId = await getNextSequenceValue('invoiceId');
+    const invoice = new Invoice({
+      ...rest,
+      id: nextId,
+      customer: customerId,
+      lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
+    });
+
     const newInvoice = await invoice.save();
     const populatedInvoice = await Invoice.findById(newInvoice._id)
         .populate('customer')
-        .populate('lorryReceipts');
+        .populate({
+            path: 'lorryReceipts',
+            populate: [
+                { path: 'consignor' },
+                { path: 'consignee' },
+                { path: 'vehicle' }
+            ]
+        });
     res.status(201).json(populatedInvoice);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
@@ -55,7 +81,14 @@ export const updateInvoice = async (req: Request, res: Response) => {
         };
         const updatedInvoice = await Invoice.findByIdAndUpdate(req.params.id, updatedData, { new: true })
             .populate('customer')
-            .populate('lorryReceipts');
+            .populate({
+                path: 'lorryReceipts',
+                populate: [
+                    { path: 'consignor' },
+                    { path: 'consignee' },
+                    { path: 'vehicle' }
+                ]
+            });
 
         if (updatedInvoice == null) {
             return res.status(404).json({ message: 'Cannot find invoice' });

@@ -20,7 +20,7 @@ interface InvoiceViewProps {
 }
 
 export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, customers }) => {
-    const client = customers.find(c => c._id === invoice.customerId);
+    const client = invoice.customer;
 
     const totalPacks = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.count, 0), 0);
     const totalWeight = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.chargedWeight, 0), 0);
@@ -87,7 +87,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     </thead>
                     <tbody>
                         {invoice.lorryReceipts.map(lr => {
-                            const consignee = customers.find(c => c._id === lr.consigneeId);
+                            const consignee = lr.consignee;
                             const packs = lr.packages.reduce((sum, p) => sum + p.count, 0);
                             const weight = lr.packages.reduce((sum, p) => sum + p.chargedWeight, 0);
                             const otherCharges = lr.charges.aoc + lr.charges.hamali + lr.charges.bCh + lr.charges.trCh + lr.charges.detentionCh;

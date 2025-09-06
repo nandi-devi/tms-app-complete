@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import LorryReceipt from '../models/lorryReceipt';
+import { getNextSequenceValue } from '../utils/sequence';
 
 export const getLorryReceipts = async (req: Request, res: Response) => {
   try {
     const lorryReceipts = await LorryReceipt.find()
       .populate('consignor')
       .populate('consignee')
-      .populate('vehicle');
+      .populate('vehicle')
+      .sort({ id: -1 }); // Sort by the new sequential ID
     res.json(lorryReceipts);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -30,14 +32,17 @@ export const getLorryReceiptById = async (req: Request, res: Response) => {
 
 export const createLorryReceipt = async (req: Request, res: Response) => {
   const { consignorId, consigneeId, vehicleId, ...rest } = req.body;
-  const lorryReceipt = new LorryReceipt({
-    ...rest,
-    consignor: consignorId,
-    consignee: consigneeId,
-    vehicle: vehicleId,
-  });
 
   try {
+    const nextId = await getNextSequenceValue('lorryReceiptId');
+    const lorryReceipt = new LorryReceipt({
+      ...rest,
+      id: nextId,
+      consignor: consignorId,
+      consignee: consigneeId,
+      vehicle: vehicleId,
+    });
+
     const newLorryReceipt = await lorryReceipt.save();
     const populatedLr = await LorryReceipt.findById(newLorryReceipt._id)
         .populate('consignor')

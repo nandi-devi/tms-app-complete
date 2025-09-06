@@ -5,7 +5,7 @@ export interface ICustomer extends Document {
   tradeName?: string;
   address: string;
   state: string;
-  gstin: string;
+  gstin?: string;
   contactPerson?: string;
   contactPhone?: string;
   contactEmail?: string;
@@ -16,7 +16,7 @@ const CustomerSchema = new Schema({
   tradeName: { type: String },
   address: { type: String, required: true },
   state: { type: String, required: true },
-  gstin: { type: String, required: true },
+  gstin: { type: String },
   contactPerson: { type: String },
   contactPhone: { type: String },
   contactEmail: { type: String },

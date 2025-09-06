@@ -32,12 +32,11 @@ export enum PaymentMode {
 
 export interface Customer {
   _id: string;
-  id: string;
   name: string; // Legal Name of Business
   tradeName?: string;
   address: string;
   state:string;
-  gstin: string;
+  gstin?: string;
   contactPerson?: string;
   contactPhone?: string;
   contactEmail?: string;
@@ -45,19 +44,21 @@ export interface Customer {
 
 export interface Vehicle {
   _id: string;
-  id: string;
   number: string;
 }
 
 export interface LorryReceipt {
   _id: string;
-  id: string;
+  id: number; // Sequential ID
   date: string;
   reportingDate?: string;
   deliveryDate?: string;
   consignorId: string;
+  consignor?: Customer;
   consigneeId: string;
+  consignee?: Customer;
   vehicleId: string;
+  vehicle?: Vehicle;
   from: string;
   to: string;
   packages: {
@@ -94,11 +95,12 @@ export interface LorryReceipt {
 
 export interface Invoice {
   _id: string;
-  id: string;
+  id: number; // Sequential ID
   date: string;
   customerId: string;
+  customer?: Customer;
   lorryReceipts: LorryReceipt[];
-  totalAmount: number; // This will now act as the subtotal (taxable amount)
+  totalAmount: number;
   remarks: string;
   gstType: GstType;
   cgstRate: number;
@@ -108,7 +110,7 @@ export interface Invoice {
   sgstAmount: number;
   igstAmount: number;
   grandTotal: number;
-  isRcm: boolean; // Reverse Charge Mechanism
+  isRcm: boolean;
   isManualGst: boolean;
 }
 
@@ -129,8 +131,8 @@ export interface CompanyInfo {
 
 export interface Payment {
     _id: string;
-    id: string;
     customerId: string;
+    customer?: Customer;
     date: string;
     amount: number;
     type: PaymentType;
