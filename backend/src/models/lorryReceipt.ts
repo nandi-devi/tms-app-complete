@@ -1,7 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 import { LorryReceipt as ILorryReceiptType, LorryReceiptStatus, GstPayableBy } from '../types';
 
-export interface ILorryReceipt extends Omit<ILorryReceiptType, '_id' | 'consignor' | 'consignee' | 'vehicle' | 'consignorId' | 'consigneeId' | 'vehicleId'>, Document {
   consignor: Schema.Types.ObjectId;
   consignee: Schema.Types.ObjectId;
   vehicle: Schema.Types.ObjectId;
