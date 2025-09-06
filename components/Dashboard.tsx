@@ -73,7 +73,7 @@ const PreviewModal: React.FC<{
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b bg-slate-50 rounded-t-xl">
-          <h2 className="text-xl font-bold text-gray-800">{item.type === 'LR' ? `Preview: Lorry Receipt #${item.data.id}` : `Preview: Invoice #${item.data.id}`}</h2>
+          <h2 className="text-xl font-bold text-gray-800">{item.type === 'LR' ? `Preview: Lorry Receipt #${item.data.lrNumber}` : `Preview: Invoice #${item.data.invoiceNumber}`}</h2>
           <button onClick={closeModal} className="text-gray-400 hover:text-gray-700 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -120,7 +120,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
         const searchLower = searchTerm.toLowerCase();
 
         const matchesSearch = searchTerm === '' ||
-          lr.id.toString().includes(searchTerm) ||
+          lr.lrNumber.toString().includes(searchTerm) ||
           lr.from.toLowerCase().includes(searchLower) ||
           lr.to.toLowerCase().includes(searchLower) ||
           consignorName.toLowerCase().includes(searchLower) ||
@@ -143,7 +143,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus;
       })
-      .sort((a, b) => b.id - a.id); // Sort by new sequential ID
+      .sort((a, b) => b.lrNumber - a.lrNumber); // Sort by new sequential ID
   }, [lorryReceipts, searchTerm, startDate, endDate, selectedCustomerId, selectedStatus]);
 
   const filteredInvoices = useMemo(() => {
@@ -153,9 +153,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
         const searchLower = searchTerm.toLowerCase();
 
         const matchesSearch = searchTerm === '' ||
-          inv.id.toString().includes(searchTerm) ||
+          inv.invoiceNumber.toString().includes(searchTerm) ||
           customerName.toLowerCase().includes(searchLower) ||
-          inv.lorryReceipts.some(lr => lr.id.toString().includes(searchTerm));
+          inv.lorryReceipts.some(lr => lr.lrNumber.toString().includes(searchTerm));
 
         const invDate = new Date(inv.date);
         invDate.setHours(0, 0, 0, 0);
@@ -171,7 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer;
       })
-      .sort((a, b) => b.id - a.id); // Sort by new sequential ID
+      .sort((a, b) => b.invoiceNumber - a.invoiceNumber); // Sort by new sequential ID
   }, [invoices, searchTerm, startDate, endDate, selectedCustomerId]);
 
   return (
@@ -236,7 +236,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLrs.map(lr => (
                 <tr key={lr._id} onClick={() => setPreviewItem({ type: 'LR', data: lr })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lr.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lr.lrNumber}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(lr.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignor?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
@@ -285,7 +285,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, c
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredInvoices.map(inv => (
                 <tr key={inv._id} onClick={() => setPreviewItem({ type: 'INVOICE', data: inv })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inv.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inv.invoiceNumber}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{inv.grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>

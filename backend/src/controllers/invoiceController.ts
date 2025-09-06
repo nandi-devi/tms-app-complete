@@ -14,7 +14,7 @@ export const getInvoices = async (req: Request, res: Response) => {
               { path: 'vehicle' }
           ]
       })
-      .sort({ id: -1 });
+      .sort({ invoiceNumber: -1 });
     res.json(invoices);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -46,10 +46,10 @@ export const createInvoice = async (req: Request, res: Response) => {
   const { customerId, lorryReceipts, ...rest } = req.body;
 
   try {
-    const nextId = await getNextSequenceValue('invoiceId');
+    const nextInvoiceNumber = await getNextSequenceValue('invoiceId');
     const invoice = new Invoice({
       ...rest,
-      id: nextId,
+      invoiceNumber: nextInvoiceNumber,
       customer: customerId,
       lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
     });

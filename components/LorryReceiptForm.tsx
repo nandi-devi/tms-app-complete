@@ -277,7 +277,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         {vehicles.map(v => <option key={v._id} value={v.number} />)}
       </datalist>
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-800">{existingLr ? `Edit Lorry Receipt #${existingLr.id}` : 'Create Lorry Receipt'}</h2>
+        <h2 className="text-3xl font-bold text-gray-800">{existingLr ? `Edit Lorry Receipt #${existingLr.lrNumber}` : 'Create Lorry Receipt'}</h2>
         <div className="flex items-center space-x-2">
             <span className="font-bold text-lg">Total: ₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</span>
         </div>

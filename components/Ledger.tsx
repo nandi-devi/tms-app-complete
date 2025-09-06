@@ -77,7 +77,7 @@ export const Ledger: React.FC<LedgerProps> = ({ customers, invoices, payments, o
         type: 'invoice' as const,
         date: inv.date,
         id: `inv-${inv._id}`,
-        particulars: `Invoice No: ${inv.id} (LRs: ${(inv.lorryReceipts || []).map(lr => lr.id).join(', ')})`,
+        particulars: `Invoice No: ${inv.invoiceNumber} (LRs: ${(inv.lorryReceipts || []).map(lr => lr.lrNumber).join(', ')})`,
         debit: inv.grandTotal,
         credit: 0
     }));

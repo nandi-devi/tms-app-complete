@@ -1,7 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 import { Payment as IPaymentType, PaymentType, PaymentMode } from '../types';
 
-export interface IPayment extends Omit<IPaymentType, '_id'>, Document {
+export interface IPayment extends Omit<IPaymentType, '_id' | 'customer' | 'customerId'>, Document {
   customer: Schema.Types.ObjectId;
 }
 

@@ -172,7 +172,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-800">{existingInvoice ? `Edit Invoice #${existingInvoice.id}` : 'Create Invoice'}</h2>
+      <h2 className="text-3xl font-bold text-gray-800">{existingInvoice ? `Edit Invoice #${existingInvoice.invoiceNumber}` : 'Create Invoice'}</h2>
 
       <Card title="Invoice Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -207,7 +207,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
               {customerLrs.map(lr => (
                 <tr key={lr._id} className="border-b last:border-0 hover:bg-slate-50">
                   <td className="p-3"><input type="checkbox" checked={selectedLrs.has(lr._id)} onChange={() => handleLrSelectionChange(lr._id)} /></td>
-                  <td className="p-3 text-sm">{lr.id}</td>
+                  <td className="p-3 text-sm">{lr.lrNumber}</td>
                   <td className="p-3 text-sm">{formatDate(lr.date)}</td>
                   <td className="p-3 text-sm">{lr.to}</td>
                   <td className="p-3 text-right text-sm">₹{lr.totalAmount.toLocaleString('en-IN')}</td>
