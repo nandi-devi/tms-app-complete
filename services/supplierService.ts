@@ -49,3 +49,21 @@ export const deleteSupplier = async (id: string): Promise<void> => {
         throw new Error(errorData.message);
     }
 };
+
+export const getSupplierDues = async (id: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/suppliers/${id}/dues`);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch supplier dues' }));
+        throw new Error(errorData.message);
+    }
+    return response.json();
+};
+
+export const getSupplierDuesSummary = async (): Promise<any[]> => {
+    const response = await fetch(`${API_BASE_URL}/suppliers/dues-summary`);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch supplier dues summary' }));
+        throw new Error(errorData.message);
+    }
+    return response.json();
+};

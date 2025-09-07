@@ -1,32 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import type { Supplier } from '../types';
-import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../services/supplierService';
+import React, { useState } from 'react';
+import type { Supplier, View } from '../types';
+import { createSupplier, updateSupplier, deleteSupplier } from '../services/supplierService';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { SupplierForm } from './SupplierForm';
 
-export const Suppliers: React.FC = () => {
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+interface SuppliersProps {
+  suppliers: Supplier[];
+  onViewChange: (view: View) => void;
+}
+
+export const Suppliers: React.FC<SuppliersProps> = ({ suppliers, onViewChange }) => {
     const [editingSupplier, setEditingSupplier] = useState<Partial<Supplier> | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchSuppliers = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await getSuppliers();
-            setSuppliers(data);
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch suppliers');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchSuppliers();
-    }, []);
+    if (error) {
+        return <Card><p className="text-red-500">Error: {error}</p></Card>;
+    }
 
     const handleSave = async (supplierData: Partial<Supplier>) => {
         try {
@@ -35,10 +25,9 @@ export const Suppliers: React.FC = () => {
             } else {
                 await createSupplier(supplierData as Omit<Supplier, '_id'>);
             }
-            await fetchSuppliers(); // Refetch to get the updated list
+            // App.tsx will refetch all data, so we don't need to do it here.
         } catch (err: any) {
             setError(err.message || 'Failed to save supplier');
-            // Re-throw to be caught by the form if needed
             throw err;
         }
     };
@@ -47,7 +36,7 @@ export const Suppliers: React.FC = () => {
         if (window.confirm('Are you sure you want to delete this supplier?')) {
             try {
                 await deleteSupplier(id);
-                await fetchSuppliers(); // Refetch to get the updated list
+                // App.tsx will refetch all data
             } catch (err: any) {
                 setError(err.message || 'Failed to delete supplier');
             }
@@ -103,6 +92,8 @@ export const Suppliers: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">{supplier.paymentTerms}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4 align-top">
+                                        <button onClick={() => onViewChange({ name: 'SUPPLIER_DUES', supplierId: supplier._id })} className="text-purple-600 hover:text-purple-900 transition-colors">View Dues</button>
+                                        <button onClick={() => onViewChange({ name: 'TRUCK_RENTALS', supplierId: supplier._id })} className="text-blue-600 hover:text-blue-900 transition-colors">Manage Rentals</button>
                                         <button onClick={() => handleEdit(supplier)} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
                                         <button onClick={() => handleDelete(supplier._id)} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
                                     </td>

@@ -10,6 +10,9 @@ import { Ledger } from './components/Ledger';
 import { PendingPayments } from './components/PendingPayments';
 import { Clients } from './components/Clients';
 import { Suppliers } from './components/Suppliers';
+import { TruckRentals } from './components/TruckRentals';
+import { SupplierDues } from './components/SupplierDues';
+import { PromissoryNotes } from './components/PromissoryNotes';
 import { Login } from './components/Login';
 import { Setup } from './components/Setup';
 import { hashPassword } from './services/authService';
@@ -22,6 +25,10 @@ import { getVehicles, createVehicle } from './services/vehicleService';
 import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryReceipt } from './services/lorryReceiptService';
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
 import { getPayments, createPayment } from './services/paymentService';
+import { getSuppliers } from './services/supplierService';
+import { getTruckRentals } from './services/truckRentalService';
+import { getSupplierPayments } from './services/supplierPaymentService';
+import { getPromissoryNotes } from './services/promissoryNoteService';
 import { resetApplicationData, loadMockData } from './services/dataService';
 
 export type View = 
@@ -37,6 +44,9 @@ export type View =
   | { name: 'CLIENTS' }
   | { name: 'LEDGER' }
   | { name: 'SUPPLIERS' }
+  | { name: 'TRUCK_RENTALS', supplierId: string }
+  | { name: 'SUPPLIER_DUES', supplierId: string }
+  | { name: 'PROMISSORY_NOTES', supplierId: string }
   | { name: 'PENDING_PAYMENTS' };
 
 const App: React.FC = () => {
@@ -46,6 +56,10 @@ const App: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [truckRentals, setTruckRentals] = useState<TruckRental[]>([]);
+  const [supplierPayments, setSupplierPayments] = useState<SupplierPayment[]>([]);
+  const [promissoryNotes, setPromissoryNotes] = useState<PromissoryNote[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo>('companyInfo', initialCompanyInfo);
 
@@ -56,18 +70,36 @@ const App: React.FC = () => {
 
   const fetchAllData = useCallback(async () => {
     try {
-      const [fetchedCustomers, fetchedVehicles, fetchedLorryReceipts, fetchedInvoices, fetchedPayments] = await Promise.all([
+      const [
+        fetchedCustomers,
+        fetchedSuppliers,
+        fetchedVehicles,
+        fetchedLorryReceipts,
+        fetchedInvoices,
+        fetchedPayments,
+        fetchedTruckRentals,
+        fetchedSupplierPayments,
+        fetchedPromissoryNotes
+      ] = await Promise.all([
         getCustomers(),
+        getSuppliers(),
         getVehicles(),
         getLorryReceipts(),
         getInvoices(),
         getPayments(),
+        getTruckRentals(),
+        getSupplierPayments(),
+        getPromissoryNotes(),
       ]);
       setCustomers(fetchedCustomers);
+      setSuppliers(fetchedSuppliers);
       setVehicles(fetchedVehicles);
       setLorryReceipts(fetchedLorryReceipts);
       setInvoices(fetchedInvoices);
       setPayments(fetchedPayments);
+      setTruckRentals(fetchedTruckRentals);
+      setSupplierPayments(fetchedSupplierPayments);
+      setPromissoryNotes(fetchedPromissoryNotes);
     } catch (error) {
       console.error('Failed to fetch initial data:', error);
       alert('Failed to load data from the server. Please check your connection and refresh the page.');
@@ -258,10 +290,10 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (view.name) {
       case 'CREATE_LR':
-        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} />;
+        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} truckRentals={truckRentals} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} />;
       case 'EDIT_LR':
         const lrToEdit = lorryReceipts.find(lr => lr._id === view.id);
-        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
+        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} truckRentals={truckRentals} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
       case 'VIEW_LR':
         const lrToView = lorryReceipts.find(lr => lr._id === view.id);
         return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} /> : <div>LR not found</div>;
@@ -306,7 +338,19 @@ const App: React.FC = () => {
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} />;
 
       case 'SUPPLIERS':
-        return <Suppliers />;
+        return <Suppliers suppliers={suppliers} onViewChange={setView} />;
+
+      case 'TRUCK_RENTALS':
+        const supplierForRentals = suppliers.find(s => s._id === view.supplierId);
+        return supplierForRentals ? <TruckRentals supplier={supplierForRentals} vehicles={vehicles} onBack={() => setView({ name: 'SUPPLIERS' })} /> : <div>Supplier not found</div>;
+
+      case 'SUPPLIER_DUES':
+        const supplierForDues = suppliers.find(s => s._id === view.supplierId);
+        return supplierForDues ? <SupplierDues supplier={supplierForDues} onBack={() => setView({ name: 'SUPPLIERS' })} onViewChange={setView} /> : <div>Supplier not found</div>;
+
+      case 'PROMISSORY_NOTES':
+        const supplierForNotes = suppliers.find(s => s._id === view.supplierId);
+        return supplierForNotes ? <PromissoryNotes supplier={supplierForNotes} onBack={() => setView({ name: 'SUPPLIER_DUES', supplierId: view.supplierId })} /> : <div>Supplier not found</div>;
 
       case 'DASHBOARD':
       default:
@@ -322,6 +366,7 @@ const App: React.FC = () => {
                  onDeleteLr={deleteLr}
                  onDeleteInvoice={deleteInvoice}
                  onSavePayment={savePayment}
+                 promissoryNotes={promissoryNotes}
                />;
     }
   };

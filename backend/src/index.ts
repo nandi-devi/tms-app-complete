@@ -16,6 +16,9 @@ import invoiceRoutes from './routes/invoiceRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import dataRoutes from './routes/dataRoutes';
 import supplierRoutes from './routes/supplierRoutes';
+import truckRentalRoutes from './routes/truckRentalRoutes';
+import supplierPaymentRoutes from './routes/supplierPaymentRoutes';
+import promissoryNoteRoutes from './routes/promissoryNoteRoutes';
 
 
 dotenv.config();
@@ -42,6 +45,9 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/suppliers', supplierRoutes);
+app.use('/api/truckrentals', truckRentalRoutes);
+app.use('/api/supplierpayments', supplierPaymentRoutes);
+app.use('/api/promissorynotes', promissoryNoteRoutes);
 
 const PORT = process.env.PORT || 5000;
 
