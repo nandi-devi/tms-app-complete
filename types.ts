@@ -138,7 +138,7 @@ export interface CompanyInfo {
 
 export interface Payment {
     _id:string;
-    invoiceId: string;
+    invoiceId?: string;
     invoice?: Invoice;
     customerId: string;
     customer?: Customer;

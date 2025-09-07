@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Invoice, Payment, PaymentMode, PaymentType, Customer } from '../types';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -59,7 +59,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({ invoices, customers, p
       }
       paymentData = {
         invoiceId: selectedInvoiceId,
-        customerId: selectedInvoice!.customerId,
+        customerId: selectedInvoice!.customer!._id,
         amount,
         date,
         mode,
@@ -73,6 +73,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({ invoices, customers, p
         return;
       }
       paymentData = {
+        invoiceId: undefined,
         customerId: selectedCustomerId,
         amount,
         date,

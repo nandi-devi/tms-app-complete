@@ -115,7 +115,7 @@ const App: React.FC = () => {
       if (lr._id) {
         await updateLorryReceipt(lr._id, lr);
       } else {
-        await createLorryReceipt(lr);
+        await createLorryReceipt(lr as Omit<LorryReceipt, '_id' | 'id'>);
       }
       await fetchAllData(); // Refetch all data for consistency
       setView({ name: 'DASHBOARD' });
@@ -130,7 +130,7 @@ const App: React.FC = () => {
       if (customerData._id) {
         savedCustomer = await updateCustomer(customerData._id, customerData);
       } else {
-        savedCustomer = await createCustomer(customerData);
+        savedCustomer = await createCustomer(customerData as Omit<Customer, 'id'>);
       }
       await fetchAllData(); // Refetch all data
       return savedCustomer;
@@ -154,7 +154,7 @@ const App: React.FC = () => {
 
   const saveVehicle = async (vehicleData: Partial<Vehicle>): Promise<Vehicle> => {
     try {
-      const newVehicle = await createVehicle(vehicleData);
+      const newVehicle = await createVehicle(vehicleData as Omit<Vehicle, 'id'>);
       await fetchAllData();
       return newVehicle;
     } catch (error) {
@@ -169,10 +169,10 @@ const App: React.FC = () => {
       if (invoice._id) {
         savedInvoice = await updateInvoice(invoice._id, invoice);
       } else {
-        savedInvoice = await createInvoice(invoice);
+        savedInvoice = await createInvoice(invoice as Omit<Invoice, '_id' | 'id'>);
       }
 
-      const invoicedLrIds = new Set(savedInvoice.lorryReceipts.map(lr => lr._id));
+      const invoicedLrIds = new Set<string>(savedInvoice.lorryReceipts.map(lr => lr._id));
       for (const lrId of invoicedLrIds) {
         await updateLorryReceipt(lrId, { status: LorryReceiptStatus.INVOICED });
       }
@@ -186,8 +186,11 @@ const App: React.FC = () => {
 
   const savePayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => {
     try {
-      await createPayment(payment);
-      await fetchAllData();
+      const newPayment = await createPayment(payment);
+      setPayments(prevPayments => [...prevPayments, newPayment]);
+      // We should still refetch invoice data as payment affects invoice status
+      const fetchedInvoices = await getInvoices();
+      setInvoices(fetchedInvoices);
     } catch (error) {
       console.error('Failed to save payment:', error);
     }
