@@ -12,7 +12,7 @@ interface ClientLedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
-  onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
+  onSavePayment: (payment: Omit<Payment, '_id'>) => Promise<void>;
 }
 
 export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices, payments, onSavePayment }) => {
@@ -37,7 +37,10 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
     }));
 
     const customerPayments = payments
-      .filter(p => p.customerId === selectedCustomerId)
+      .filter(p => {
+        const invoice = invoices.find(inv => inv._id === p.invoiceId);
+        return invoice?.customer._id === selectedCustomerId;
+      })
       .map(p => {
         const invoiceNumber = invoices.find(inv => inv._id === p.invoiceId)?.invoiceNumber;
         const particulars = `Payment for INV-${invoiceNumber} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`;
@@ -122,8 +125,7 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
                 <Button onClick={() => setIsPaymentFormVisible(true)}>Add Payment Record</Button>
                 {isPaymentFormVisible && (
                     <PaymentForm
-                        invoices={invoices.filter(inv => inv.customerId === selectedCustomerId)}
-                        customers={customers}
+                        invoices={invoices.filter(inv => inv.customer._id === selectedCustomerId)}
                         payments={payments}
                         onSave={async (p) => {
                             await onSavePayment(p as any); // TODO: Fix type

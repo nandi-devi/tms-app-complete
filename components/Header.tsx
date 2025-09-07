@@ -13,7 +13,8 @@ export const Header: React.FC<HeaderProps> = ({ view, onViewChange, onLogout }) 
   const inactiveClasses = "text-gray-600 hover:bg-gray-200/50 hover:text-gray-900";
   
   const getButtonClass = (targetViewNames: View['name'][]) => {
-      return `${baseClasses} ${targetViewNames.includes(view.name) ? activeClasses : inactiveClasses}`;
+    const isActive = targetViewNames.includes(view.name);
+    return `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
   };
 
   return (
@@ -51,10 +52,22 @@ export const Header: React.FC<HeaderProps> = ({ view, onViewChange, onLogout }) 
               New Invoice
             </button>
              <button
-              onClick={() => onViewChange({ name: 'LEDGER' })}
-              className={getButtonClass(['LEDGER'])}
+              onClick={() => onViewChange({ name: 'CLIENT_LEDGER' })}
+              className={getButtonClass(['CLIENT_LEDGER'])}
             >
-              Ledger
+              Client Ledger
+            </button>
+            <button
+              onClick={() => onViewChange({ name: 'COMPANY_LEDGER' })}
+              className={getButtonClass(['COMPANY_LEDGER'])}
+            >
+              Company Ledger
+            </button>
+            <button
+              onClick={() => onViewChange({ name: 'PENDING_PAYMENTS' })}
+              className={getButtonClass(['PENDING_PAYMENTS'])}
+            >
+              Pending Payments
             </button>
             <button
               onClick={() => onViewChange({ name: 'CLIENTS' })}

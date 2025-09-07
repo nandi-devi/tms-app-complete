@@ -11,7 +11,7 @@ export const updateInvoiceStatus = async (invoiceId: string) => {
       return;
     }
 
-    const payments = await Payment.find({ invoice: invoiceId });
+    const payments = await Payment.find({ invoiceId: invoiceId });
     const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
     let newStatus: InvoiceStatus;

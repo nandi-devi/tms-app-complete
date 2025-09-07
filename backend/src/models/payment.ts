@@ -2,8 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 import { PaymentType, PaymentMode } from '../types';
 
 export interface IPayment extends Document {
-  invoice?: Schema.Types.ObjectId;
-  customer: Schema.Types.ObjectId;
+  invoiceId: Schema.Types.ObjectId;
   date: string;
   amount: number;
   type: PaymentType;
@@ -13,8 +12,7 @@ export interface IPayment extends Document {
 }
 
 const PaymentSchema = new Schema({
-  invoice: { type: Schema.Types.ObjectId, ref: 'Invoice' },
-  customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+  invoiceId: { type: Schema.Types.ObjectId, ref: 'Invoice', required: true },
   date: { type: String, required: true },
   amount: { type: Number, required: true },
   type: { type: String, enum: Object.values(PaymentType), required: true },
