@@ -43,10 +43,6 @@ export type View =
   | { name: 'SETTINGS' }
   | { name: 'CLIENTS' }
   | { name: 'LEDGER' }
-  | { name: 'SUPPLIERS' }
-  | { name: 'TRUCK_RENTALS', supplierId: string }
-  | { name: 'SUPPLIER_DUES', supplierId: string }
-  | { name: 'PROMISSORY_NOTES', supplierId: string }
   | { name: 'PENDING_PAYMENTS' };
 
 const App: React.FC = () => {
