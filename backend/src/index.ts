@@ -31,11 +31,6 @@ connectDB();
 // Middleware
 app.use(express.json());
 const corsOptions = {
-  origin: 'YOUR_NETLIFY_APP_URL', // Replace with your Netlify app URL
-  optionsSuccessStatus: 200
-};
-
-const corsOptions = {
   origin: 'https://allindialo.netlify.app',
   optionsSuccessStatus: 200
 };
