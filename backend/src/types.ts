@@ -119,6 +119,9 @@ export interface Invoice {
   isRcm: boolean;
   isManualGst: boolean;
   status: InvoiceStatus;
+  payments: Payment[];
+  paidAmount: number;
+  balanceDue: number;
 }
 
 export interface CompanyInfo {

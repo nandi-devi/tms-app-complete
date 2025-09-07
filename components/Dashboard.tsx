@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment } from '../types';
 import { LorryReceiptStatus, InvoiceStatus } from '../types';
 import type { View } from '../App';
-import { PaymentForm } from './PaymentForm';
 import { formatDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Card } from './ui/Card';
@@ -119,7 +118,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | {type: 'INVOICE', data: Invoice} | null>(null);
-  const [isPaymentFormVisible, setIsPaymentFormVisible] = useState(false);
 
   const filteredLrs = useMemo(() => {
     return lorryReceipts
@@ -282,19 +280,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
       <Card>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-gray-800">Invoices</h3>
-          <button onClick={() => setIsPaymentFormVisible(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-            Add Payment
-          </button>
         </div>
-        {isPaymentFormVisible && (
-            <PaymentForm
-                invoices={invoices}
-                customers={customers}
-                payments={payments}
-                onSave={onSavePayment}
-                onCancel={() => setIsPaymentFormVisible(false)}
-            />
-        )}
          <div className="overflow-x-auto mt-4">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
@@ -302,7 +288,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Paid Amount</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance Due</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -314,6 +302,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{inv.grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right">₹{(inv.paidAmount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold text-right">₹{(inv.balanceDue || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${invoiceStatusColors[inv.status]}`}>
                       {inv.status}

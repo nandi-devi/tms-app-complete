@@ -1,11 +1,12 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 import { GstType, InvoiceStatus } from '../types';
+import { IPayment } from './payment';
 
 export interface IInvoice extends Document {
   invoiceNumber: number;
   date: string;
-  customer: Schema.Types.ObjectId;
-  lorryReceipts: Schema.Types.ObjectId[];
+  customer: Types.ObjectId;
+  lorryReceipts: Types.ObjectId[];
   totalAmount: number;
   remarks: string;
   gstType: GstType;
@@ -19,8 +20,11 @@ export interface IInvoice extends Document {
   isRcm: boolean;
   isManualGst: boolean;
   status: InvoiceStatus;
-  payments: Schema.Types.ObjectId[];
+  payments: (Types.ObjectId | IPayment)[];
   dueDate?: string;
+  // Virtuals
+  paidAmount: number;
+  balanceDue: number;
 }
 
 const InvoiceSchema = new Schema({
@@ -43,6 +47,30 @@ const InvoiceSchema = new Schema({
   status: { type: String, enum: Object.values(InvoiceStatus), default: InvoiceStatus.UNPAID },
   payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }],
   dueDate: { type: String },
+}, {
+  // Ensure virtuals are included when converting to JSON
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
+
+// Virtual for total paid amount
+InvoiceSchema.virtual('paidAmount').get(function(this: IInvoice) {
+  // Ensure payments are populated and it's an array of documents, not just ObjectIDs
+  if (this.payments && this.payments.length > 0 && (this.payments[0] as IPayment).amount !== undefined) {
+    return this.payments.reduce((total, payment) => total + (payment as IPayment).amount, 0);
+  }
+  return 0;
+});
+
+// Virtual for balance due
+InvoiceSchema.virtual('balanceDue').get(function(this: IInvoice) {
+  let paidAmount = 0;
+  // Ensure payments are populated and it's an array of documents, not just ObjectIDs
+  if (this.payments && this.payments.length > 0 && (this.payments[0] as IPayment).amount !== undefined) {
+    paidAmount = this.payments.reduce((total, payment) => total + (payment as IPayment).amount, 0);
+  }
+  return this.grandTotal - paidAmount;
+});
+
 
 export default model<IInvoice>('Invoice', InvoiceSchema);

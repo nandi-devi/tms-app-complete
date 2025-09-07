@@ -2,11 +2,9 @@ import React, { useState, useMemo } from 'react';
 import type { Customer, Invoice, Payment } from '../types';
 import { PaymentType, PaymentMode } from '../types';
 import { formatDate, getCurrentDate } from '../services/utils';
-import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Card } from './ui/Card';
-import { PaymentForm } from './PaymentForm';
 
 interface ClientLedgerProps {
   customers: Customer[];
@@ -17,7 +15,6 @@ interface ClientLedgerProps {
 
 export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices, payments, onSavePayment }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(customers[0]?._id || null);
-  const [isPaymentFormVisible, setIsPaymentFormVisible] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [transactionType, setTransactionType] = useState<'all' | 'invoice' | 'payment'>('all');
@@ -120,20 +117,6 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
                     <h4 className="text-sm font-medium text-gray-600">Closing Balance</h4>
                     <p className={`text-2xl font-bold ${transactionData.finalBalance >= 0 ? 'text-indigo-900' : 'text-green-800'}`}>₹{Math.abs(transactionData.finalBalance).toLocaleString('en-IN')} {transactionData.finalBalance >= 0 ? 'Dr' : 'Cr'}</p>
                 </div>
-            </div>
-            <div className="mb-4">
-                <Button onClick={() => setIsPaymentFormVisible(true)}>Add Payment Record</Button>
-                {isPaymentFormVisible && (
-                    <PaymentForm
-                        invoices={invoices.filter(inv => inv.customer._id === selectedCustomerId)}
-                        payments={payments}
-                        onSave={async (p) => {
-                            await onSavePayment(p as any); // TODO: Fix type
-                            setIsPaymentFormVisible(false);
-                        }}
-                        onCancel={() => setIsPaymentFormVisible(false)}
-                    />
-                )}
             </div>
             <Card>
                 <div className="overflow-x-auto">

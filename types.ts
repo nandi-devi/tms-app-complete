@@ -53,6 +53,16 @@ export interface Vehicle {
   number: string;
 }
 
+export interface Supplier {
+  _id: string;
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  paymentTerms?: string;
+  notes?: string;
+}
+
 export interface LorryReceipt {
   _id: string;
   lrNumber: number;
