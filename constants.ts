@@ -1,7 +1,6 @@
 
 import type { Customer, Vehicle, CompanyInfo } from './types';
 
-export const API_BASE_URL = 'https://neww-fbrr.onrender.com';
 
 export const indianStates = [
   "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
