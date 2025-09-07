@@ -19,6 +19,8 @@ export interface IInvoice extends Document {
   isRcm: boolean;
   isManualGst: boolean;
   status: InvoiceStatus;
+  payments: Schema.Types.ObjectId[];
+  dueDate?: string;
 }
 
 const InvoiceSchema = new Schema({
@@ -39,6 +41,8 @@ const InvoiceSchema = new Schema({
   isRcm: { type: Boolean, default: false },
   isManualGst: { type: Boolean, default: false },
   status: { type: String, enum: Object.values(InvoiceStatus), default: InvoiceStatus.UNPAID },
+  payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }],
+  dueDate: { type: String },
 });
 
 export default model<IInvoice>('Invoice', InvoiceSchema);

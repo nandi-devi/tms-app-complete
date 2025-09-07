@@ -21,21 +21,24 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ customers, invoice
       type: 'invoice' as const,
       date: inv.date,
       id: `inv-${inv._id}`,
-      customerName: customers.find(c => c._id === inv.customerId)?.name || 'N/A',
+      customerName: inv.customer.name,
       particulars: `Invoice No: ${inv.invoiceNumber}`,
       debit: inv.grandTotal,
       credit: 0
     }));
 
-    const allPayments = payments.map(p => ({
-      type: 'payment' as const,
-      date: p.date,
-      id: `pay-${p._id}`,
-      customerName: customers.find(c => c._id === p.customerId)?.name || 'N/A',
-      particulars: `Payment via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}`,
-      debit: 0,
-      credit: p.amount
-    }));
+    const allPayments = payments.map(p => {
+      const invoice = invoices.find(inv => inv._id === p.invoiceId);
+      return {
+        type: 'payment' as const,
+        date: p.date,
+        id: `pay-${p._id}`,
+        customerName: invoice?.customer.name || 'N/A',
+        particulars: `Payment via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}`,
+        debit: 0,
+        credit: p.amount
+      }
+    });
 
     const allTransactions = [...allInvoices, ...allPayments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

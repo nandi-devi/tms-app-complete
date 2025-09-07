@@ -6,7 +6,9 @@ import { InvoiceForm } from './components/InvoiceForm';
 import { LorryReceiptPDF } from './components/LorryReceiptPDF';
 import { InvoicePDF } from './components/InvoicePDF';
 import { Settings } from './components/Settings';
-import { Ledger } from './components/Ledger';
+import { ClientLedger } from './components/ClientLedger';
+import { CompanyLedger } from './components/CompanyLedger';
+import { PendingPayments } from './components/PendingPayments';
 import { Clients } from './components/Clients';
 import { Login } from './components/Login';
 import { Setup } from './components/Setup';
@@ -33,7 +35,9 @@ export type View =
   | { name: 'VIEW_INVOICE', id: string }
   | { name: 'SETTINGS' }
   | { name: 'CLIENTS' }
-  | { name: 'LEDGER' };
+  | { name: 'CLIENT_LEDGER' }
+  | { name: 'COMPANY_LEDGER' }
+  | { name: 'PENDING_PAYMENTS' };
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>({ name: 'DASHBOARD' });
@@ -292,8 +296,14 @@ const App: React.FC = () => {
                   onLoadMockData={handleLoadMockData}
                 />;
 
-      case 'LEDGER':
-        return <Ledger customers={customers} invoices={invoices} payments={payments} onSavePayment={savePayment} />;
+      case 'CLIENT_LEDGER':
+        return <ClientLedger customers={customers} invoices={invoices} payments={payments} onSavePayment={savePayment} />;
+
+      case 'COMPANY_LEDGER':
+        return <CompanyLedger customers={customers} invoices={invoices} payments={payments} />;
+
+      case 'PENDING_PAYMENTS':
+        return <PendingPayments invoices={invoices} />;
       
       case 'CLIENTS':
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} />;
