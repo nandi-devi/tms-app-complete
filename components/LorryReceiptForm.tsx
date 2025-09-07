@@ -15,7 +15,6 @@ interface LorryReceiptFormProps {
   onCancel: () => void;
   customers: Customer[];
   vehicles: Vehicle[];
-  truckRentals: TruckRental[];
   existingLr?: LorryReceipt;
   onSaveCustomer: (customer: Omit<Customer, 'id' | '_id'> & { _id?: string }) => Promise<Customer>;
   lorryReceipts: LorryReceipt[];
@@ -149,10 +148,9 @@ const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => vo
     return null;
 };
 
-export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCancel, customers, vehicles, truckRentals, existingLr, onSaveCustomer, lorryReceipts, onSaveVehicle }) => {
+export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCancel, customers, vehicles, existingLr, onSaveCustomer, lorryReceipts, onSaveVehicle }) => {
   
   const getInitialState = (): LorryReceiptFormData => ({
-    truckRental: undefined,
     date: getCurrentDate(),
     consignorId: '',
     consigneeId: '',
@@ -174,8 +172,6 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     
   const [lr, setLr] = useState<Partial<LorryReceipt>>(existingLr ? { ...existingLr } : getInitialState());
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [selectedRentalId, setSelectedRentalId] = useState(existingLr?.truckRental?._id || '');
-  const selectedRental = useMemo(() => truckRentals.find(r => r._id === selectedRentalId), [selectedRentalId, truckRentals]);
   
   const [vehicleNumber, setVehicleNumber] = useState(() => {
     if (existingLr && existingLr.vehicle) {
@@ -183,26 +179,6 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     }
     return '';
   });
-
-  useEffect(() => {
-    if (selectedRentalId) {
-      const selectedRental = truckRentals.find(r => r._id === selectedRentalId);
-      if (selectedRental) {
-        setLr(prev => ({
-          ...prev,
-          vehicleId: selectedRental.truck._id,
-          truckRental: selectedRental,
-        }));
-        setVehicleNumber(selectedRental.truck.number);
-      }
-    } else {
-        // If no rental is selected, clear the auto-filled fields
-        setLr(prev => ({
-          ...prev,
-          truckRental: undefined,
-        }));
-    }
-  }, [selectedRentalId, truckRentals]);
 
   const uniqueLocations = useMemo(() => {
     const locations = new Set<string>();
@@ -282,7 +258,6 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       const lrDataToSave = {
         ...lr,
         vehicleId: finalVehicleId,
-        truckRental: lr.truckRental ? (lr.truckRental as any)._id : undefined,
       };
 
       await onSave(lrDataToSave);
@@ -312,19 +287,6 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       <Card title="Shipment Details">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Input label="Date" type="date" name="date" value={lr.date || ''} onChange={handleChange} required error={errors.date} />
-            <Select
-              label="Rented Truck (Optional)"
-              value={selectedRentalId}
-              onChange={(e) => setSelectedRentalId(e.target.value)}
-              wrapperClassName="md:col-span-2"
-            >
-                <option value="">Use Own Vehicle</option>
-                {truckRentals.map(r => (
-                    <option key={r._id} value={r._id}>
-                        {r.supplier.name} - {r.truck.number}
-                    </option>
-                ))}
-            </Select>
             <Input
               label="Vehicle No."
               name="vehicleNumber"
@@ -333,19 +295,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
               required
               error={errors.vehicleId}
               list="vehicles-list"
-              readOnly={!!selectedRentalId}
-              className={selectedRentalId ? 'bg-gray-100' : ''}
+              wrapperClassName="md:col-span-1"
             />
-            {selectedRental && (
-                <Input
-                    label={`Usage (${selectedRental.rentalType})`}
-                    type="number"
-                    name="rentalUsageValue"
-                    value={lr.rentalUsageValue || ''}
-                    onChange={handleChange}
-                    required
-                />
-            )}
             <Input label="From" name="from" value={lr.from || ''} onChange={handleChange} required error={errors.from} list="locations-list" />
             <Input label="To" name="to" value={lr.to || ''} onChange={handleChange} required error={errors.to} list="locations-list" />
         </div>

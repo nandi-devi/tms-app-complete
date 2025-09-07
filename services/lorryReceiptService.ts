@@ -19,7 +19,9 @@ export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' |
         body: JSON.stringify(lorryReceipt),
     });
     if (!response.ok) {
-        throw new Error('Failed to create lorry receipt');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+        console.error('Server validation error:', errorData);
+        throw new Error(`Failed to create lorry receipt: ${errorData.message || 'Unknown server error'}`);
     }
     return response.json();
 };
