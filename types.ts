@@ -53,57 +53,9 @@ export interface Vehicle {
   number: string;
 }
 
-export interface Supplier {
-  _id: string;
-  name: string;
-  contactPerson?: string;
-  email?: string;
-  phone?: string;
-  paymentTerms?: string;
-  notes?: string;
-}
-
-export enum RentalType {
-    PER_DAY = 'per-day',
-    PER_KM = 'per-km',
-    PER_HOUR = 'per-hour',
-}
-
-export interface TruckRental {
-  _id: string;
-  supplier: Supplier;
-  truck: Vehicle;
-  rentalRate: number;
-  rentalType: RentalType;
-  startDate: string;
-  endDate?: string;
-}
-
-export interface SupplierPayment {
-  _id: string;
-  supplier: Supplier;
-  amount: number;
-  paymentDate: string;
-  notes?: string;
-  relatedRental?: TruckRental;
-}
-
-export interface PromissoryNote {
-  _id: string;
-  supplier: Supplier;
-  amount: number;
-  issueDate: string;
-  dueDate: string;
-  paymentTerms?: string;
-  isPaid: boolean;
-}
-
 export interface LorryReceipt {
   _id: string;
   lrNumber: number;
-  truckRental?: TruckRental;
-  rentalCost?: number;
-  rentalUsageValue?: number;
   date: string;
   reportingDate?: string;
   deliveryDate?: string;
@@ -196,4 +148,23 @@ export interface Payment {
     mode: PaymentMode;
     referenceNo?: string;
     notes?: string;
+}
+
+export interface TruckHiringNote {
+  _id: string;
+  thnNumber: number;
+  date: string;
+  truckOwnerName: string;
+  truckNumber: string;
+  driverName: string;
+  driverLicense: string;
+  origin: string;
+  destination: string;
+  goodsType: string;
+  weight: number;
+  freight: number;
+  advancePaid: number;
+  balancePayable: number;
+  expectedDeliveryDate: string;
+  specialInstructions?: string;
 }

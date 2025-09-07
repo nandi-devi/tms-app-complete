@@ -16,7 +16,6 @@ interface DashboardProps {
   payments: Payment[];
   customers: Customer[];
   vehicles: Vehicle[];
-  promissoryNotes: PromissoryNote[];
   companyInfo: CompanyInfo;
   onViewChange: (view: View) => void;
   onUpdateLrStatus: (id: string, status: LorryReceiptStatus) => void;
@@ -112,7 +111,7 @@ const PreviewModal: React.FC<{
 };
 
 
-export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, payments, customers, vehicles, promissoryNotes, companyInfo, onViewChange, onUpdateLrStatus, onDeleteLr, onDeleteInvoice, onSavePayment }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, payments, customers, vehicles, companyInfo, onViewChange, onUpdateLrStatus, onDeleteLr, onDeleteInvoice, onSavePayment }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -223,43 +222,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
               <option value="">All Statuses</option>
               {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
             </Select>
-        </div>
-      </Card>
-
-      <Card title="Supplier Dues & Notes">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h4 className="font-semibold text-gray-700 mb-2">Overdue/Upcoming Promissory Notes</h4>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                    {promissoryNotes.filter(n => !n.isPaid).sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).map(note => {
-                        const dueDate = new Date(note.dueDate);
-                        const today = new Date();
-                        today.setHours(0,0,0,0);
-                        const isOverdue = dueDate < today;
-                        return (
-                            <div key={note._id} className={`p-2 rounded-lg ${isOverdue ? 'bg-red-50 border-l-4 border-red-400' : 'bg-yellow-50 border-l-4 border-yellow-400'}`}>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="font-medium">{note.supplier.name}</span>
-                                    <span className={`font-bold ${isOverdue ? 'text-red-600' : 'text-yellow-700'}`}>
-                                        ₹{note.amount.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                    Due: {formatDate(note.dueDate)}
-                                </div>
-                            </div>
-                        );
-                    })}
-                    {promissoryNotes.filter(n => !n.isPaid).length === 0 && (
-                        <p className="text-sm text-gray-500">No unpaid promissory notes.</p>
-                    )}
-                </div>
-            </div>
-             <div>
-                <h4 className="font-semibold text-gray-700 mb-2">Total Dues by Supplier</h4>
-                {/* This part will be implemented once a service is available */}
-                 <p className="text-sm text-gray-500 italic">This will show a summary of dues per supplier.</p>
-            </div>
         </div>
       </Card>
 

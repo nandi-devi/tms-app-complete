@@ -70,10 +70,10 @@ export const Header: React.FC<HeaderProps> = ({ view, onViewChange, onLogout }) 
               Clients
             </button>
             <button
-              onClick={() => onViewChange({ name: 'SUPPLIERS' })}
-              className={getButtonClass(['SUPPLIERS'])}
+              onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES' })}
+              className={getButtonClass(['TRUCK_HIRING_NOTES'])}
             >
-              Suppliers
+              Truck Hiring
             </button>
              <button
               onClick={() => onViewChange({ name: 'SETTINGS' })}
