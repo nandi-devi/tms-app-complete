@@ -64,7 +64,12 @@ InvoiceSchema.virtual('paidAmount').get(function(this: IInvoice) {
 
 // Virtual for balance due
 InvoiceSchema.virtual('balanceDue').get(function(this: IInvoice) {
-  return this.grandTotal - this.paidAmount;
+  let paidAmount = 0;
+  // Ensure payments are populated and it's an array of documents, not just ObjectIDs
+  if (this.payments && this.payments.length > 0 && (this.payments[0] as IPayment).amount !== undefined) {
+    paidAmount = this.payments.reduce((total, payment) => total + (payment as IPayment).amount, 0);
+  }
+  return this.grandTotal - paidAmount;
 });
 
 
