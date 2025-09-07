@@ -1,11 +1,11 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 import { GstType, InvoiceStatus } from '../types';
 
 export interface IInvoice extends Document {
   invoiceNumber: number;
   date: string;
-  customer: Schema.Types.ObjectId;
-  lorryReceipts: Schema.Types.ObjectId[];
+  customer: Types.ObjectId;
+  lorryReceipts: Types.ObjectId[];
   totalAmount: number;
   remarks: string;
   gstType: GstType;
@@ -19,7 +19,7 @@ export interface IInvoice extends Document {
   isRcm: boolean;
   isManualGst: boolean;
   status: InvoiceStatus;
-  payments: Schema.Types.ObjectId[];
+  payments: Types.ObjectId[];
   dueDate?: string;
 }
 
