@@ -282,6 +282,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       const lrDataToSave = {
         ...lr,
         vehicleId: finalVehicleId,
+        truckRental: lr.truckRental ? (lr.truckRental as any)._id : undefined,
       };
 
       await onSave(lrDataToSave);
