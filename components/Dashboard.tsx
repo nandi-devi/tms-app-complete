@@ -302,8 +302,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{inv.grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right">₹{inv.paidAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold text-right">₹{inv.balanceDue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right">₹{(inv.paidAmount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold text-right">₹{(inv.balanceDue || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${invoiceStatusColors[inv.status]}`}>
                       {inv.status}
