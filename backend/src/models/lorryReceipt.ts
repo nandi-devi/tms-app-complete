@@ -41,6 +41,9 @@ export interface ILorryReceipt extends Document {
   };
   invoiceNo: string;
   sealNo: string;
+  truckRental?: Schema.Types.ObjectId;
+  rentalCost?: number;
+  rentalUsageValue?: number;
 }
 
 const LorryReceiptSchema = new Schema({
@@ -85,6 +88,9 @@ const LorryReceiptSchema = new Schema({
   },
   invoiceNo: { type: String },
   sealNo: { type: String },
+  truckRental: { type: Schema.Types.ObjectId, ref: 'TruckRental' },
+  rentalCost: { type: Number },
+  rentalUsageValue: { type: Number },
 });
 
 export default model<ILorryReceipt>('LorryReceipt', LorryReceiptSchema);

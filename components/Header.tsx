@@ -69,6 +69,12 @@ export const Header: React.FC<HeaderProps> = ({ view, onViewChange, onLogout }) 
             >
               Clients
             </button>
+            <button
+              onClick={() => onViewChange({ name: 'SUPPLIERS' })}
+              className={getButtonClass(['SUPPLIERS'])}
+            >
+              Suppliers
+            </button>
              <button
               onClick={() => onViewChange({ name: 'SETTINGS' })}
               className={getButtonClass(['SETTINGS'])}
