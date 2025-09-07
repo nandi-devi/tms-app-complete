@@ -1,5 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 import { GstType, InvoiceStatus } from '../types';
+import { IPayment } from './payment';
 
 export interface IInvoice extends Document {
   invoiceNumber: number;
@@ -19,7 +20,7 @@ export interface IInvoice extends Document {
   isRcm: boolean;
   isManualGst: boolean;
   status: InvoiceStatus;
-  payments: Types.ObjectId[];
+  payments: (Types.ObjectId | IPayment)[];
   dueDate?: string;
   // Virtuals
   paidAmount: number;
@@ -53,16 +54,16 @@ const InvoiceSchema = new Schema({
 });
 
 // Virtual for total paid amount
-InvoiceSchema.virtual('paidAmount').get(function() {
+InvoiceSchema.virtual('paidAmount').get(function(this: IInvoice) {
   // Ensure payments are populated and it's an array of documents, not just ObjectIDs
-  if (this.payments && this.payments.length > 0 && this.payments[0].amount !== undefined) {
-    return this.payments.reduce((total, payment: any) => total + payment.amount, 0);
+  if (this.payments && this.payments.length > 0 && (this.payments[0] as IPayment).amount !== undefined) {
+    return this.payments.reduce((total, payment) => total + (payment as IPayment).amount, 0);
   }
   return 0;
 });
 
 // Virtual for balance due
-InvoiceSchema.virtual('balanceDue').get(function() {
+InvoiceSchema.virtual('balanceDue').get(function(this: IInvoice) {
   return this.grandTotal - this.paidAmount;
 });
 
