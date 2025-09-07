@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { LorryReceipt, Customer, Vehicle } from '../types';
 import { GstPayableBy } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
@@ -175,6 +174,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     
   const [lr, setLr] = useState<Partial<LorryReceipt>>(existingLr ? { ...existingLr } : getInitialState());
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [selectedRentalId, setSelectedRentalId] = useState(existingLr?.truckRental?._id || '');
   const selectedRental = useMemo(() => truckRentals.find(r => r._id === selectedRentalId), [selectedRentalId, truckRentals]);
   
   const [vehicleNumber, setVehicleNumber] = useState(() => {
@@ -183,8 +183,6 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     }
     return '';
   });
-
-  const [selectedRentalId, setSelectedRentalId] = useState(existingLr?.truckRental?._id || '');
 
   useEffect(() => {
     if (selectedRentalId) {
