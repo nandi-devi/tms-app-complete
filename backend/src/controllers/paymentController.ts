@@ -50,7 +50,7 @@ export const createPayment = async (req: Request, res: Response) => {
 
     const newPayment = await payment.save();
 
-    invoice.payments.push(newPayment._id);
+    invoice.payments.push(newPayment._id as Types.ObjectId);
     await invoice.save();
 
     await updateInvoiceStatus(invoiceId);
