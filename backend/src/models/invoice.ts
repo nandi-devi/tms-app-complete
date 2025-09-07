@@ -21,6 +21,9 @@ export interface IInvoice extends Document {
   status: InvoiceStatus;
   payments: Types.ObjectId[];
   dueDate?: string;
+  // Virtuals
+  paidAmount: number;
+  balanceDue: number;
 }
 
 const InvoiceSchema = new Schema({
@@ -43,6 +46,25 @@ const InvoiceSchema = new Schema({
   status: { type: String, enum: Object.values(InvoiceStatus), default: InvoiceStatus.UNPAID },
   payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }],
   dueDate: { type: String },
+}, {
+  // Ensure virtuals are included when converting to JSON
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
+
+// Virtual for total paid amount
+InvoiceSchema.virtual('paidAmount').get(function() {
+  // Ensure payments are populated and it's an array of documents, not just ObjectIDs
+  if (this.payments && this.payments.length > 0 && this.payments[0].amount !== undefined) {
+    return this.payments.reduce((total, payment: any) => total + payment.amount, 0);
+  }
+  return 0;
+});
+
+// Virtual for balance due
+InvoiceSchema.virtual('balanceDue').get(function() {
+  return this.grandTotal - this.paidAmount;
+});
+
 
 export default model<IInvoice>('Invoice', InvoiceSchema);

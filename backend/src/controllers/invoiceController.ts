@@ -7,6 +7,7 @@ export const getInvoices = async (req: Request, res: Response) => {
   try {
     const invoices = await Invoice.find()
       .populate('customer')
+      .populate('payments')
       .populate({
           path: 'lorryReceipts',
           populate: [
@@ -26,6 +27,7 @@ export const getInvoiceById = async (req: Request, res: Response) => {
     try {
         const invoice = await Invoice.findById(req.params.id)
             .populate('customer')
+            .populate('payments')
             .populate({
                 path: 'lorryReceipts',
                 populate: [
@@ -59,6 +61,7 @@ export const createInvoice = async (req: Request, res: Response) => {
     const newInvoice = await invoice.save();
     const populatedInvoice = await Invoice.findById(newInvoice._id)
         .populate('customer')
+        .populate('payments')
         .populate({
             path: 'lorryReceipts',
             populate: [
@@ -83,6 +86,7 @@ export const updateInvoice = async (req: Request, res: Response) => {
         };
         const updatedInvoice = await Invoice.findByIdAndUpdate(req.params.id, updatedData, { new: true })
             .populate('customer')
+            .populate('payments')
             .populate({
                 path: 'lorryReceipts',
                 populate: [
