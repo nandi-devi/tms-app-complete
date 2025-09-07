@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import type { Supplier, View } from '../types';
+import type { Supplier } from '../types';
+import type { View } from '../App';
 import { createSupplier, updateSupplier, deleteSupplier } from '../services/supplierService';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -54,10 +55,6 @@ export const Suppliers: React.FC<SuppliersProps> = ({ suppliers, onViewChange })
     const handleCloseModal = () => {
         setEditingSupplier(null);
     };
-
-    if (isLoading) {
-        return <Card><p>Loading suppliers...</p></Card>;
-    }
 
     if (error) {
         return <Card><p className="text-red-500">Error: {error}</p></Card>;
