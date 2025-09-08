@@ -4,6 +4,8 @@ import { formatDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+import { exportToCsv } from '../services/exportService';
 
 interface CompanyLedgerProps {
   customers: Customer[];
@@ -58,8 +60,24 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ customers, invoice
     return { transactions: filteredTransactions, totalDebit, totalCredit, netBalance };
   }, [invoices, payments, customers, startDate, endDate, transactionType]);
 
+  const handleExport = () => {
+    if (!transactionData) return;
+    const filename = `Company-Ledger.csv`;
+    const dataToExport = transactionData.transactions.map(tx => ({
+        Date: formatDate(tx.date),
+        Client: tx.customerName,
+        Particulars: tx.particulars,
+        Debit: tx.debit,
+        Credit: tx.credit,
+    }));
+    exportToCsv(filename, dataToExport);
+  };
+
   return (
     <div className="space-y-6">
+       <div className="flex justify-end">
+          <Button onClick={handleExport} variant="secondary">Export to CSV</Button>
+      </div>
       <Card title="Filters">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
           <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />

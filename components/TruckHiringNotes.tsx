@@ -6,19 +6,24 @@ import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { TruckHiringNoteForm } from './TruckHiringNoteForm';
 import { THNPaymentForm } from './THNPaymentForm';
+import { THNPaymentHistoryModal } from './THNPaymentHistoryModal';
 import { formatDate } from '../services/utils';
+import type { View } from '../App';
 
 interface TruckHiringNotesProps {
     notes: TruckHiringNote[];
     onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => Promise<any>;
     onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => Promise<void>;
+    onViewChange: (view: View) => void;
 }
 
-export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment }) => {
+export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment, onViewChange }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<TruckHiringNote | undefined>(undefined);
     const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
     const [selectedNoteForPayment, setSelectedNoteForPayment] = useState<TruckHiringNote | null>(null);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [selectedNoteForHistory, setSelectedNoteForHistory] = useState<TruckHiringNote | null>(null);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -68,6 +73,11 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
         setIsPaymentFormOpen(true);
     };
 
+    const handleOpenHistoryModal = (note: TruckHiringNote) => {
+        setSelectedNoteForHistory(note);
+        setIsHistoryModalOpen(true);
+    };
+
     return (
         <div className="space-y-6">
             {isFormOpen && (
@@ -82,6 +92,12 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                     truckHiringNote={selectedNoteForPayment}
                     onSave={onSavePayment}
                     onClose={() => setIsPaymentFormOpen(false)}
+                />
+            )}
+            {isHistoryModalOpen && selectedNoteForHistory && (
+                <THNPaymentHistoryModal
+                    truckHiringNote={selectedNoteForHistory}
+                    onClose={() => setIsHistoryModalOpen(false)}
                 />
             )}
             <div className="flex justify-between items-center">
@@ -133,6 +149,8 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                                             onChange={(e) => {
                                                 const action = e.target.value;
                                                 if (action === 'add_payment') handleOpenPaymentForm(note);
+                                                else if (action === 'view_history') handleOpenHistoryModal(note);
+                                                else if (action === 'view_pdf') onViewChange({ name: 'VIEW_THN', id: note._id });
                                                 else if (action === 'edit') handleEdit(note);
                                                 e.target.value = '';
                                             }}
