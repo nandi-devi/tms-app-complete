@@ -46,14 +46,14 @@ export const createPayment = async (req: Request, res: Response) => {
     if (invoiceId) {
       const invoice = await Invoice.findById(invoiceId);
       if (invoice) {
-        invoice.payments.push(newPayment._id);
+        invoice.payments.push(newPayment._id as any);
         await invoice.save();
         await updateInvoiceStatus(invoiceId);
       }
     } else if (truckHiringNoteId) {
       const thn = await TruckHiringNote.findById(truckHiringNoteId);
       if (thn) {
-        thn.payments.push(newPayment._id);
+        thn.payments.push(newPayment._id as any);
         await thn.save();
         await updateThnStatus(truckHiringNoteId);
       }

@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
-import { THNStatus } from '../../types.js';
+import { THNStatus } from '../../../types';
 
 export interface ITruckHiringNote extends Document {
   thnNumber: number;
