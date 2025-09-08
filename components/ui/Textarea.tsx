@@ -7,7 +7,7 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 export const Textarea: React.FC<TextareaProps> = ({ label, id, error, wrapperClassName, ...props }) => {
-  const textareaId = id || `textarea-${label.replace(/\s+/g, '-')}`;
+  const textareaId = id || `textarea-${(label || '').replace(/\s+/g, '-')}`;
   
   const errorClasses = error 
     ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 

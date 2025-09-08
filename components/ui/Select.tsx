@@ -7,7 +7,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const Select: React.FC<SelectProps> = ({ label, id, error, wrapperClassName, children, ...props }) => {
-  const selectId = id || `select-${label.replace(/\s+/g, '-')}`;
+  const selectId = id || `select-${(label || '').replace(/\s+/g, '-')}`;
   
   const errorClasses = error 
     ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
