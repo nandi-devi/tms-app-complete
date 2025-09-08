@@ -9,7 +9,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input: React.FC<InputProps> = ({ label, id, type = 'text', error, wrapperClassName, icon, ...props }) => {
-  const inputId = id || `input-${label.replace(/\s+/g, '-')}`;
+  const inputId = id || `input-${(label || '').replace(/\s+/g, '-')}`;
   
   const errorClasses = error 
     ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
