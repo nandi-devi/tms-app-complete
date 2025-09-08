@@ -22,7 +22,7 @@ import { getVehicles, createVehicle } from './services/vehicleService';
 import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryReceipt } from './services/lorryReceiptService';
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
 import { getPayments, createPayment } from './services/paymentService';
-import { getTruckHiringNotes } from './services/truckHiringNoteService';
+import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
 import { resetApplicationData, loadMockData } from './services/dataService';
 
 export type View = 
@@ -199,6 +199,19 @@ const App: React.FC = () => {
     }
   };
 
+  const saveTruckHiringNote = async (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => {
+    try {
+      if (note._id) {
+        await updateTruckHiringNote(note._id, note);
+      } else {
+        await createTruckHiringNote(note as any);
+      }
+      await fetchAllData();
+    } catch (error) {
+      console.error('Failed to save Truck Hiring Note:', error);
+    }
+  };
+
   const savePayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => {
     try {
       const newPayment = await createPayment(payment);
@@ -317,7 +330,7 @@ const App: React.FC = () => {
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} />;
 
       case 'TRUCK_HIRING_NOTES':
-        return <TruckHiringNotes />;
+        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} />;
 
       case 'DASHBOARD':
       default:
