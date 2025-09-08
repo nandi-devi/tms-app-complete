@@ -5,9 +5,23 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/all-india-logistics', {
+    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/all-india-logistics', {
     });
     console.log('MongoDB connected');
+
+    // This is a one-time fix to remove an old, incorrect index from the database.
+    // The index was likely created by a previous version of the schema.
+    try {
+      const lorryReceiptsCollection = conn.connection.collection('lorryreceipts');
+      const indexExists = await lorryReceiptsCollection.indexExists('id_1');
+      if (indexExists) {
+        await lorryReceiptsCollection.dropIndex('id_1');
+        console.log('Successfully dropped legacy index "id_1" from lorryreceipts collection.');
+      }
+    } catch (indexError) {
+        console.error('Could not drop legacy index. This might be okay if it was already removed.', indexError);
+    }
+
   } catch (error) {
     console.error('MongoDB connection error:', error);
     process.exit(1);
