@@ -324,7 +324,7 @@ const App: React.FC = () => {
         return <Ledger customers={customers} invoices={invoices} payments={payments} onSavePayment={savePayment} />;
 
       case 'PENDING_PAYMENTS':
-        return <PendingPayments invoices={invoices} />;
+        return <PendingPayments invoices={invoices} onSavePayment={savePayment} />;
       
       case 'CLIENTS':
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} />;
