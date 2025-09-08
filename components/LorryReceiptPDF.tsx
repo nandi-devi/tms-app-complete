@@ -13,8 +13,8 @@ interface LorryReceiptPDFProps {
 interface LorryReceiptViewProps {
     lorryReceipt: LorryReceipt;
     companyInfo: CompanyInfo;
-    copyType: string;
-    hideCharges: boolean;
+    copyType?: string;
+    hideCharges?: boolean;
 }
 
 const copyTypes = [
@@ -24,7 +24,7 @@ const copyTypes = [
   'Office Copy'
 ];
 
-export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt, companyInfo, copyType, hideCharges }) => {
+export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt, companyInfo, copyType = 'PREVIEW', hideCharges = false }) => {
     const { consignor, consignee, vehicle } = lorryReceipt;
 
     const charges = [
@@ -66,7 +66,7 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                         <p>Demurrage chargeable after 15 days from today @ Rs.1/- per day pay Quintal on weight charged.</p>
                     </div>
                     <div className="font-bold text-xl text-center flex items-center justify-center underline">
-                        {copyType !== 'PREVIEW' ? copyType.toUpperCase() : 'DOCUMENT PREVIEW'}
+                        {(copyType || 'PREVIEW').toUpperCase()}
                     </div>
                     <div className="border border-black p-1 text-center">
                         <p>PAN No.: {companyInfo.pan}</p>
