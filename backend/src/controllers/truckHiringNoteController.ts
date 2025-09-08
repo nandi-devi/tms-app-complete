@@ -4,7 +4,7 @@ import { getNextSequenceValue } from '../utils/sequence';
 
 export const getTruckHiringNotes = async (req: Request, res: Response) => {
   try {
-    const notes = await TruckHiringNote.find().sort({ thnNumber: -1 });
+    const notes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
     res.json(notes);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -13,7 +13,7 @@ export const getTruckHiringNotes = async (req: Request, res: Response) => {
 
 export const getTruckHiringNoteById = async (req: Request, res: Response) => {
     try {
-        const note = await TruckHiringNote.findById(req.params.id);
+        const note = await TruckHiringNote.findById(req.params.id).populate('payments');
         if (note == null) {
             return res.status(404).json({ message: 'Cannot find Truck Hiring Note' });
         }
