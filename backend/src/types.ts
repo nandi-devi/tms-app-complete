@@ -23,6 +23,12 @@ export enum InvoiceStatus {
     PAID = 'Paid',
 }
 
+export enum THNStatus {
+    UNPAID = 'Unpaid',
+    PARTIALLY_PAID = 'Partially Paid',
+    PAID = 'Paid',
+}
+
 export enum PaymentType {
     ADVANCE = 'Advance',
     RECEIPT = 'Receipt',
@@ -55,7 +61,7 @@ export interface Vehicle {
 
 export interface LorryReceipt {
   _id: string;
-  id: number; // Sequential ID
+  lrNumber: number;
   date: string;
   reportingDate?: string;
   deliveryDate?: string;
@@ -101,7 +107,7 @@ export interface LorryReceipt {
 
 export interface Invoice {
   _id: string;
-  id: number; // Sequential ID
+  invoiceNumber: number;
   date: string;
   customerId: string;
   customer?: Customer;
@@ -119,9 +125,6 @@ export interface Invoice {
   isRcm: boolean;
   isManualGst: boolean;
   status: InvoiceStatus;
-  payments: Payment[];
-  paidAmount: number;
-  balanceDue: number;
 }
 
 export interface CompanyInfo {
@@ -140,9 +143,11 @@ export interface CompanyInfo {
 }
 
 export interface Payment {
-    _id: string;
-    invoiceId: string;
+    _id:string;
+    invoiceId?: string;
     invoice?: Invoice;
+    truckHiringNoteId?: string;
+    truckHiringNote?: TruckHiringNote;
     customerId: string;
     customer?: Customer;
     date: string;
@@ -151,4 +156,26 @@ export interface Payment {
     mode: PaymentMode;
     referenceNo?: string;
     notes?: string;
+}
+
+export interface TruckHiringNote {
+  _id: string;
+  thnNumber: number;
+  date: string;
+  truckOwnerName: string;
+  truckNumber: string;
+  driverName: string;
+  driverLicense: string;
+  origin: string;
+  destination: string;
+  goodsType: string;
+  weight: number;
+  freight: number;
+  advancePaid: number;
+  balancePayable: number;
+  expectedDeliveryDate: string;
+  specialInstructions?: string;
+  status: THNStatus;
+  paidAmount: number;
+  payments: Payment[];
 }
