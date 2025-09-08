@@ -17,6 +17,7 @@ interface SettingsProps {
   payments: Payment[];
   customers: Customer[];
   vehicles: Vehicle[];
+  truckHiringNotes: TruckHiringNote[];
   onPasswordChange: (currentPassword: string, newPassword: string) => Promise<{success: boolean, message: string}>;
   onResetData: () => Promise<void>;
   onLoadMockData: () => Promise<void>;
@@ -74,25 +75,30 @@ const CompanyInfoForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: Compa
     );
 };
 
-const BackupExport: React.FC<Pick<SettingsProps, 'lorryReceipts' | 'invoices' | 'payments' | 'customers' | 'vehicles'>> = (props) => {
-    // This component now has inconsistent data access patterns after the main refactor.
-    // This should be fixed if the user wants to continue using it.
-    // For now, leaving it as is to focus on the requested features.
+const BackupExport: React.FC<Pick<SettingsProps, 'lorryReceipts' | 'invoices' | 'truckHiringNotes'>> = (props) => {
 
     const handleExportLrs = () => {
         const data = props.lorryReceipts.map(lr => ({
-            'LR No': lr.id, 'Date': formatDate(lr.date), 'Consignor': lr.consignor?.name, 'Consignee': lr.consignee?.name,
-             'Vehicle No': lr.vehicle?.number, 'From': lr.from, 'To': lr.to,
+            'LR No': lr.lrNumber, 'Date': formatDate(lr.date), 'Consignor': lr.consignor?.name, 'Consignee': lr.consignee?.name,
+             'Vehicle No': lr.vehicle?.number, 'From': lr.from, 'To': lr.to, 'Amount': lr.totalAmount, 'Status': lr.status
         }));
         exportToCsv('lorry-receipts-backup.csv', data);
     };
 
     const handleExportInvoices = () => {
         const data = props.invoices.map(inv => ({
-            'Invoice No': inv.id, 'Date': formatDate(inv.date), 'Client': inv.customer?.name,
-            'LRs Included': inv.lorryReceipts.map(lr => lr.id).join(', '), 'Grand Total': inv.grandTotal,
+            'Invoice No': inv.invoiceNumber, 'Date': formatDate(inv.date), 'Client': inv.customer?.name,
+            'LRs Included': inv.lorryReceipts.map(lr => lr.lrNumber).join(', '), 'Grand Total': inv.grandTotal, 'Status': inv.status
         }));
         exportToCsv('invoices-backup.csv', data);
+    };
+
+    const handleExportThns = () => {
+        const data = props.truckHiringNotes.map(thn => ({
+            'THN No': thn.thnNumber, 'Date': formatDate(thn.date), 'Owner': thn.truckOwnerName, 'Truck No': thn.truckNumber,
+            'From': thn.origin, 'To': thn.destination, 'Freight': thn.freight, 'Balance': thn.balancePayable, 'Status': thn.status
+        }));
+        exportToCsv('truck-hiring-notes-backup.csv', data);
     };
     
     return (
@@ -109,6 +115,11 @@ const BackupExport: React.FC<Pick<SettingsProps, 'lorryReceipts' | 'invoices' | 
                     <h4 className="font-semibold text-lg">Invoices</h4>
                     <p className="text-sm text-gray-500 mb-4 flex-grow">Export all Invoice data.</p>
                     <Button onClick={handleExportInvoices} variant="secondary">Export Invoices</Button>
+                </Card>
+                <Card className="flex flex-col items-start">
+                    <h4 className="font-semibold text-lg">Truck Hiring Notes</h4>
+                    <p className="text-sm text-gray-500 mb-4 flex-grow">Export all Truck Hiring Note data.</p>
+                    <Button onClick={handleExportThns} variant="secondary">Export THNs</Button>
                 </Card>
              </div>
         </div>
@@ -226,7 +237,7 @@ export const Settings: React.FC<SettingsProps> = (props) => {
         </div>
         <div className="pt-8">
             {activeTab === 'info' && <CompanyInfoForm companyInfo={props.companyInfo} onSave={props.onSave} />}
-            {activeTab === 'export' && <BackupExport {...props} />}
+            {activeTab === 'export' && <BackupExport lorryReceipts={props.lorryReceipts} invoices={props.invoices} truckHiringNotes={props.truckHiringNotes} />}
             {activeTab === 'security' && <ChangePasswordForm onPasswordChange={props.onPasswordChange} />}
             {activeTab === 'data' && <DataManagement onResetData={props.onResetData} onLoadMockData={props.onLoadMockData} />}
         </div>
