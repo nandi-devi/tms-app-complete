@@ -1,22 +1,42 @@
-import React, { useMemo } from 'react';
-import type { Invoice } from '../types';
+import React, { useMemo, useState } from 'react';
+import type { Invoice, Payment } from '../types';
 import { InvoiceStatus } from '../types';
 import { formatDate } from '../services/utils';
 import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+import { PaymentForm } from './PaymentForm';
 
 interface PendingPaymentsProps {
   invoices: Invoice[];
+  onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
 }
 
-export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices }) => {
+export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices, onSavePayment }) => {
+  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+
   const pendingInvoices = useMemo(() => {
     return invoices
       .filter(inv => inv.status === InvoiceStatus.UNPAID || inv.status === InvoiceStatus.PARTIALLY_PAID)
-      .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [invoices]);
+
+  const handleOpenPaymentForm = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsPaymentFormOpen(true);
+  };
 
   return (
     <div className="space-y-6">
+      {isPaymentFormOpen && selectedInvoice && (
+        <PaymentForm
+          invoiceId={selectedInvoice._id}
+          customerId={selectedInvoice.customerId}
+          balanceDue={selectedInvoice.balanceDue || selectedInvoice.grandTotal}
+          onSave={onSavePayment}
+          onClose={() => setIsPaymentFormOpen(false)}
+        />
+      )}
       <h2 className="text-3xl font-bold text-gray-800">Pending Payments</h2>
       <Card>
         <div className="overflow-x-auto">
@@ -26,9 +46,9 @@ export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices }) =>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance Due</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -37,15 +57,19 @@ export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices }) =>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{`INV-${invoice.invoiceNumber}`}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">{invoice.customer.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(invoice.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{invoice.dueDate ? formatDate(invoice.dueDate) : 'N/A'}</td>
-                  <td className="px-6 py-4 text-right text-sm">₹{invoice.grandTotal.toLocaleString('en-IN')}</td>
-                  <td className="px-6 py-4 text-right text-sm">
+                  <td className="px-6 py-4 text-right text-sm font-semibold text-red-600">₹{(invoice.balanceDue || invoice.grandTotal).toLocaleString('en-IN')}</td>
+                  <td className="px-6 py-4 text-center text-sm">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       invoice.status === InvoiceStatus.UNPAID ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
                       {invoice.status}
                     </span>
                   </td>
+                   <td className="px-6 py-4 text-right text-sm">
+                      <Button variant="secondary" onClick={() => handleOpenPaymentForm(invoice)}>
+                        Add Payment
+                      </Button>
+                   </td>
                 </tr>
               ))}
               {pendingInvoices.length === 0 && (

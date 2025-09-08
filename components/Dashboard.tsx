@@ -8,6 +8,8 @@ import { Card } from './ui/Card';
 import { Select } from './ui/Select';
 import { InvoiceView } from './InvoicePDF';
 import { LorryReceiptView } from './LorryReceiptPDF';
+import { PaymentForm } from './PaymentForm';
+import { PaymentHistoryModal } from './PaymentHistoryModal';
 
 
 interface DashboardProps {
@@ -118,6 +120,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | {type: 'INVOICE', data: Invoice} | null>(null);
+  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
+
+
+  const handleOpenPaymentForm = (invoice: Invoice) => {
+    setSelectedInvoiceForPayment(invoice);
+    setIsPaymentFormOpen(true);
+  };
+
+  const handleOpenHistoryModal = (invoice: Invoice) => {
+    setSelectedInvoiceForHistory(invoice);
+    setIsHistoryModalOpen(true);
+  };
 
   const filteredLrs = useMemo(() => {
     return lorryReceipts
@@ -184,6 +201,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
 
   return (
     <div className="space-y-8">
+      {isPaymentFormOpen && selectedInvoiceForPayment && (
+        <PaymentForm
+          invoiceId={selectedInvoiceForPayment._id}
+          customerId={selectedInvoiceForPayment.customerId}
+          balanceDue={selectedInvoiceForPayment.balanceDue || selectedInvoiceForPayment.grandTotal}
+          onSave={onSavePayment}
+          onClose={() => setIsPaymentFormOpen(false)}
+        />
+      )}
+      {isHistoryModalOpen && selectedInvoiceForHistory && (
+        <PaymentHistoryModal
+          invoice={selectedInvoiceForHistory}
+          payments={payments}
+          onClose={() => setIsHistoryModalOpen(false)}
+        />
+      )}
       {previewItem && (
         <PreviewModal
           item={previewItem}
@@ -309,10 +342,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
                       {inv.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_INVOICE', id: inv._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
-                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_INVOICE', id: inv._id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
-                     <button onClick={(e) => { e.stopPropagation(); onDeleteInvoice(inv._id); }} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="relative inline-block text-left">
+                        <Select
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                const action = e.target.value;
+                                if (action === 'add_payment') handleOpenPaymentForm(inv);
+                                else if (action === 'view_history') handleOpenHistoryModal(inv);
+                                else if (action === 'edit') onViewChange({ name: 'EDIT_INVOICE', id: inv._id });
+                                else if (action === 'view_pdf') onViewChange({ name: 'VIEW_INVOICE', id: inv._id });
+                                else if (action === 'delete') onDeleteInvoice(inv._id);
+                                // Reset select value after action
+                                e.target.value = '';
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-sm"
+                        >
+                            <option value="" disabled>Actions</option>
+                            {inv.status !== 'Paid' && <option value="add_payment">Add Payment</option>}
+                            <option value="view_history">View History</option>
+                            <option value="view_pdf">View PDF</option>
+                            <option value="edit">Edit</option>
+                            <option value="delete">Delete</option>
+                        </Select>
+                    </div>
                   </td>
                 </tr>
               ))}
