@@ -2,11 +2,13 @@ import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import Payment from '../models/payment';
 import Invoice from '../models/invoice';
+import TruckHiringNote from '../models/truckHiringNote';
 import { updateInvoiceStatus } from '../utils/invoiceUtils';
+import { updateThnStatus } from '../utils/thnUtils';
 
 export const getPayments = async (req: Request, res: Response) => {
   try {
-    const payments = await Payment.find().populate('invoiceId');
+    const payments = await Payment.find().populate('invoiceId').populate('truckHiringNoteId');
     res.json(payments);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -26,36 +28,41 @@ export const getPaymentById = async (req: Request, res: Response) => {
 };
 
 export const createPayment = async (req: Request, res: Response) => {
-  const { invoiceId, amount, date, type, mode, referenceNo, notes } = req.body;
+  const { invoiceId, truckHiringNoteId, ...paymentData } = req.body;
 
-  if (!invoiceId || !Types.ObjectId.isValid(invoiceId)) {
-    return res.status(400).json({ message: 'Invalid or missing invoice ID' });
+  if (!invoiceId && !truckHiringNoteId) {
+    return res.status(400).json({ message: 'Either invoiceId or truckHiringNoteId is required.' });
   }
 
   try {
-    const invoice = await Invoice.findById(invoiceId);
-    if (!invoice) {
-      return res.status(404).json({ message: 'Invoice not found' });
-    }
-
     const payment = new Payment({
-      invoiceId,
-      amount,
-      date,
-      type,
-      mode,
-      referenceNo,
-      notes,
+      ...paymentData,
+      invoiceId: invoiceId || undefined,
+      truckHiringNoteId: truckHiringNoteId || undefined,
     });
 
     const newPayment = await payment.save();
 
-    invoice.payments.push(newPayment._id as Types.ObjectId);
-    await invoice.save();
+    if (invoiceId) {
+      const invoice = await Invoice.findById(invoiceId);
+      if (invoice) {
+        invoice.payments.push(newPayment._id as Types.ObjectId);
+        await invoice.save();
+        await updateInvoiceStatus(invoiceId);
+      }
+    } else if (truckHiringNoteId) {
+      const thn = await TruckHiringNote.findById(truckHiringNoteId);
+      if (thn) {
+        thn.payments.push(newPayment._id as Types.ObjectId);
+        await thn.save();
+        await updateThnStatus(truckHiringNoteId);
+      }
+    }
 
-    await updateInvoiceStatus(invoiceId);
+    const populatedPayment = await Payment.findById(newPayment._id)
+        .populate('invoiceId')
+        .populate('truckHiringNoteId');
 
-    const populatedPayment = await Payment.findById(newPayment._id).populate('invoiceId');
     res.status(201).json(populatedPayment);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
@@ -64,7 +71,7 @@ export const createPayment = async (req: Request, res: Response) => {
 
 export const updatePayment = async (req: Request, res: Response) => {
     try {
-        const updatedPayment = await Payment.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('invoiceId');
+        const updatedPayment = await Payment.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
         if (updatedPayment == null) {
             return res.status(404).json({ message: 'Cannot find payment' });
@@ -72,6 +79,8 @@ export const updatePayment = async (req: Request, res: Response) => {
 
         if (updatedPayment.invoiceId) {
             await updateInvoiceStatus(updatedPayment.invoiceId.toString());
+        } else if (updatedPayment.truckHiringNoteId) {
+            await updateThnStatus(updatedPayment.truckHiringNoteId.toString());
         }
 
         res.json(updatedPayment);
@@ -82,21 +91,19 @@ export const updatePayment = async (req: Request, res: Response) => {
 
 export const deletePayment = async (req: Request, res: Response) => {
     try {
-        const payment = await Payment.findById(req.params.id);
+        const payment = await Payment.findByIdAndDelete(req.params.id);
         if (payment == null) {
             return res.status(404).json({ message: 'Cannot find payment' });
         }
 
         if (payment.invoiceId) {
             const invoiceId = payment.invoiceId.toString();
-
-            // Remove payment from invoice's payments array
             await Invoice.findByIdAndUpdate(invoiceId, { $pull: { payments: payment._id } });
-
-            await payment.deleteOne();
             await updateInvoiceStatus(invoiceId);
-        } else {
-            await payment.deleteOne();
+        } else if (payment.truckHiringNoteId) {
+            const thnId = payment.truckHiringNoteId.toString();
+            await TruckHiringNote.findByIdAndUpdate(thnId, { $pull: { payments: payment._id } });
+            await updateThnStatus(thnId);
         }
 
         res.json({ message: 'Deleted Payment' });

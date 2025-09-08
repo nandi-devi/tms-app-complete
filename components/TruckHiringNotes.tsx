@@ -1,19 +1,24 @@
 import React, { useState, useMemo } from 'react';
-import type { TruckHiringNote } from '../types';
+import type { TruckHiringNote, Payment } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { Select } from './ui/Select';
 import { TruckHiringNoteForm } from './TruckHiringNoteForm';
+import { THNPaymentForm } from './THNPaymentForm';
 import { formatDate } from '../services/utils';
 
 interface TruckHiringNotesProps {
     notes: TruckHiringNote[];
     onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => Promise<any>;
+    onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => Promise<void>;
 }
 
-export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave }) => {
+export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<TruckHiringNote | undefined>(undefined);
+    const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+    const [selectedNoteForPayment, setSelectedNoteForPayment] = useState<TruckHiringNote | null>(null);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -58,6 +63,11 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
         setIsFormOpen(true);
     };
 
+    const handleOpenPaymentForm = (note: TruckHiringNote) => {
+        setSelectedNoteForPayment(note);
+        setIsPaymentFormOpen(true);
+    };
+
     return (
         <div className="space-y-6">
             {isFormOpen && (
@@ -65,6 +75,13 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                     existingNote={editingNote}
                     onSave={handleSave}
                     onCancel={() => setIsFormOpen(false)}
+                />
+            )}
+            {isPaymentFormOpen && selectedNoteForPayment && (
+                <THNPaymentForm
+                    truckHiringNote={selectedNoteForPayment}
+                    onSave={onSavePayment}
+                    onClose={() => setIsPaymentFormOpen(false)}
                 />
             )}
             <div className="flex justify-between items-center">
@@ -111,9 +128,22 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.origin} to {note.destination}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{note.freight.toLocaleString('en-IN')}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">₹{note.balancePayable.toLocaleString('en-IN')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                                        <button className="text-indigo-600 hover:text-indigo-900">View PDF</button>
-                                        <button onClick={() => handleEdit(note)} className="text-green-600 hover:text-green-900">Edit</button>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <Select
+                                            onChange={(e) => {
+                                                const action = e.target.value;
+                                                if (action === 'add_payment') handleOpenPaymentForm(note);
+                                                else if (action === 'edit') handleEdit(note);
+                                                e.target.value = '';
+                                            }}
+                                            className="text-sm"
+                                        >
+                                            <option value="" disabled>Actions</option>
+                                            {note.status !== 'Paid' && <option value="add_payment">Add Payment</option>}
+                                            <option value="view_history">View History</option>
+                                            <option value="view_pdf">View PDF</option>
+                                            <option value="edit">Edit</option>
+                                        </Select>
                                     </td>
                                 </tr>
                             ))}

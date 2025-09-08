@@ -1,4 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
+import { THNStatus } from '../../types';
 
 export interface ITruckHiringNote extends Document {
   thnNumber: number;
@@ -16,6 +17,9 @@ export interface ITruckHiringNote extends Document {
   balancePayable: number;
   expectedDeliveryDate: string;
   specialInstructions?: string;
+  status: THNStatus;
+  paidAmount: number;
+  payments: Schema.Types.ObjectId[];
 }
 
 const TruckHiringNoteSchema = new Schema({
@@ -34,6 +38,9 @@ const TruckHiringNoteSchema = new Schema({
   balancePayable: { type: Number, required: true },
   expectedDeliveryDate: { type: String, required: true },
   specialInstructions: { type: String },
+  status: { type: String, enum: Object.values(THNStatus), default: THNStatus.UNPAID },
+  paidAmount: { type: Number, default: 0 },
+  payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }],
 }, {
   timestamps: true,
 });
