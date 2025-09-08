@@ -10,6 +10,7 @@ import { Ledger } from './components/Ledger';
 import { PendingPayments } from './components/PendingPayments';
 import { Clients } from './components/Clients';
 import { TruckHiringNotes } from './components/TruckHiringNotes';
+import { THNPdf } from './components/THNPdf';
 import { Login } from './components/Login';
 import { Setup } from './components/Setup';
 import { hashPassword } from './services/authService';
@@ -38,7 +39,8 @@ export type View =
   | { name: 'CLIENTS' }
   | { name: 'LEDGER' }
   | { name: 'PENDING_PAYMENTS' }
-  | { name: 'TRUCK_HIRING_NOTES' };
+  | { name: 'TRUCK_HIRING_NOTES' }
+  | { name: 'VIEW_THN', id: string };
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>({ name: 'DASHBOARD' });
@@ -328,7 +330,11 @@ const App: React.FC = () => {
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} />;
 
       case 'TRUCK_HIRING_NOTES':
-        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} />;
+        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={setView} />;
+
+      case 'VIEW_THN':
+        const thnToView = truckHiringNotes.find(thn => thn._id === view.id);
+        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} /> : <div>THN not found</div>;
 
       case 'DASHBOARD':
       default:

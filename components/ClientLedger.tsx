@@ -5,6 +5,8 @@ import { formatDate, getCurrentDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+import { exportToCsv } from '../services/exportService';
 
 interface ClientLedgerProps {
   customers: Customer[];
@@ -81,6 +83,20 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
     return { transactions: filteredTransactions, totalDebit, totalCredit, finalBalance };
   }, [selectedCustomerId, invoices, payments, startDate, endDate, transactionType]);
 
+  const handleExport = () => {
+    if (!transactionData || !selectedCustomerId) return;
+    const customer = customers.find(c => c._id === selectedCustomerId);
+    const filename = `Client-Ledger-${customer?.name.replace(/\s+/g, '_') || 'export'}.csv`;
+    const dataToExport = transactionData.transactions.map(tx => ({
+        Date: formatDate(tx.date),
+        Particulars: tx.particulars,
+        Debit: tx.debit,
+        Credit: tx.credit,
+        Balance: `${Math.abs(tx.balance).toFixed(2)} ${tx.balance >= 0 ? 'Dr' : 'Cr'}`
+    }));
+    exportToCsv(filename, dataToExport);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -104,6 +120,9 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
 
       {selectedCustomerId && transactionData ? (
         <>
+            <div className="flex justify-end">
+                <Button onClick={handleExport} variant="secondary">Export to CSV</Button>
+            </div>
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                 <div>
                     <h4 className="text-sm font-medium text-gray-600">Total Billed (Debit)</h4>
