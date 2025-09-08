@@ -23,6 +23,12 @@ export enum InvoiceStatus {
     PAID = 'Paid',
 }
 
+export enum THNStatus {
+    UNPAID = 'Unpaid',
+    PARTIALLY_PAID = 'Partially Paid',
+    PAID = 'Paid',
+}
+
 export enum PaymentType {
     ADVANCE = 'Advance',
     RECEIPT = 'Receipt',
@@ -140,6 +146,8 @@ export interface Payment {
     _id:string;
     invoiceId?: string;
     invoice?: Invoice;
+    truckHiringNoteId?: string;
+    truckHiringNote?: TruckHiringNote;
     customerId: string;
     customer?: Customer;
     date: string;
@@ -167,4 +175,7 @@ export interface TruckHiringNote {
   balancePayable: number;
   expectedDeliveryDate: string;
   specialInstructions?: string;
+  status: THNStatus;
+  paidAmount: number;
+  payments: Payment[];
 }

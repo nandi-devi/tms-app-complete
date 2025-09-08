@@ -212,13 +212,10 @@ const App: React.FC = () => {
     }
   };
 
-  const savePayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => {
+  const savePayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => {
     try {
-      const newPayment = await createPayment(payment);
-      setPayments(prevPayments => [...prevPayments, newPayment]);
-      // We should still refetch invoice data as payment affects invoice status
-      const fetchedInvoices = await getInvoices();
-      setInvoices(fetchedInvoices);
+      await createPayment(payment);
+      await fetchAllData(); // Refetch all data to update invoices, THNs, and payments
     } catch (error) {
       console.error('Failed to save payment:', error);
     }
@@ -330,7 +327,7 @@ const App: React.FC = () => {
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} />;
 
       case 'TRUCK_HIRING_NOTES':
-        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} />;
+        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} />;
 
       case 'DASHBOARD':
       default:
