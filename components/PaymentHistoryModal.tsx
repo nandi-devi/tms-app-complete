@@ -11,7 +11,9 @@ interface PaymentHistoryModalProps {
 }
 
 export const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ invoice, payments, onClose }) => {
-    const relevantPayments = payments.filter(p => p.invoiceId === invoice._id);
+    // The `payments` prop comes from App.tsx state, which is populated from the backend.
+    // The backend's getPayments call populates `invoiceId`, so `p.invoiceId` is an Invoice object, not a string.
+    const relevantPayments = payments.filter(p => (p.invoiceId as Invoice)?._id === invoice._id);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
