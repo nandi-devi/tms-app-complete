@@ -19,7 +19,18 @@ const connectDB = async () => {
         console.log('Successfully dropped legacy index "id_1" from lorryreceipts collection.');
       }
     } catch (indexError) {
-        console.error('Could not drop legacy index. This might be okay if it was already removed.', indexError);
+        console.error('Could not drop legacy index from lorryreceipts. This might be okay if it was already removed.', indexError);
+    }
+
+    try {
+      const invoicesCollection = conn.connection.collection('invoices');
+      const indexExists = await invoicesCollection.indexExists('id_1');
+      if (indexExists) {
+        await invoicesCollection.dropIndex('id_1');
+        console.log('Successfully dropped legacy index "id_1" from invoices collection.');
+      }
+    } catch (indexError) {
+        console.error('Could not drop legacy index from invoices. This might be okay if it was already removed.', indexError);
     }
 
   } catch (error) {
