@@ -1,6 +1,6 @@
 import TruckHiringNote from '../models/truckHiringNote';
 import Payment from '../models/payment';
-import { THNStatus } from '../../types';
+import { THNStatus } from '../../types.js';
 
 export const updateThnStatus = async (thnId: string) => {
   try {
