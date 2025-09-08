@@ -158,7 +158,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSave(invoice);
+      // Create a copy of the invoice object for saving
+      // This ensures we don't mutate the state directly
+      // And we can format the lorryReceipts to just be their IDs if needed by the backend
+      const invoiceToSave = {
+        ...invoice,
+        lorryReceipts: (invoice.lorryReceipts || []).map(lr => ({ _id: lr._id })),
+      };
+      onSave(invoiceToSave as Partial<Invoice>);
     }
   };
   
