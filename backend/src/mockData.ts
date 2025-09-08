@@ -1,4 +1,4 @@
-import { Customer, Vehicle } from './types';
+import { Customer, Vehicle, TruckHiringNote, THNStatus } from './types';
 
 // Note: _id fields are intentionally omitted. MongoDB will generate them.
 // The purpose of this mock data is to have some initial customers and vehicles
@@ -14,4 +14,42 @@ export const mockVehicles: Omit<Vehicle, '_id'>[] = [
   { number: 'TN 20 AX 1234' },
   { number: 'TN 19 BY 5678' },
   { number: 'MH 04 CZ 9012' },
+];
+
+export const mockTruckHiringNotes: Omit<TruckHiringNote, '_id' | 'thnNumber' | 'payments'>[] = [
+    {
+        date: '2023-10-01',
+        truckOwnerName: 'Ravi Transport',
+        truckNumber: 'MH 12 AB 3456',
+        driverName: 'Suresh Kumar',
+        driverLicense: 'DL123456789',
+        origin: 'Mumbai',
+        destination: 'Pune',
+        goodsType: 'Electronics',
+        weight: 5000,
+        freight: 15000,
+        advancePaid: 5000,
+        balancePayable: 10000,
+        expectedDeliveryDate: '2023-10-02',
+        specialInstructions: 'Handle with care.',
+        status: THNStatus.UNPAID,
+        paidAmount: 5000,
+    },
+    {
+        date: '2023-10-03',
+        truckOwnerName: 'Gupta Logistics',
+        truckNumber: 'GJ 05 XY 7890',
+        driverName: 'Ramesh Patel',
+        driverLicense: 'DL987654321',
+        origin: 'Ahmedabad',
+        destination: 'Surat',
+        goodsType: 'Textiles',
+        weight: 8000,
+        freight: 22000,
+        advancePaid: 10000,
+        balancePayable: 12000,
+        expectedDeliveryDate: '2023-10-04',
+        status: THNStatus.PARTIALLY_PAID,
+        paidAmount: 10000,
+    }
 ];

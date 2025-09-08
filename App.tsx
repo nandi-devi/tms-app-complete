@@ -312,6 +312,7 @@ const App: React.FC = () => {
                   payments={payments}
                   customers={customers}
                   vehicles={vehicles}
+                  truckHiringNotes={truckHiringNotes}
                   onPasswordChange={handleChangePassword}
                   onResetData={handleResetData}
                   onLoadMockData={handleLoadMockData}
