@@ -1,5 +1,5 @@
 import express from 'express';
-import { resetData, loadMockData } from '../controllers/dataController';
+import { resetData, backupData, restoreData } from '../controllers/dataController';
 
 const router = express.Router();
 
@@ -7,8 +7,12 @@ const router = express.Router();
 // @route   POST /api/data/reset
 router.post('/reset', resetData);
 
-// @desc    Load mock data into the application
-// @route   POST /api/data/load-mock
-router.post('/load-mock', loadMockData);
+// @desc    Backup all application data
+// @route   GET /api/data/backup
+router.get('/backup', backupData);
+
+// @desc    Restore all application data from a backup
+// @route   POST /api/data/restore
+router.post('/restore', restoreData);
 
 export default router;

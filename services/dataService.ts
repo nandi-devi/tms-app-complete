@@ -14,16 +14,26 @@ export const resetApplicationData = async (): Promise<any> => {
     return response.json();
 };
 
-export const loadMockData = async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/data/load-mock`, {
+export const restoreBackupData = async (backupData: any): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/data/restore`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify(backupData),
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to load mock data');
+        throw new Error(errorData.message || 'Failed to restore data');
+    }
+    return response.json();
+};
+
+export const getBackupData = async (): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/data/backup`);
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch backup data');
     }
     return response.json();
 };

@@ -319,8 +319,7 @@ const App: React.FC = () => {
                   vehicles={vehicles}
                   truckHiringNotes={truckHiringNotes}
                   onPasswordChange={handleChangePassword}
-                  onResetData={handleResetData}
-                  onLoadMockData={handleLoadMockData}
+                  onDataChange={fetchAllData}
                 />;
 
       case 'LEDGER':
