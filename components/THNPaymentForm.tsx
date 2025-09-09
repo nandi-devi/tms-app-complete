@@ -19,7 +19,7 @@ export const THNPaymentForm: React.FC<THNPaymentFormProps> = ({ truckHiringNote,
         truckHiringNoteId: truckHiringNote._id,
         amount: truckHiringNote.balancePayable,
         date: getCurrentDate(),
-        type: PaymentType.RECEIPT, // This might need to be 'Payable' or something else
+        type: PaymentType.PAYMENT,
         mode: PaymentMode.CASH,
         referenceNo: '',
         notes: '',

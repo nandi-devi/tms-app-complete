@@ -32,6 +32,7 @@ export enum THNStatus {
 export enum PaymentType {
     ADVANCE = 'Advance',
     RECEIPT = 'Receipt',
+    PAYMENT = 'Payment',
 }
 
 export enum PaymentMode {
