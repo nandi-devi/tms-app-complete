@@ -5,12 +5,9 @@ import { Button } from './ui/Button';
 import { formatDate, numberToWords } from '../services/utils';
 import { Card } from './ui/Card';
 
-import { PdfViewWrapper } from './ui/PdfViewWrapper';
-
 interface LorryReceiptPDFProps {
   lorryReceipt: LorryReceipt;
   companyInfo: CompanyInfo;
-  onBack: () => void;
 }
 
 interface LorryReceiptViewProps {
@@ -235,7 +232,7 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
     );
 };
 
-export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, companyInfo, onBack }) => {
+export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, companyInfo }) => {
     
     const [selections, setSelections] = useState(
         copyTypes.map(type => ({
@@ -256,61 +253,54 @@ export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, 
     const selectedCopies = selections.filter(s => s.selected);
 
     return (
-        <PdfViewWrapper
-            title={`Lorry Receipt #${lorryReceipt.lrNumber}`}
-            onBack={onBack}
-            actions={
-                <Button
-                    onClick={() => generateMultiPagePdf('lr-pdf-container', `LR-${lorryReceipt.lrNumber}-Copies.pdf`)}
+        <div>
+            <Card className="mb-4 sticky top-20 z-10">
+                 <h3 className="text-xl font-semibold mb-4">Generate Lorry Receipt Copies</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                     {selections.map((item, index) => (
+                         <div key={item.copyType} className="border p-4 rounded-lg bg-slate-50">
+                            <div className="flex items-center mb-2">
+                                <input
+                                    type="checkbox"
+                                    id={`select-${index}`}
+                                    checked={item.selected}
+                                    onChange={() => handleSelectionChange(index)}
+                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <label htmlFor={`select-${index}`} className="ml-3 font-medium text-sm text-gray-700">{item.copyType}</label>
+                            </div>
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id={`hide-${index}`}
+                                    checked={item.hideCharges}
+                                    onChange={() => handleHideChargesChange(index)}
+                                    disabled={!item.selected}
+                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+                                />
+                                <label htmlFor={`hide-${index}`} className="ml-3 text-sm text-gray-600">Hide Charges</label>
+                            </div>
+                         </div>
+                     ))}
+                 </div>
+                 <Button
+                    onClick={() => generateMultiPagePdf('lr-pdf-container', `LR-${lorryReceipt.id}-Copies`)}
                     disabled={selectedCopies.length === 0}
                 >
                     Download {selectedCopies.length} {selectedCopies.length === 1 ? 'Copy' : 'Copies'} as PDF
                 </Button>
-            }
-        >
-            <div className="w-full space-y-4">
-                <Card>
-                     <h3 className="text-xl font-semibold mb-4">Generate Lorry Receipt Copies</h3>
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                         {selections.map((item, index) => (
-                             <div key={item.copyType} className="border p-4 rounded-lg bg-slate-50">
-                                <div className="flex items-center mb-2">
-                                    <input
-                                        type="checkbox"
-                                        id={`select-${index}`}
-                                        checked={item.selected}
-                                        onChange={() => handleSelectionChange(index)}
-                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                    />
-                                    <label htmlFor={`select-${index}`} className="ml-3 font-medium text-sm text-gray-700">{item.copyType}</label>
-                                </div>
-                                <div className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        id={`hide-${index}`}
-                                        checked={item.hideCharges}
-                                        onChange={() => handleHideChargesChange(index)}
-                                        disabled={!item.selected}
-                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
-                                    />
-                                    <label htmlFor={`hide-${index}`} className="ml-3 text-sm text-gray-600">Hide Charges</label>
-                                </div>
-                             </div>
-                         ))}
-                     </div>
-                </Card>
-                <div id="lr-pdf-container" className="flex flex-col items-center bg-gray-200 p-8 space-y-8 rounded-lg">
-                    {selectedCopies.map(({ copyType, hideCharges }) => (
-                        <LorryReceiptView
-                            key={copyType}
-                            lorryReceipt={lorryReceipt}
-                            companyInfo={companyInfo}
-                            copyType={copyType}
-                            hideCharges={hideCharges}
-                        />
-                    ))}
-                </div>
+            </Card>
+            <div id="lr-pdf-container" className="flex flex-col items-center bg-gray-200 p-8 space-y-8">
+                {selectedCopies.map(({ copyType, hideCharges }) => (
+                    <LorryReceiptView
+                        key={copyType}
+                        lorryReceipt={lorryReceipt}
+                        companyInfo={companyInfo}
+                        copyType={copyType}
+                        hideCharges={hideCharges}
+                    />
+                ))}
             </div>
-        </PdfViewWrapper>
+        </div>
     );
 }

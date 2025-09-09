@@ -25,7 +25,7 @@ import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryRe
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
 import { getPayments, createPayment } from './services/paymentService';
 import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
-import { resetApplicationData } from './services/dataService';
+import { resetApplicationData, loadMockData } from './services/dataService';
 
 export type View = 
   | { name: 'DASHBOARD' }
@@ -270,6 +270,17 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLoadMockData = async () => {
+    try {
+      await loadMockData();
+      await fetchAllData();
+      alert('Mock data has been successfully loaded.');
+    } catch (error: any) {
+      console.error('Failed to load mock data:', error);
+      alert(`An error occurred while loading mock data: ${error.message}`);
+    }
+  };
+
   const renderContent = () => {
     switch (view.name) {
       case 'CREATE_LR':
@@ -279,23 +290,23 @@ const App: React.FC = () => {
         return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
       case 'VIEW_LR':
         const lrToView = lorryReceipts.find(lr => lr._id === view.id);
-        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} onBack={() => setView({ name: 'DASHBOARD' })} /> : <div>LR not found</div>;
+        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
         const availableLrs = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status));
-        return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} invoices={invoices} />;
+        return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} />;
       case 'CREATE_INVOICE_FROM_LR':
         const lrToInvoice = lorryReceipts.find(lr => lr._id === view.lrId);
         if (!lrToInvoice) return <div>LR not found</div>;
         const availableLrsForNewInvoice = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === view.lrId);
-         return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} invoices={invoices} />;
+         return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} />;
       case 'EDIT_INVOICE':
          const invoiceToEdit = invoices.find(inv => inv._id === view.id);
          const lrsForEdit = lorryReceipts.filter(lr => (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || invoiceToEdit?.lorryReceipts.some(ilr => ilr._id === lr._id));
-         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} invoices={invoices} /> : <div>Invoice not found</div>;
+         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
         const invoiceToView = invoices.find(inv => inv._id === view.id);
-        return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} onBack={() => setView({ name: 'DASHBOARD' })} /> : <div>Invoice not found</div>;
+        return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} /> : <div>Invoice not found</div>;
       
       case 'SETTINGS':
         return <Settings 
@@ -308,7 +319,8 @@ const App: React.FC = () => {
                   vehicles={vehicles}
                   truckHiringNotes={truckHiringNotes}
                   onPasswordChange={handleChangePassword}
-                  onDataChange={fetchAllData}
+                  onResetData={handleResetData}
+                  onLoadMockData={handleLoadMockData}
                 />;
 
       case 'LEDGER':
@@ -336,9 +348,7 @@ const App: React.FC = () => {
             });
 
         return customer ? <LedgerPDF
-                    title={`Client Ledger: ${customer.name}`}
-                    reportTitle={`Client Ledger for ${customer.name}`}
-                    onBack={() => setView({ name: 'LEDGER' })}
+                    title={`Client-Ledger-${customer.name}`}
                     transactions={transactions}
                     companyInfo={companyInfo}
                     columns={[
@@ -360,9 +370,7 @@ const App: React.FC = () => {
         const companyTransactions = [...invoiceTxComp, ...thnTxComp].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return <LedgerPDF
-                    title="Company Ledger"
-                    reportTitle="Company Ledger"
-                    onBack={() => setView({ name: 'LEDGER' })}
+                    title="Company-Ledger"
                     transactions={companyTransactions}
                     companyInfo={companyInfo}
                     columns={[
@@ -384,7 +392,7 @@ const App: React.FC = () => {
 
       case 'VIEW_THN':
         const thnToView = truckHiringNotes.find(thn => thn._id === view.id);
-        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} onBack={() => setView({ name: 'TRUCK_HIRING_NOTES' })} /> : <div>THN not found</div>;
+        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} /> : <div>THN not found</div>;
 
       case 'DASHBOARD':
       default:

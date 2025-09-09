@@ -31,24 +31,13 @@ export const getLorryReceiptById = async (req: Request, res: Response) => {
 };
 
 export const createLorryReceipt = async (req: Request, res: Response) => {
-  const { consignorId, consigneeId, vehicleId, lrNumber, ...rest } = req.body;
+  const { consignorId, consigneeId, vehicleId, ...rest } = req.body;
 
   try {
-    let finalLrNumber: number;
-
-    if (lrNumber) {
-      const existingLr = await LorryReceipt.findOne({ lrNumber: lrNumber });
-      if (existingLr) {
-        return res.status(409).json({ message: `Lorry Receipt number ${lrNumber} already exists.` });
-      }
-      finalLrNumber = lrNumber;
-    } else {
-      finalLrNumber = await getNextSequenceValue('lorryReceiptId');
-    }
-
+    const nextLrNumber = await getNextSequenceValue('lorryReceiptId');
     const lorryReceipt = new LorryReceipt({
       ...rest,
-      lrNumber: finalLrNumber,
+      lrNumber: nextLrNumber,
       consignor: consignorId,
       consignee: consigneeId,
       vehicle: vehicleId,
@@ -61,10 +50,6 @@ export const createLorryReceipt = async (req: Request, res: Response) => {
         .populate('vehicle');
     res.status(201).json(populatedLr);
   } catch (err: any) {
-    // Check for duplicate key error on lrNumber if a race condition occurs
-    if (err.code === 11000 && err.keyPattern?.lrNumber) {
-        return res.status(409).json({ message: `Lorry Receipt number ${err.keyValue.lrNumber} already exists.` });
-    }
     res.status(400).json({ message: err.message });
   }
 };
