@@ -32,6 +32,7 @@ export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices, onSa
         <PaymentForm
           invoiceId={selectedInvoice._id}
           customerId={selectedInvoice.customerId}
+          grandTotal={selectedInvoice.grandTotal}
           balanceDue={selectedInvoice.balanceDue || selectedInvoice.grandTotal}
           onSave={onSavePayment}
           onClose={() => setIsPaymentFormOpen(false)}
