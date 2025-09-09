@@ -126,8 +126,6 @@ export interface Invoice {
   isRcm: boolean;
   isManualGst: boolean;
   status: InvoiceStatus;
-  paidAmount: number;
-  balanceDue: number;
 }
 
 export interface CompanyInfo {
@@ -180,4 +178,5 @@ export interface TruckHiringNote {
   specialInstructions?: string;
   status: THNStatus;
   paidAmount: number;
+  payments: Payment[];
 }
