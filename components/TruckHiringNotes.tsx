@@ -15,9 +15,10 @@ interface TruckHiringNotesProps {
     onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => Promise<any>;
     onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => Promise<void>;
     onViewChange: (view: View) => void;
+    onBack: () => void;
 }
 
-export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment, onViewChange }) => {
+export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment, onViewChange, onBack }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<TruckHiringNote | undefined>(undefined);
     const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
@@ -102,7 +103,10 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
             )}
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold text-gray-800">Truck Hiring Notes</h2>
-                <Button onClick={handleAddNew}>Add New THN</Button>
+                <div>
+                    <Button onClick={handleAddNew} className="mr-4">Add New THN</Button>
+                    <Button variant="secondary" onClick={onBack}>Back</Button>
+                </div>
             </div>
 
             <Card title="Filters">

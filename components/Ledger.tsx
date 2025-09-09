@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import type { Customer, Invoice, Payment, TruckHiringNote } from '../types';
+import React, { useState } from 'react';
+import type { Customer, Invoice, Payment, TruckHiringNote } from '../types';
 import { ClientLedger } from './ClientLedger';
 import { CompanyLedger } from './CompanyLedger';
 import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+
 
 import type { View } from '../App';
 
@@ -12,6 +16,7 @@ interface LedgerProps {
   payments: Payment[];
   truckHiringNotes: TruckHiringNote[];
   onViewChange: (view: View) => void;
+  onBack: () => void;
 }
 
 type LedgerView = 'client' | 'company';
@@ -21,7 +26,10 @@ export const Ledger: React.FC<LedgerProps> = (props) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-800">Ledger</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-800">Ledger</h2>
+        <Button variant="secondary" onClick={props.onBack}>Back</Button>
+      </div>
       
       <Card>
         <div className="flex border-b">
