@@ -46,13 +46,24 @@ export const getInvoiceById = async (req: Request, res: Response) => {
 };
 
 export const createInvoice = async (req: Request, res: Response) => {
-  const { customerId, lorryReceipts, ...rest } = req.body;
+  const { customerId, lorryReceipts, invoiceNumber, ...rest } = req.body;
 
   try {
-    const nextInvoiceNumber = await getNextSequenceValue('invoiceId');
+    let finalInvoiceNumber: number;
+
+    if (invoiceNumber) {
+        const existingInvoice = await Invoice.findOne({ invoiceNumber: invoiceNumber });
+        if (existingInvoice) {
+            return res.status(409).json({ message: `Invoice number ${invoiceNumber} already exists.` });
+        }
+        finalInvoiceNumber = invoiceNumber;
+    } else {
+        finalInvoiceNumber = await getNextSequenceValue('invoiceId');
+    }
+
     const invoice = new Invoice({
       ...rest,
-      invoiceNumber: nextInvoiceNumber,
+      invoiceNumber: finalInvoiceNumber,
       customer: customerId,
       lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
       status: InvoiceStatus.UNPAID,
@@ -72,6 +83,9 @@ export const createInvoice = async (req: Request, res: Response) => {
         });
     res.status(201).json(populatedInvoice);
   } catch (err: any) {
+    if (err.code === 11000 && err.keyPattern?.invoiceNumber) {
+        return res.status(409).json({ message: `Invoice number ${err.keyValue.invoiceNumber} already exists.` });
+    }
     res.status(400).json({ message: err.message });
   }
 };

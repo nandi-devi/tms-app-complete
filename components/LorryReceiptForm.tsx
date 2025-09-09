@@ -172,6 +172,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     
   const [lr, setLr] = useState<Partial<LorryReceipt>>(existingLr ? { ...existingLr } : getInitialState());
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isManualLr, setIsManualLr] = useState(false);
+  const [customLrNumber, setCustomLrNumber] = useState('');
   
   const [vehicleNumber, setVehicleNumber] = useState(() => {
     if (existingLr && existingLr.vehicle) {
@@ -237,6 +239,10 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     if (!lr.packages || lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
         newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
     }
+    if (isManualLr && !existingLr) {
+        if (!customLrNumber) newErrors.lrNumber = 'LR Number is required for manual entry.';
+        else if (lorryReceipts.some(l => l.lrNumber === parseInt(customLrNumber))) newErrors.lrNumber = 'This LR Number already exists.';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -255,10 +261,13 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         finalVehicleId = newVehicle._id;
       }
       
-      const lrDataToSave = {
+      const lrDataToSave: Partial<LorryReceipt> = {
         ...lr,
         vehicleId: finalVehicleId,
       };
+      if (isManualLr && !existingLr) {
+        lrDataToSave.lrNumber = parseInt(customLrNumber);
+      }
 
       await onSave(lrDataToSave);
     }
@@ -286,7 +295,16 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       
       <Card title="Shipment Details">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Input label="Date" type="date" name="date" value={lr.date || ''} onChange={handleChange} required error={errors.date} />
+            <div className="md:col-span-1">
+                <Input label="Date" type="date" name="date" value={lr.date || ''} onChange={handleChange} required error={errors.date} />
+                {!existingLr && (
+                    <div className="flex items-center mt-2">
+                        <input type="checkbox" id="isManualLr" checked={isManualLr} onChange={e => setIsManualLr(e.target.checked)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                        <label htmlFor="isManualLr" className="ml-2 block text-sm text-gray-900">Set LR No. Manually</label>
+                    </div>
+                )}
+            </div>
+            {isManualLr && !existingLr && <Input label="LR Number" type="number" value={customLrNumber} onChange={e => setCustomLrNumber(e.target.value)} required error={errors.lrNumber} />}
             <Input
               label="Vehicle No."
               name="vehicleNumber"
@@ -295,7 +313,6 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
               required
               error={errors.vehicleId}
               list="vehicles-list"
-              wrapperClassName="md:col-span-1"
             />
             <Input label="From" name="from" value={lr.from || ''} onChange={handleChange} required error={errors.from} list="locations-list" />
             <Input label="To" name="to" value={lr.to || ''} onChange={handleChange} required error={errors.to} list="locations-list" />
