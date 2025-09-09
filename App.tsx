@@ -25,7 +25,7 @@ import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryRe
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
 import { getPayments, createPayment } from './services/paymentService';
 import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
-import { resetApplicationData, loadMockData } from './services/dataService';
+import { resetApplicationData } from './services/dataService';
 
 export type View = 
   | { name: 'DASHBOARD' }
@@ -267,17 +267,6 @@ const App: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to reset data:', error);
       alert(`An error occurred while resetting data: ${error.message}`);
-    }
-  };
-
-  const handleLoadMockData = async () => {
-    try {
-      await loadMockData();
-      await fetchAllData();
-      alert('Mock data has been successfully loaded.');
-    } catch (error: any) {
-      console.error('Failed to load mock data:', error);
-      alert(`An error occurred while loading mock data: ${error.message}`);
     }
   };
 
