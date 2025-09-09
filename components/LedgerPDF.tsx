@@ -7,13 +7,14 @@ import { formatDate } from '../services/utils';
 // This component will be flexible enough to render either a Client or Company Ledger
 interface LedgerPDFProps {
     title: string;
+    reportTitle: string;
     transactions: any[]; // Using 'any' for flexibility between client/company ledger data structures
     columns: { key: string, label: string, align?: 'right' | 'left' | 'center' }[];
     companyInfo: CompanyInfo;
     summary?: { label: string, value: string | number, color?: string }[];
 }
 
-export const LedgerView: React.FC<Omit<LedgerPDFProps, 'title'>> = ({ transactions, columns, companyInfo, summary }) => {
+const LedgerView: React.FC<Omit<LedgerPDFProps, 'title'>> = ({ reportTitle, transactions, columns, companyInfo, summary }) => {
     return (
         <div id="ledger-pdf" className="bg-white p-8 text-sm font-sans" style={{ width: '210mm', minHeight: '297mm' }}>
             <div className="w-full">
@@ -21,7 +22,7 @@ export const LedgerView: React.FC<Omit<LedgerPDFProps, 'title'>> = ({ transactio
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold tracking-wider text-gray-800">{companyInfo.name}</h1>
                     <p className="text-gray-600">{companyInfo.address}</p>
-                    <h2 className="text-2xl font-semibold mt-4 underline">{summary ? 'Ledger Report' : 'Company Ledger'}</h2>
+                    <h2 className="text-2xl font-semibold mt-4 underline">{reportTitle}</h2>
                 </div>
 
                 {/* Summary Details */}
