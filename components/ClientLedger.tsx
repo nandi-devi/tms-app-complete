@@ -37,11 +37,11 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
 
     const customerPayments = payments
       .filter(p => {
-        const invoice = invoices.find(inv => inv._id === p.invoiceId);
-        return invoice?.customer._id === selectedCustomerId;
+        // Since p.invoiceId is populated, it's an object. We need to check its _id.
+        return (p.invoiceId as Invoice)?.customer?._id === selectedCustomerId;
       })
       .map(p => {
-        const invoiceNumber = invoices.find(inv => inv._id === p.invoiceId)?.invoiceNumber;
+        const invoiceNumber = (p.invoiceId as Invoice)?.invoiceNumber;
         const particulars = `Payment for INV-${invoiceNumber} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`;
         return {
           type: 'payment' as const,
