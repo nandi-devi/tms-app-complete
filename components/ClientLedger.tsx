@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Customer, Invoice, Payment } from '../types';
-import { PaymentType, PaymentMode } from '../types';
-import { formatDate, getCurrentDate } from '../services/utils';
+import { formatDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Card } from './ui/Card';
@@ -12,10 +11,9 @@ interface ClientLedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
-  onSavePayment: (payment: Omit<Payment, '_id'>) => Promise<void>;
 }
 
-export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices, payments, onSavePayment }) => {
+export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices, payments }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(customers[0]?._id || null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -25,35 +23,28 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
     if (!selectedCustomerId) return null;
 
     const customerInvoices = invoices
-      .filter(inv => inv.customerId === selectedCustomerId)
+      .filter(inv => inv.customer?._id === selectedCustomerId)
       .map(inv => ({
         type: 'invoice' as const,
         date: inv.date,
         id: `inv-${inv._id}`,
-        particulars: `Invoice No: ${inv.invoiceNumber} (LRs: ${(inv.lorryReceipts || []).map(lr => lr.lrNumber).join(', ')})`,
+        particulars: `Invoice No: ${inv.invoiceNumber}`,
         debit: inv.grandTotal,
         credit: 0
     }));
 
     const customerPayments = payments
-      .filter(p => {
-        // Since p.invoiceId is populated, it's an object. We need to check its _id.
-        return (p.invoiceId as Invoice)?.customer?._id === selectedCustomerId;
-      })
-      .map(p => {
-        const invoiceNumber = (p.invoiceId as Invoice)?.invoiceNumber;
-        const particulars = `Payment for INV-${invoiceNumber} via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}${p.notes ? ` - ${p.notes}` : ''}`;
-        return {
+      .filter(p => p.invoiceId?.customer?._id === selectedCustomerId)
+      .map(p => ({
           type: 'payment' as const,
           date: p.date,
           id: `pay-${p._id}`,
-          particulars,
+          particulars: `Payment for INV-${p.invoiceId?.invoiceNumber} via ${p.mode}`,
           debit: 0,
           credit: p.amount
-        }
-      });
+      }));
 
-    const allTransactions = [...customerInvoices, ...customerPayments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || (a.type === 'invoice' ? -1 : 1));
+    const allTransactions = [...customerInvoices, ...customerPayments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     let runningBalance = 0;
     const allTransactionsWithBalance = allTransactions.map(tx => {
@@ -72,13 +63,7 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
 
     const totalDebit = filteredTransactions.reduce((sum, tx) => sum + tx.debit, 0);
     const totalCredit = filteredTransactions.reduce((sum, tx) => sum + tx.credit, 0);
-
-    const endFilterDate = endDate ? new Date(endDate) : null; if(endFilterDate) endFilterDate.setHours(0,0,0,0);
-    const relevantTransactionsForBalance = allTransactionsWithBalance.filter(tx => {
-        const txDate = new Date(tx.date); txDate.setHours(0,0,0,0);
-        return !endFilterDate || txDate <= endFilterDate;
-    });
-    const finalBalance = relevantTransactionsForBalance.length > 0 ? relevantTransactionsForBalance[relevantTransactionsForBalance.length - 1].balance : 0;
+    const finalBalance = allTransactionsWithBalance.length > 0 ? allTransactionsWithBalance[allTransactionsWithBalance.length - 1].balance : 0;
 
     return { transactions: filteredTransactions, totalDebit, totalCredit, finalBalance };
   }, [selectedCustomerId, invoices, payments, startDate, endDate, transactionType]);
@@ -123,7 +108,7 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
             <div className="flex justify-end">
                 <Button onClick={handleExport} variant="secondary">Export to CSV</Button>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-center mt-4">
                 <div>
                     <h4 className="text-sm font-medium text-gray-600">Total Billed (Debit)</h4>
                     <p className="text-2xl font-bold text-red-600">₹{transactionData.totalDebit.toLocaleString('en-IN')}</p>

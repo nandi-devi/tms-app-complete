@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Customer, Invoice, Payment } from '../types';
+import type { Invoice, Payment, TruckHiringNote } from '../types';
 import { formatDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
@@ -8,41 +8,37 @@ import { Button } from './ui/Button';
 import { exportToCsv } from '../services/exportService';
 
 interface CompanyLedgerProps {
-  customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
+  truckHiringNotes: TruckHiringNote[];
 }
 
-export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ customers, invoices, payments }) => {
+export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ invoices, payments, truckHiringNotes }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [transactionType, setTransactionType] = useState<'all' | 'invoice' | 'payment'>('all');
+  const [transactionType, setTransactionType] = useState<'all' | 'income' | 'expense'>('all');
 
   const transactionData = useMemo(() => {
-    const allInvoices = invoices.map(inv => ({
-      type: 'invoice' as const,
+    const invoiceIncome = invoices.map(inv => ({
+      type: 'income' as const,
       date: inv.date,
       id: `inv-${inv._id}`,
-      customerName: inv.customer.name,
-      particulars: `Invoice No: ${inv.invoiceNumber}`,
-      debit: inv.grandTotal,
-      credit: 0
+      particulars: `Invoice No: ${inv.invoiceNumber} to ${inv.customer?.name}`,
+      amount: inv.grandTotal,
     }));
 
-    const allPayments = payments.map(p => {
-      const invoice = invoices.find(inv => inv._id === p.invoiceId);
-      return {
-        type: 'payment' as const,
-        date: p.date,
-        id: `pay-${p._id}`,
-        customerName: invoice?.customer.name || 'N/A',
-        particulars: `Payment via ${p.mode}${p.referenceNo ? ` (${p.referenceNo})` : ''}`,
-        debit: 0,
-        credit: p.amount
-      }
-    });
+    const thnExpenses = truckHiringNotes.map(thn => ({
+        type: 'expense' as const,
+        date: thn.date,
+        id: `thn-${thn._id}`,
+        particulars: `THN No: ${thn.thnNumber} to ${thn.truckOwnerName}`,
+        amount: thn.freight,
+    }));
 
-    const allTransactions = [...allInvoices, ...allPayments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Note: We are considering all payments as cash flow, not separate income/expense
+    // This provides a simpler cash-flow view.
+
+    const allTransactions = [...invoiceIncome, ...thnExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const filteredTransactions = allTransactions.filter(tx => {
       const txDate = new Date(tx.date); txDate.setHours(0, 0, 0, 0);
@@ -53,22 +49,21 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ customers, invoice
       return matchesDate && matchesType;
     });
 
-    const totalDebit = filteredTransactions.reduce((sum, tx) => sum + tx.debit, 0);
-    const totalCredit = filteredTransactions.reduce((sum, tx) => sum + tx.credit, 0);
-    const netBalance = totalDebit - totalCredit;
+    const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
+    const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
+    const net = totalIncome - totalExpense;
 
-    return { transactions: filteredTransactions, totalDebit, totalCredit, netBalance };
-  }, [invoices, payments, customers, startDate, endDate, transactionType]);
+    return { transactions: filteredTransactions, totalIncome, totalExpense, net };
+  }, [invoices, truckHiringNotes, startDate, endDate, transactionType]);
 
   const handleExport = () => {
     if (!transactionData) return;
     const filename = `Company-Ledger.csv`;
     const dataToExport = transactionData.transactions.map(tx => ({
         Date: formatDate(tx.date),
-        Client: tx.customerName,
+        Type: tx.type,
         Particulars: tx.particulars,
-        Debit: tx.debit,
-        Credit: tx.credit,
+        Amount: tx.amount,
     }));
     exportToCsv(filename, dataToExport);
   };
@@ -84,25 +79,25 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ customers, invoice
           <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
           <Select label="Transaction Type" value={transactionType} onChange={e => setTransactionType(e.target.value as any)}>
             <option value="all">All Transactions</option>
-            <option value="invoice">Invoices (Debit)</option>
-            <option value="payment">Payments (Credit)</option>
+            <option value="income">Income (Invoices)</option>
+            <option value="expense">Expenses (THNs)</option>
           </Select>
         </div>
       </Card>
 
       <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
         <div>
-          <h4 className="text-sm font-medium text-gray-600">Total Billed (Debit)</h4>
-          <p className="text-2xl font-bold text-red-600">₹{transactionData.totalDebit.toLocaleString('en-IN')}</p>
+          <h4 className="text-sm font-medium text-gray-600">Total Income</h4>
+          <p className="text-2xl font-bold text-green-600">₹{transactionData.totalIncome.toLocaleString('en-IN')}</p>
         </div>
         <div>
-          <h4 className="text-sm font-medium text-gray-600">Total Paid (Credit)</h4>
-          <p className="text-2xl font-bold text-green-600">₹{transactionData.totalCredit.toLocaleString('en-IN')}</p>
+          <h4 className="text-sm font-medium text-gray-600">Total Expenses</h4>
+          <p className="text-2xl font-bold text-red-600">₹{transactionData.totalExpense.toLocaleString('en-IN')}</p>
         </div>
         <div>
-          <h4 className="text-sm font-medium text-gray-600">Net Balance</h4>
-          <p className={`text-2xl font-bold ${transactionData.netBalance >= 0 ? 'text-indigo-900' : 'text-green-800'}`}>
-            ₹{Math.abs(transactionData.netBalance).toLocaleString('en-IN')} {transactionData.netBalance >= 0 ? 'Dr' : 'Cr'}
+          <h4 className="text-sm font-medium text-gray-600">Net Profit / Loss</h4>
+          <p className={`text-2xl font-bold ${transactionData.net >= 0 ? 'text-indigo-900' : 'text-orange-600'}`}>
+            ₹{Math.abs(transactionData.net).toLocaleString('en-IN')}
           </p>
         </div>
       </div>
@@ -113,25 +108,27 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ customers, invoice
             <thead className="bg-slate-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Particulars</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Debit (₹)</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Credit (₹)</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount (₹)</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {transactionData.transactions.map(tx => (
                 <tr key={tx.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(tx.date)}</td>
-                  <td className="px-6 py-4 text-sm">{tx.customerName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${tx.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {tx.type.toUpperCase()}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-sm">{tx.particulars}</td>
-                  <td className="px-6 py-4 text-right text-sm text-red-700">{tx.debit > 0 ? tx.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}</td>
-                  <td className="px-6 py-4 text-right text-sm text-green-700">{tx.credit > 0 ? tx.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}</td>
+                  <td className="px-6 py-4 text-right text-sm font-semibold">{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
               {transactionData.transactions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500">No transactions found for the selected criteria.</td>
+                  <td colSpan={4} className="text-center py-8 text-gray-500">No transactions found for the selected criteria.</td>
                 </tr>
               )}
             </tbody>

@@ -8,7 +8,15 @@ import { updateThnStatus } from '../utils/thnUtils';
 
 export const getPayments = async (req: Request, res: Response) => {
   try {
-    const payments = await Payment.find().populate('invoiceId').populate('truckHiringNoteId');
+    const payments = await Payment.find()
+      .populate({
+        path: 'invoiceId',
+        populate: {
+          path: 'customer',
+          model: 'Customer'
+        }
+      })
+      .populate('truckHiringNoteId');
     res.json(payments);
   } catch (err: any) {
     res.status(500).json({ message: err.message });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Customer, Invoice, Payment } from '../types';
+import type { Customer, Invoice, Payment, TruckHiringNote } from '../types';
 import { ClientLedger } from './ClientLedger';
 import { CompanyLedger } from './CompanyLedger';
 import { Card } from './ui/Card';
@@ -8,7 +8,7 @@ interface LedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
-  onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
+  truckHiringNotes: TruckHiringNote[];
 }
 
 type LedgerView = 'client' | 'company';
