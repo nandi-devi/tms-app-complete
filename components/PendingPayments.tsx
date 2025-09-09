@@ -9,9 +9,10 @@ import { PaymentForm } from './PaymentForm';
 interface PendingPaymentsProps {
   invoices: Invoice[];
   onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
+  onBack: () => void;
 }
 
-export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices, onSavePayment }) => {
+export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices, onSavePayment, onBack }) => {
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
@@ -38,7 +39,10 @@ export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices, onSa
           onClose={() => setIsPaymentFormOpen(false)}
         />
       )}
-      <h2 className="text-3xl font-bold text-gray-800">Pending Payments</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-800">Pending Payments</h2>
+        <Button variant="secondary" onClick={onBack}>Back</Button>
+      </div>
       <Card>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">

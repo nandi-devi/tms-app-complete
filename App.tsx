@@ -46,7 +46,22 @@ export type View =
   | { name: 'VIEW_COMPANY_LEDGER_PDF' };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<View>({ name: 'DASHBOARD' });
+  const [viewHistory, setViewHistory] = useState<View[]>([{ name: 'DASHBOARD' }]);
+  const currentView = viewHistory[viewHistory.length - 1];
+
+  const navigateTo = (newView: View) => {
+    setViewHistory(prev => [...prev, newView]);
+  };
+
+  const goBack = () => {
+    if (viewHistory.length > 1) {
+      setViewHistory(prev => prev.slice(0, -1));
+    }
+  };
+
+  const navigateHome = () => {
+    setViewHistory([{ name: 'DASHBOARD' }]);
+  };
   
   const [lorryReceipts, setLorryReceipts] = useState<LorryReceipt[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -114,7 +129,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
       setIsAuthenticated(false);
-      setView({ name: 'DASHBOARD' });
+      navigateHome();
   };
 
   const handleChangePassword = async (currentPassword: string, newPassword: string): Promise<{success: boolean, message: string}> => {
@@ -138,7 +153,7 @@ const App: React.FC = () => {
         await createLorryReceipt(lr as Omit<LorryReceipt, '_id' | 'id'>);
       }
       await fetchAllData(); // Refetch all data for consistency
-      setView({ name: 'DASHBOARD' });
+      navigateHome();
     } catch (error) {
       console.error('Failed to save lorry receipt:', error);
     }
@@ -198,7 +213,7 @@ const App: React.FC = () => {
       }
 
       await fetchAllData();
-      setView({ name: 'DASHBOARD' });
+      navigateHome();
     } catch (error) {
       console.error('Failed to save invoice:', error);
     }
@@ -282,31 +297,31 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    switch (view.name) {
+    switch (currentView.name) {
       case 'CREATE_LR':
-        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} />;
+        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} />;
       case 'EDIT_LR':
-        const lrToEdit = lorryReceipts.find(lr => lr._id === view.id);
-        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
+        const lrToEdit = lorryReceipts.find(lr => lr._id === currentView.id);
+        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
       case 'VIEW_LR':
-        const lrToView = lorryReceipts.find(lr => lr._id === view.id);
-        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} /> : <div>LR not found</div>;
+        const lrToView = lorryReceipts.find(lr => lr._id === currentView.id);
+        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} onBack={goBack} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
         const availableLrs = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status));
-        return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} />;
+        return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} />;
       case 'CREATE_INVOICE_FROM_LR':
-        const lrToInvoice = lorryReceipts.find(lr => lr._id === view.lrId);
+        const lrToInvoice = lorryReceipts.find(lr => lr._id === currentView.lrId);
         if (!lrToInvoice) return <div>LR not found</div>;
-        const availableLrsForNewInvoice = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === view.lrId);
-         return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} />;
+        const availableLrsForNewInvoice = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === currentView.lrId);
+         return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} />;
       case 'EDIT_INVOICE':
-         const invoiceToEdit = invoices.find(inv => inv._id === view.id);
+         const invoiceToEdit = invoices.find(inv => inv._id === currentView.id);
          const lrsForEdit = lorryReceipts.filter(lr => (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || invoiceToEdit?.lorryReceipts.some(ilr => ilr._id === lr._id));
-         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} /> : <div>Invoice not found</div>;
+         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
-        const invoiceToView = invoices.find(inv => inv._id === view.id);
-        return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} /> : <div>Invoice not found</div>;
+        const invoiceToView = invoices.find(inv => inv._id === currentView.id);
+        return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} onBack={goBack} /> : <div>Invoice not found</div>;
       
       case 'SETTINGS':
         return <Settings 
@@ -321,13 +336,14 @@ const App: React.FC = () => {
                   onPasswordChange={handleChangePassword}
                   onResetData={handleResetData}
                   onLoadMockData={handleLoadMockData}
+                  onBack={goBack}
                 />;
 
       case 'LEDGER':
-        return <Ledger customers={customers} invoices={invoices} payments={payments} truckHiringNotes={truckHiringNotes} onViewChange={setView} />;
+        return <Ledger customers={customers} invoices={invoices} payments={payments} truckHiringNotes={truckHiringNotes} onViewChange={navigateTo} onBack={goBack} />;
 
       case 'VIEW_CLIENT_LEDGER_PDF':
-        const customerId = view.customerId;
+        const customerId = currentView.customerId;
         const customer = customers.find(c => c._id === customerId);
         const customerInvoices = invoices.filter(inv => inv.customer?._id === customerId);
         const customerPayments = payments.filter(p => p.invoiceId?.customer?._id === customerId);
@@ -362,6 +378,7 @@ const App: React.FC = () => {
                         { label: 'Client', value: customer.name },
                         { label: 'Closing Balance', value: transactions.length > 0 ? transactions[transactions.length - 1].balance : '0.00 Dr', color: 'font-bold' }
                     ]}
+                    onBack={goBack}
                 /> : <div>Customer not found</div>;
 
       case 'VIEW_COMPANY_LEDGER_PDF':
@@ -379,20 +396,21 @@ const App: React.FC = () => {
                         { key: 'particulars', label: 'Particulars' },
                         { key: 'amount', label: 'Amount (₹)', align: 'right' },
                     ]}
+                    onBack={goBack}
                 />;
 
       case 'PENDING_PAYMENTS':
-        return <PendingPayments invoices={invoices} onSavePayment={savePayment} />;
+        return <PendingPayments invoices={invoices} onSavePayment={savePayment} onBack={goBack} />;
       
       case 'CLIENTS':
-        return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} />;
+        return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} onBack={goBack} />;
 
       case 'TRUCK_HIRING_NOTES':
-        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={setView} />;
+        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={navigateTo} onBack={goBack} />;
 
       case 'VIEW_THN':
-        const thnToView = truckHiringNotes.find(thn => thn._id === view.id);
-        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} /> : <div>THN not found</div>;
+        const thnToView = truckHiringNotes.find(thn => thn._id === currentView.id);
+        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} onBack={goBack} /> : <div>THN not found</div>;
 
       case 'DASHBOARD':
       default:
@@ -403,7 +421,7 @@ const App: React.FC = () => {
                  customers={customers}
                  vehicles={vehicles}
                  companyInfo={companyInfo}
-                 onViewChange={setView}
+                 onViewChange={navigateTo}
                  onUpdateLrStatus={updateLrStatus}
                  onDeleteLr={deleteLr}
                  onDeleteInvoice={deleteInvoice}
@@ -422,7 +440,7 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen font-sans">
-      <Header view={view} onViewChange={setView} onLogout={handleLogout} />
+      <Header view={currentView} onViewChange={navigateTo} onLogout={handleLogout} />
       <main className="p-4 sm:p-6 md:p-8">
         {renderContent()}
       </main>

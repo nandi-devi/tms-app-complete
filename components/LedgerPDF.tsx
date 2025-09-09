@@ -11,9 +11,10 @@ interface LedgerPDFProps {
     columns: { key: string, label: string, align?: 'right' | 'left' | 'center' }[];
     companyInfo: CompanyInfo;
     summary?: { label: string, value: string | number, color?: string }[];
+    onBack: () => void;
 }
 
-export const LedgerView: React.FC<Omit<LedgerPDFProps, 'title'>> = ({ transactions, columns, companyInfo, summary }) => {
+export const LedgerView: React.FC<Omit<LedgerPDFProps, 'title' | 'onBack'>> = ({ transactions, columns, companyInfo, summary }) => {
     return (
         <div id="ledger-pdf" className="bg-white p-8 text-sm font-sans" style={{ width: '210mm', minHeight: '297mm' }}>
             <div className="w-full">
@@ -73,10 +74,18 @@ export const LedgerView: React.FC<Omit<LedgerPDFProps, 'title'>> = ({ transactio
 export const LedgerPDF: React.FC<LedgerPDFProps> = (props) => {
     return (
         <div>
-            <div className="mb-4 flex justify-end">
-                <Button onClick={() => generatePdf('ledger-pdf-container', `${props.title.replace(/\s+/g, '_')}-Ledger`)}>
+            <style>{`
+                @media print {
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `}</style>
+            <div className="mb-4 flex justify-end no-print">
+                <Button onClick={() => generatePdf('ledger-pdf-container', `${props.title.replace(/\s+/g, '_')}-Ledger`)} className="mr-4">
                     Download PDF
                 </Button>
+                <Button variant="secondary" onClick={props.onBack}>Back</Button>
             </div>
             <div id="ledger-pdf-container" className="flex justify-center bg-gray-300 p-8">
                 <LedgerView {...props} />

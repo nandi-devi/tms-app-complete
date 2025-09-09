@@ -21,6 +21,7 @@ interface SettingsProps {
   onPasswordChange: (currentPassword: string, newPassword: string) => Promise<{success: boolean, message: string}>;
   onResetData: () => Promise<void>;
   onLoadMockData: () => Promise<void>;
+  onBack: () => void;
 }
 
 const CompanyInfoForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: CompanyInfo) => void }> = ({ companyInfo, onSave }) => {
@@ -221,7 +222,10 @@ export const Settings: React.FC<SettingsProps> = (props) => {
 
   return (
     <Card>
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Settings</h2>
+        <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Settings</h2>
+            <Button variant="secondary" onClick={props.onBack}>Back</Button>
+        </div>
         <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                 {tabs.map(tab => (

@@ -8,6 +8,7 @@ import { Card } from './ui/Card';
 interface LorryReceiptPDFProps {
   lorryReceipt: LorryReceipt;
   companyInfo: CompanyInfo;
+  onBack: () => void;
 }
 
 interface LorryReceiptViewProps {
@@ -232,7 +233,7 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
     );
 };
 
-export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, companyInfo }) => {
+export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, companyInfo, onBack }) => {
     
     const [selections, setSelections] = useState(
         copyTypes.map(type => ({
@@ -254,7 +255,14 @@ export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, 
 
     return (
         <div>
-            <Card className="mb-4 sticky top-20 z-10">
+            <style>{`
+                @media print {
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `}</style>
+            <Card className="mb-4 sticky top-20 z-10 no-print">
                  <h3 className="text-xl font-semibold mb-4">Generate Lorry Receipt Copies</h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                      {selections.map((item, index) => (
@@ -283,12 +291,16 @@ export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, 
                          </div>
                      ))}
                  </div>
-                 <Button
-                    onClick={() => generateMultiPagePdf('lr-pdf-container', `LR-${lorryReceipt.id}-Copies`)}
-                    disabled={selectedCopies.length === 0}
-                >
-                    Download {selectedCopies.length} {selectedCopies.length === 1 ? 'Copy' : 'Copies'} as PDF
-                </Button>
+                 <div>
+                    <Button
+                        onClick={() => generateMultiPagePdf('lr-pdf-container', `LR-${lorryReceipt.id}-Copies`)}
+                        disabled={selectedCopies.length === 0}
+                        className="mr-4"
+                    >
+                        Download {selectedCopies.length} {selectedCopies.length === 1 ? 'Copy' : 'Copies'} as PDF
+                    </Button>
+                    <Button variant="secondary" onClick={onBack}>Back</Button>
+                 </div>
             </Card>
             <div id="lr-pdf-container" className="flex flex-col items-center bg-gray-200 p-8 space-y-8">
                 {selectedCopies.map(({ copyType, hideCharges }) => (

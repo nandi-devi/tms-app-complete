@@ -7,9 +7,10 @@ import { formatDate, numberToWords } from '../services/utils';
 interface THNPdfProps {
   truckHiringNote: TruckHiringNote;
   companyInfo: CompanyInfo;
+  onBack: () => void;
 }
 
-export const THNView: React.FC<THNPdfProps> = ({ truckHiringNote: thn, companyInfo }) => {
+export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: CompanyInfo}> = ({ truckHiringNote: thn, companyInfo }) => {
     return (
         <div id="thn-pdf" className="bg-white p-8 text-sm font-sans" style={{ width: '210mm', minHeight: '297mm' }}>
             <div className="border-2 border-black p-4">
@@ -112,13 +113,21 @@ export const THNView: React.FC<THNPdfProps> = ({ truckHiringNote: thn, companyIn
     );
 };
 
-export const THNPdf: React.FC<THNPdfProps> = ({ truckHiringNote, companyInfo }) => {
+export const THNPdf: React.FC<THNPdfProps> = ({ truckHiringNote, companyInfo, onBack }) => {
     return (
         <div>
-            <div className="mb-4 flex justify-end">
-                <Button onClick={() => generatePdf('thn-pdf-container', `THN-${truckHiringNote.thnNumber}`)}>
+            <style>{`
+                @media print {
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `}</style>
+            <div className="mb-4 flex justify-end no-print">
+                <Button onClick={() => generatePdf('thn-pdf-container', `THN-${truckHiringNote.thnNumber}`)} className="mr-4">
                     Download PDF
                 </Button>
+                <Button variant="secondary" onClick={onBack}>Back</Button>
             </div>
             <div id="thn-pdf-container" className="flex justify-center bg-gray-300 p-8">
                 <THNView truckHiringNote={truckHiringNote} companyInfo={companyInfo} />

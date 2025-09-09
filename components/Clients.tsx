@@ -12,6 +12,7 @@ interface ClientsProps {
   customers: Customer[];
   onSave: (customer: Omit<Customer, 'id' | '_id'> & { _id?: string }) => Promise<Customer>;
   onDelete: (id: string) => void;
+  onBack: () => void;
 }
 
 const ClientFormModal: React.FC<{
@@ -139,7 +140,7 @@ const ClientFormModal: React.FC<{
 };
 
 
-export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete }) => {
+export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, onBack }) => {
     const [editingClient, setEditingClient] = useState<Partial<Customer> | null>(null);
 
     const handleAddNew = () => {
@@ -159,7 +160,10 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete })
             {editingClient && <ClientFormModal client={editingClient} onSave={onSave} onClose={handleCloseModal} />}
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold text-gray-800">Manage Clients</h2>
-                <Button onClick={handleAddNew}>Add New Client</Button>
+                <div>
+                  <Button onClick={handleAddNew} className="mr-4">Add New Client</Button>
+                  <Button variant="secondary" onClick={onBack}>Back</Button>
+                </div>
             </div>
             <Card>
                 <div className="overflow-x-auto">
