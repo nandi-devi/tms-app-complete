@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import type { Customer, Invoice, Payment, TruckHiringNote } from '../types';
-import React, { useState } from 'react';
-import type { Customer, Invoice, Payment, TruckHiringNote } from '../types';
 import { ClientLedger } from './ClientLedger';
 import { CompanyLedger } from './CompanyLedger';
 import { Card } from './ui/Card';
