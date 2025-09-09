@@ -343,31 +343,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
                       {inv.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="relative inline-block text-left">
-                        <Select
-                            onChange={(e) => {
-                                e.stopPropagation();
-                                const action = e.target.value;
-                                if (action === 'add_payment') handleOpenPaymentForm(inv);
-                                else if (action === 'view_history') handleOpenHistoryModal(inv);
-                                else if (action === 'edit') onViewChange({ name: 'EDIT_INVOICE', id: inv._id });
-                                else if (action === 'view_pdf') onViewChange({ name: 'VIEW_INVOICE', id: inv._id });
-                                else if (action === 'delete') onDeleteInvoice(inv._id);
-                                // Reset select value after action
-                                e.target.value = '';
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-sm"
-                        >
-                            <option value="" disabled>Actions</option>
-                            {inv.status !== 'Paid' && <option value="add_payment">Add Payment</option>}
-                            <option value="view_history">View History</option>
-                            <option value="view_pdf">View PDF</option>
-                            <option value="edit">Edit</option>
-                            <option value="delete">Delete</option>
-                        </Select>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                    {inv.status !== 'Paid' && (
+                      <button onClick={(e) => { e.stopPropagation(); handleOpenPaymentForm(inv); }} className="text-blue-600 hover:text-blue-900 transition-colors">Add Payment</button>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); handleOpenHistoryModal(inv); }} className="text-gray-600 hover:text-gray-900 transition-colors">History</button>
+                    <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_INVOICE', id: inv._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
+                    <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_INVOICE', id: inv._id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteInvoice(inv._id); }} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
                   </td>
                 </tr>
               ))}
