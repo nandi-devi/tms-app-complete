@@ -294,16 +294,16 @@ const App: React.FC = () => {
       
       case 'CREATE_INVOICE':
         const availableLrs = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status));
-        return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} />;
+        return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} invoices={invoices} />;
       case 'CREATE_INVOICE_FROM_LR':
         const lrToInvoice = lorryReceipts.find(lr => lr._id === view.lrId);
         if (!lrToInvoice) return <div>LR not found</div>;
         const availableLrsForNewInvoice = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === view.lrId);
-         return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} />;
+         return <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} invoices={invoices} />;
       case 'EDIT_INVOICE':
          const invoiceToEdit = invoices.find(inv => inv._id === view.id);
          const lrsForEdit = lorryReceipts.filter(lr => (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || invoiceToEdit?.lorryReceipts.some(ilr => ilr._id === lr._id));
-         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} /> : <div>Invoice not found</div>;
+         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} invoices={invoices} /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
         const invoiceToView = invoices.find(inv => inv._id === view.id);
         return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} /> : <div>Invoice not found</div>;

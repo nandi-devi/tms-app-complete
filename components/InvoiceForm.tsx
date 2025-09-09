@@ -13,6 +13,7 @@ interface InvoiceFormProps {
   onCancel: () => void;
   availableLrs: LorryReceipt[];
   customers: Customer[];
+  invoices: Invoice[];
   companyInfo: CompanyInfo;
   existingInvoice?: Invoice;
   preselectedLr?: LorryReceipt;
@@ -29,7 +30,7 @@ const ToggleSwitch: React.FC<{ label: string; checked: boolean; onChange: (check
     </label>
 );
 
-export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, companyInfo, existingInvoice, preselectedLr }) => {
+export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, invoices, companyInfo, existingInvoice, preselectedLr }) => {
 
   const [invoice, setInvoice] = useState<Partial<Invoice>>(
     existingInvoice
@@ -56,6 +57,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   const [selectedLrs, setSelectedLrs] = useState<Set<string>>(
     new Set(existingInvoice?.lorryReceipts.map(lr => lr._id) || [])
   );
+  const [isManualInvoice, setIsManualInvoice] = useState(false);
+  const [customInvoiceNumber, setCustomInvoiceNumber] = useState('');
   
   // Auto-set GST type based on client and company state
   useEffect(() => {
@@ -151,6 +154,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     if (!invoice.customerId) newErrors.customerId = 'Client is required.';
     if (!invoice.date) newErrors.date = 'Invoice date is required.';
     if (selectedLrs.size === 0) newErrors.lrs = 'At least one Lorry Receipt must be selected.';
+
+    if (isManualInvoice && !existingInvoice) {
+        if (!customInvoiceNumber) newErrors.invoiceNumber = 'Invoice Number is required for manual entry.';
+        else if (invoices.some(i => i.invoiceNumber === parseInt(customInvoiceNumber))) newErrors.invoiceNumber = 'This Invoice Number already exists.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -158,14 +167,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      // Create a copy of the invoice object for saving
-      // This ensures we don't mutate the state directly
-      // And we can format the lorryReceipts to just be their IDs if needed by the backend
-      const invoiceToSave = {
+      const invoiceToSave: Partial<Invoice> = {
         ...invoice,
         lorryReceipts: (invoice.lorryReceipts || []).map(lr => ({ _id: lr._id })),
       };
-      onSave(invoiceToSave as Partial<Invoice>);
+
+      if (isManualInvoice && !existingInvoice) {
+        invoiceToSave.invoiceNumber = parseInt(customInvoiceNumber);
+      }
+
+      onSave(invoiceToSave);
     }
   };
   
@@ -187,8 +198,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
             <option value="" disabled>Select Client</option>
             {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </Select>
-          <Input label="Invoice Date" type="date" name="date" value={invoice.date || ''} onChange={handleChange} required error={errors.date} />
+          <div className="space-y-2">
+            <Input label="Invoice Date" type="date" name="date" value={invoice.date || ''} onChange={handleChange} required error={errors.date} />
+            {!existingInvoice && (
+                <div className="flex items-center">
+                    <input type="checkbox" id="isManualInvoice" checked={isManualInvoice} onChange={e => setIsManualInvoice(e.target.checked)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                    <label htmlFor="isManualInvoice" className="ml-2 block text-sm text-gray-900">Set Invoice No. Manually</label>
+                </div>
+            )}
+          </div>
         </div>
+        {isManualInvoice && !existingInvoice && (
+            <div className="mt-4">
+                <Input label="Invoice Number" type="number" value={customInvoiceNumber} onChange={e => setCustomInvoiceNumber(e.target.value)} required error={errors.invoiceNumber} />
+            </div>
+        )}
         {customer && <p className="text-sm text-gray-500 mt-2">Client State: <span className="font-medium text-gray-700">{customer.state}</span></p>}
       </Card>
 
