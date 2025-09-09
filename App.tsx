@@ -349,6 +349,7 @@ const App: React.FC = () => {
 
         return customer ? <LedgerPDF
                     title={`Client-Ledger-${customer.name}`}
+                    reportTitle={`Client Ledger for ${customer.name}`}
                     transactions={transactions}
                     companyInfo={companyInfo}
                     columns={[
@@ -371,6 +372,7 @@ const App: React.FC = () => {
 
         return <LedgerPDF
                     title="Company-Ledger"
+                    reportTitle="Company Ledger"
                     transactions={companyTransactions}
                     companyInfo={companyInfo}
                     columns={[
