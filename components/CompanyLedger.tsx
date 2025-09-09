@@ -72,10 +72,6 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ invoices, payments
 
   return (
     <div className="space-y-6">
-       <div className="flex justify-end space-x-2">
-          <Button onClick={() => onViewChange({ name: 'VIEW_COMPANY_LEDGER_PDF' })} variant="secondary">Export to PDF</Button>
-          <Button onClick={handleExport} variant="secondary">Export to CSV</Button>
-      </div>
       <Card title="Filters">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
           <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
@@ -88,56 +84,66 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ invoices, payments
         </div>
       </Card>
 
-      <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-        <div>
-          <h4 className="text-sm font-medium text-gray-600">Total Income</h4>
-          <p className="text-2xl font-bold text-green-600">₹{transactionData.totalIncome.toLocaleString('en-IN')}</p>
-        </div>
-        <div>
-          <h4 className="text-sm font-medium text-gray-600">Total Expenses</h4>
-          <p className="text-2xl font-bold text-red-600">₹{transactionData.totalExpense.toLocaleString('en-IN')}</p>
-        </div>
-        <div>
-          <h4 className="text-sm font-medium text-gray-600">Net Profit / Loss</h4>
-          <p className={`text-2xl font-bold ${transactionData.net >= 0 ? 'text-indigo-900' : 'text-orange-600'}`}>
-            ₹{Math.abs(transactionData.net).toLocaleString('en-IN')}
-          </p>
-        </div>
-      </div>
+      {transactionData.transactions.length === 0 ? (
+        <Card>
+          <div className="text-center py-12">
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Transactions Found</h3>
+            <p className="text-gray-500">There are no company transactions (invoices or truck hiring notes) recorded yet.</p>
+          </div>
+        </Card>
+      ) : (
+        <>
+          <div className="flex justify-end space-x-2">
+              <Button onClick={() => onViewChange({ name: 'VIEW_COMPANY_LEDGER_PDF' })} variant="secondary">Export to PDF</Button>
+              <Button onClick={handleExport} variant="secondary">Export to CSV</Button>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div>
+              <h4 className="text-sm font-medium text-gray-600">Total Income</h4>
+              <p className="text-2xl font-bold text-green-600">₹{transactionData.totalIncome.toLocaleString('en-IN')}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-600">Total Expenses</h4>
+              <p className="text-2xl font-bold text-red-600">₹{transactionData.totalExpense.toLocaleString('en-IN')}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-600">Net Profit / Loss</h4>
+              <p className={`text-2xl font-bold ${transactionData.net >= 0 ? 'text-indigo-900' : 'text-orange-600'}`}>
+                ₹{Math.abs(transactionData.net).toLocaleString('en-IN')}
+              </p>
+            </div>
+          </div>
 
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-slate-100">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Particulars</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount (₹)</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {transactionData.transactions.map(tx => (
-                <tr key={tx.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(tx.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${tx.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {tx.type.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">{tx.particulars}</td>
-                  <td className="px-6 py-4 text-right text-sm font-semibold">{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                </tr>
-              ))}
-              {transactionData.transactions.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-center py-8 text-gray-500">No transactions found for the selected criteria.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Particulars</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {transactionData.transactions.map(tx => (
+                    <tr key={tx.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(tx.date)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${tx.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {tx.type.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">{tx.particulars}</td>
+                      <td className="px-6 py-4 text-right text-sm font-semibold">{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 };
