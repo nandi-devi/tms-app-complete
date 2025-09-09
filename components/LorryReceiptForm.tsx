@@ -229,24 +229,71 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     setLr(prev => ({...prev, packages: newPackages}));
   }
 
-  const validate = () => {
-    const newErrors: { [key: string]: string } = {};
-    if (!lr.date) newErrors.date = 'Date is required.';
-    if (!vehicleNumber.trim()) newErrors.vehicleId = 'Vehicle is required.';
-    if (!lr.from) newErrors.from = 'Origin is required.';
-    if (!lr.to) newErrors.to = 'Destination is required.';
-    if (!lr.consignorId) newErrors.consignorId = 'Consignor is required.';
-    if (!lr.consigneeId) newErrors.consigneeId = 'Consignee is required.';
-    if (!lr.packages || lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
-        newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
+  const TABS = ['shipment', 'parties', 'packages', 'charges', 'other'];
+
+  const validate = (tabToValidate?: string) => {
+    const tabsToProcess = tabToValidate ? [tabToValidate] : TABS;
+    let newErrors: { [key: string]: string } = {};
+
+    tabsToProcess.forEach(tabName => {
+        switch(tabName) {
+            case 'shipment':
+                if (!lr.date) newErrors.date = 'Date is required.';
+                if (!vehicleNumber.trim()) newErrors.vehicleId = 'Vehicle is required.';
+                if (!lr.from) newErrors.from = 'Origin is required.';
+                if (!lr.to) newErrors.to = 'Destination is required.';
+                if (isManualLr && !existingLr) {
+                    if (!customLrNumber) newErrors.lrNumber = 'LR Number is required for manual entry.';
+                    else if (lorryReceipts.some(l => l.lrNumber === parseInt(customLrNumber))) newErrors.lrNumber = 'This LR Number already exists.';
+                }
+                break;
+            case 'parties':
+                if (!lr.consignorId) newErrors.consignorId = 'Consignor is required.';
+                if (!lr.consigneeId) newErrors.consigneeId = 'Consignee is required.';
+                break;
+            case 'packages':
+                if (!lr.packages || lr.packages.length === 0 || lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
+                    newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
+                }
+                break;
+            default:
+                break;
+        }
+    });
+
+    if (tabToValidate) {
+        // Clear old errors for this tab's fields before setting new ones
+        const fieldsForTab: {[key: string]: string[]} = {
+            shipment: ['date', 'vehicleId', 'from', 'to', 'lrNumber'],
+            parties: ['consignorId', 'consigneeId'],
+            packages: ['packages']
+        };
+        const fields = fieldsForTab[tabToValidate] || [];
+        const clearedErrors = { ...errors };
+        fields.forEach(field => delete clearedErrors[field]);
+        setErrors({ ...clearedErrors, ...newErrors });
+    } else {
+        setErrors(newErrors);
     }
-    if (isManualLr && !existingLr) {
-        if (!customLrNumber) newErrors.lrNumber = 'LR Number is required for manual entry.';
-        else if (lorryReceipts.some(l => l.lrNumber === parseInt(customLrNumber))) newErrors.lrNumber = 'This LR Number already exists.';
-    }
-    setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   }
+
+  const handleNext = () => {
+    if (validate(activeTab)) {
+        const currentIndex = TABS.indexOf(activeTab);
+        if (currentIndex < TABS.length - 1) {
+            setActiveTab(TABS[currentIndex + 1]);
+        }
+    }
+  };
+
+  const handlePrevious = () => {
+    const currentIndex = TABS.indexOf(activeTab);
+    if (currentIndex > 0) {
+        setActiveTab(TABS[currentIndex - 1]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,10 +324,33 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   const selectedConsignor = existingLr?.consignor || customers.find(c => c._id === lr.consignorId);
   const selectedConsignee = existingLr?.consignee || customers.find(c => c._id === lr.consigneeId);
 
+  const TabContentWrapper: React.FC<{ children: React.ReactNode; showPrevious: boolean; showNext: boolean; }> = ({ children, showPrevious, showNext }) => (
+    <div>
+        {children}
+        <div className="flex justify-between mt-6">
+            {showPrevious ? (
+                <Button type="button" variant="secondary" onClick={handlePrevious}>Previous</Button>
+            ) : (
+                <div /> // Placeholder for alignment
+            )}
+            {showNext ? (
+                <Button type="button" onClick={handleNext}>Next</Button>
+            ) : (
+                <div /> // Placeholder for alignment
+            )}
+        </div>
+    </div>
+  );
+
   const renderTabContent = () => {
+    const currentIndex = TABS.indexOf(activeTab);
+    const showPrevious = currentIndex > 0;
+    const showNext = currentIndex < TABS.length - 1;
+
+    let content;
     switch (activeTab) {
       case 'shipment':
-        return (
+        content = (
           <Card title="Shipment Details">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="md:col-span-1">
@@ -307,8 +377,9 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
             </div>
           </Card>
         );
+        break;
       case 'parties':
-        return (
+        content = (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card title="Consignor">
                 <div className="relative">
@@ -357,7 +428,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
                             </div>
                             {(selectedConsignee.contactPerson || selectedConsignee.contactPhone || selectedConsignee.contactEmail) && (
                                 <div className="pt-2 border-t">
-                                    {selectedConsignee.contactPerson && <p><b>Contact:</b> {selectedConsignee.contactPerson}</p>}
+                                    {selectedConsignee.contactPerson && <p><b>Contact:</b> {selectedConsignor.contactPerson}</p>}
                                     {selectedConsignee.contactPhone && <p><b>Phone:</b> {selectedConsignee.contactPhone}</p>}
                                     {selectedConsignee.contactEmail && <p><b>Email:</b> {selectedConsignee.contactEmail}</p>}
                                 </div>
@@ -368,8 +439,9 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
             </Card>
           </div>
         );
+        break;
       case 'packages':
-        return (
+        content = (
             <Card title="Packages">
                 {(lr.packages || []).map((pkg, index) => (
                   <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4 border-b pb-4 last:border-b-0 last:pb-0">
@@ -383,8 +455,9 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
                 {errors.packages && <p className="mt-1 text-xs text-red-600">{errors.packages}</p>}
             </Card>
         );
+        break;
       case 'charges':
-        return (
+        content = (
             <Card title="Charges">
                 <div className="space-y-4">
                     <Input label="Freight" type="number" name="charges.freight" value={lr.charges?.freight || 0} onChange={handleChange} onFocus={e => e.target.select()} />
@@ -396,8 +469,9 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
                 </div>
             </Card>
         );
+        break;
       case 'other':
-        return (
+        content = (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card title="Other Details">
                     <div className="space-y-4">
@@ -431,9 +505,11 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
                 </Card>
             </div>
         );
+        break;
       default:
-        return null;
+        content = null;
     }
+    return <TabContentWrapper showPrevious={showPrevious} showNext={showNext}>{content}</TabContentWrapper>
   };
 
   const TabButton: React.FC<{ tabName: string; label: string }> = ({ tabName, label }) => {
