@@ -11,6 +11,7 @@ import { PendingPayments } from './components/PendingPayments';
 import { Clients } from './components/Clients';
 import { TruckHiringNotes } from './components/TruckHiringNotes';
 import { THNPdf } from './components/THNPdf';
+import { LedgerPDF } from './components/LedgerPDF';
 import { Login } from './components/Login';
 import { Setup } from './components/Setup';
 import { hashPassword } from './services/authService';
@@ -40,7 +41,9 @@ export type View =
   | { name: 'LEDGER' }
   | { name: 'PENDING_PAYMENTS' }
   | { name: 'TRUCK_HIRING_NOTES' }
-  | { name: 'VIEW_THN', id: string };
+  | { name: 'VIEW_THN', id: string }
+  | { name: 'VIEW_CLIENT_LEDGER_PDF', customerId: string }
+  | { name: 'VIEW_COMPANY_LEDGER_PDF' };
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>({ name: 'DASHBOARD' });
@@ -321,7 +324,62 @@ const App: React.FC = () => {
                 />;
 
       case 'LEDGER':
-        return <Ledger customers={customers} invoices={invoices} payments={payments} onSavePayment={savePayment} />;
+        return <Ledger customers={customers} invoices={invoices} payments={payments} truckHiringNotes={truckHiringNotes} onViewChange={setView} />;
+
+      case 'VIEW_CLIENT_LEDGER_PDF':
+        const customerId = view.customerId;
+        const customer = customers.find(c => c._id === customerId);
+        const customerInvoices = invoices.filter(inv => inv.customer?._id === customerId);
+        const customerPayments = payments.filter(p => p.invoiceId?.customer?._id === customerId);
+
+        const invoiceTx = customerInvoices.map(inv => ({
+            type: 'invoice', date: inv.date, particulars: `Invoice No: ${inv.invoiceNumber}`, debit: inv.grandTotal, credit: 0
+        }));
+        const paymentTx = customerPayments.map(p => ({
+            type: 'payment', date: p.date, particulars: `Payment for INV-${p.invoiceId?.invoiceNumber}`, debit: 0, credit: p.amount
+        }));
+
+        let runningBalance = 0;
+        const transactions = [...invoiceTx, ...paymentTx]
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .map(tx => {
+                runningBalance += (tx.debit - tx.credit);
+                return { ...tx, balance: `${Math.abs(runningBalance).toFixed(2)} ${runningBalance >= 0 ? 'Dr' : 'Cr'}` };
+            });
+
+        return customer ? <LedgerPDF
+                    title={`Client-Ledger-${customer.name}`}
+                    transactions={transactions}
+                    companyInfo={companyInfo}
+                    columns={[
+                        { key: 'date', label: 'Date' },
+                        { key: 'particulars', label: 'Particulars' },
+                        { key: 'debit', label: 'Debit (₹)', align: 'right' },
+                        { key: 'credit', label: 'Credit (₹)', align: 'right' },
+                        { key: 'balance', label: 'Balance (₹)', align: 'right' },
+                    ]}
+                    summary={[
+                        { label: 'Client', value: customer.name },
+                        { label: 'Closing Balance', value: transactions.length > 0 ? transactions[transactions.length - 1].balance : '0.00 Dr', color: 'font-bold' }
+                    ]}
+                /> : <div>Customer not found</div>;
+
+      case 'VIEW_COMPANY_LEDGER_PDF':
+        const invoiceTxComp = invoices.map(inv => ({ type: 'income', date: inv.date, particulars: `Invoice No: ${inv.invoiceNumber} to ${inv.customer?.name}`, amount: inv.grandTotal }));
+        const thnTxComp = truckHiringNotes.map(thn => ({ type: 'expense', date: thn.date, particulars: `THN No: ${thn.thnNumber} to ${thn.truckOwnerName}`, amount: thn.freight }));
+        const companyTransactions = [...invoiceTxComp, ...thnTxComp].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        return <LedgerPDF
+                    title="Company-Ledger"
+                    transactions={companyTransactions}
+                    companyInfo={companyInfo}
+                    columns={[
+                        { key: 'date', label: 'Date' },
+                        { key: 'type', label: 'Type' },
+                        { key: 'particulars', label: 'Particulars' },
+                        { key: 'amount', label: 'Amount (₹)', align: 'right' },
+                    ]}
+                />;
 
       case 'PENDING_PAYMENTS':
         return <PendingPayments invoices={invoices} onSavePayment={savePayment} />;

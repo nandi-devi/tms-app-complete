@@ -51,12 +51,6 @@ export const Header: React.FC<HeaderProps> = ({ view, onViewChange, onLogout }) 
             >
               New Invoice
             </button>
-             <button
-              onClick={() => onViewChange({ name: 'LEDGER' })}
-              className={getButtonClass(['LEDGER'])}
-            >
-              Ledger
-            </button>
             <button
               onClick={() => onViewChange({ name: 'PENDING_PAYMENTS' })}
               className={getButtonClass(['PENDING_PAYMENTS'])}
