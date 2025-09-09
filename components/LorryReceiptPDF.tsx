@@ -121,9 +121,9 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                                         <span className="mx-2">OR</span>
                                         <div className="w-3 h-3 border border-black mr-1">X</div> <span className="text-[10px]">He has insured the Consignment</span>
                                     </div>
-                                    <p className="text-[10px]">Company........ {lorryReceipt.insurance.company || 'N/A'}</p>
-                                    <p className="text-[10px]">Policy No....... {lorryReceipt.insurance.policyNo || 'N/A'} .Date....... {lorryReceipt.insurance.date ? formatDate(lorryReceipt.insurance.date) : 'N/A'}</p>
-                                    <p className="text-[10px]">Amount......... {lorryReceipt.insurance.amount || 'N/A'} .Risk.......... {lorryReceipt.insurance.risk || 'N/A'}</p>
+                                    <p className="text-[10px]">Company {lorryReceipt.insurance.company || 'N/A'}</p>
+                                    <p className="text-[10px]">Policy No {lorryReceipt.insurance.policyNo || 'N/A'} .Date {lorryReceipt.insurance.date ? formatDate(lorryReceipt.insurance.date) : 'N/A'}</p>
+                                    <p className="text-[10px]">Amount {lorryReceipt.insurance.amount || 'N/A'} .Risk {lorryReceipt.insurance.risk || 'N/A'}</p>
                                 </>
                             ) : (
                                 <>
