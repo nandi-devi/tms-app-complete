@@ -6,7 +6,6 @@ import Invoice from '../models/invoice';
 import TruckHiringNote from '../models/truckHiringNote';
 import Payment from '../models/payment';
 import Counter from '../models/counter';
-import { mockCustomers, mockVehicles, mockTruckHiringNotes } from '../mockData';
 
 export const resetData = async (req: Request, res: Response) => {
     try {
@@ -23,9 +22,43 @@ export const resetData = async (req: Request, res: Response) => {
     }
 };
 
-export const loadMockData = async (req: Request, res: Response) => {
+export const backupData = async (req: Request, res: Response) => {
     try {
-        // First, reset all data to ensure a clean slate
+        const customers = await Customer.find({});
+        const vehicles = await Vehicle.find({});
+        const lorryReceipts = await LorryReceipt.find({});
+        const invoices = await Invoice.find({});
+        const truckHiringNotes = await TruckHiringNote.find({});
+        const payments = await Payment.find({});
+        const counters = await Counter.find({});
+
+        const backup = {
+            customers,
+            vehicles,
+            lorryReceipts,
+            invoices,
+            truckHiringNotes,
+            payments,
+            counters,
+            backupDate: new Date(),
+        };
+
+        res.status(200).json(backup);
+    } catch (err: any) {
+        res.status(500).json({ message: 'Failed to create backup.', error: err.message });
+    }
+};
+
+export const restoreData = async (req: Request, res: Response) => {
+    const { customers, vehicles, lorryReceipts, invoices, truckHiringNotes, payments, counters } = req.body;
+
+    // Basic validation
+    if (!customers || !vehicles || !lorryReceipts || !invoices || !truckHiringNotes || !payments || !counters) {
+        return res.status(400).json({ message: 'Invalid backup file format.' });
+    }
+
+    try {
+        // 1. Delete all existing data
         await Customer.deleteMany({});
         await Vehicle.deleteMany({});
         await LorryReceipt.deleteMany({});
@@ -34,15 +67,19 @@ export const loadMockData = async (req: Request, res: Response) => {
         await Payment.deleteMany({});
         await Counter.deleteMany({});
 
-        await Customer.insertMany(mockCustomers);
-        await Vehicle.insertMany(mockVehicles);
-        await TruckHiringNote.insertMany(mockTruckHiringNotes);
+        // 2. Insert new data from backup
+        // Using { ordered: false } might be useful if some documents could fail validation,
+        // but for a full restore, we expect all data to be valid.
+        await Customer.insertMany(customers);
+        await Vehicle.insertMany(vehicles);
+        await LorryReceipt.insertMany(lorryReceipts);
+        await Invoice.insertMany(invoices);
+        await TruckHiringNote.insertMany(truckHiringNotes);
+        await Payment.insertMany(payments);
+        await Counter.insertMany(counters);
 
-        // Note: We are not loading mock LRs/Invoices as their relational IDs are hardcoded
-        // and would not match the newly inserted customers/vehicles.
-
-        res.status(200).json({ message: 'Successfully loaded mock customers, vehicles, and THNs. Other data is reset.' });
+        res.status(200).json({ message: 'Data has been restored successfully.' });
     } catch (err: any) {
-        res.status(500).json({ message: 'Failed to load mock data.', error: err.message });
+        res.status(500).json({ message: 'Failed to restore data.', error: err.message });
     }
 };

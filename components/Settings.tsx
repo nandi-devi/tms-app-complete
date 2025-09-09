@@ -6,6 +6,7 @@ import { Card } from './ui/Card';
 import { Select } from './ui/Select';
 import { Textarea } from './ui/Textarea';
 import { exportToCsv } from '../services/exportService';
+import { getBackupData, restoreBackupData } from '../services/dataService';
 import { formatDate } from '../services/utils';
 import { indianStates } from '../constants';
 
@@ -19,8 +20,7 @@ interface SettingsProps {
   vehicles: Vehicle[];
   truckHiringNotes: TruckHiringNote[];
   onPasswordChange: (currentPassword: string, newPassword: string) => Promise<{success: boolean, message: string}>;
-  onResetData: () => Promise<void>;
-  onLoadMockData: () => Promise<void>;
+  onDataChange: () => Promise<void>;
 }
 
 const CompanyInfoForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: CompanyInfo) => void }> = ({ companyInfo, onSave }) => {
@@ -164,23 +164,67 @@ const ChangePasswordForm: React.FC<{ onPasswordChange: SettingsProps['onPassword
     );
 };
 
-const DataManagement: React.FC<{ onResetData: () => void, onLoadMockData: () => void }> = ({ onResetData, onLoadMockData }) => {
+const DataManagement: React.FC<{ onDataChange: () => Promise<void> }> = ({ onDataChange }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [isBackupLoading, setIsBackupLoading] = useState(false);
+    const [isRestoreLoading, setIsRestoreLoading] = useState(false);
 
     const handleReset = async () => {
         if (window.confirm('Are you sure you want to reset all application data? This action cannot be undone.')) {
             setIsLoading(true);
-            await onResetData();
-            setIsLoading(false);
+            try {
+                await onDataChange();
+                alert('Application data has been reset.');
+            } catch (error: any) {
+                alert(`Failed to reset data: ${error.message}`);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
-    const handleLoadMock = async () => {
-        if (window.confirm('This will replace all current data with a set of test data. Are you sure?')) {
-            setIsLoading(true);
-            await onLoadMockData();
-            setIsLoading(false);
+    const handleBackup = async () => {
+        setIsBackupLoading(true);
+        try {
+            const backupData = await getBackupData();
+            const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(backupData, null, 2))}`;
+            const link = document.createElement("a");
+            link.href = jsonString;
+            link.download = `all-india-logistics-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        } catch (error: any) {
+            alert(`Failed to create backup: ${error.message}`);
+        } finally {
+            setIsBackupLoading(false);
         }
+    };
+
+    const handleRestore = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const text = e.target?.result;
+                if (typeof text !== 'string') {
+                    throw new Error('File is not readable');
+                }
+                const backupData = JSON.parse(text);
+
+                if (window.confirm('Are you sure you want to restore from this backup? THIS WILL OVERWRITE ALL CURRENT DATA.')) {
+                    setIsRestoreLoading(true);
+                    await restoreBackupData(backupData);
+                    await onDataChange(); // Refetch all data
+                    alert('Data restored successfully!');
+                }
+            } catch (error: any) {
+                alert(`Failed to restore data: ${error.message}`);
+            } finally {
+                setIsRestoreLoading(false);
+            }
+        };
+        reader.readAsText(file);
     };
 
     return (
@@ -189,10 +233,18 @@ const DataManagement: React.FC<{ onResetData: () => void, onLoadMockData: () => 
             <Card>
                 <div className="space-y-4">
                     <div>
-                        <h4 className="font-semibold text-lg">Load Test Data</h4>
-                        <p className="text-sm text-gray-500 mb-2">Populate the database with a set of sample customers and vehicles for testing purposes. This will wipe all existing data first.</p>
-                        <Button onClick={handleLoadMock} variant="secondary" disabled={isLoading}>
-                            {isLoading ? 'Loading...' : 'Load Test Data'}
+                        <h4 className="font-semibold text-lg">Backup All Data</h4>
+                        <p className="text-sm text-gray-500 mb-2">Download a single JSON file containing all your application data. Keep this file safe.</p>
+                        <Button onClick={handleBackup} variant="secondary" disabled={isBackupLoading}>
+                            {isBackupLoading ? 'Backing up...' : 'Backup All Data'}
+                        </Button>
+                    </div>
+                    <div className="pt-4 border-t">
+                        <h4 className="font-semibold text-lg">Restore from Backup</h4>
+                        <p className="text-sm text-gray-500 mb-2">Restore all application data from a backup file. This will overwrite all current data.</p>
+                        <input type="file" id="restore-file" className="hidden" onChange={handleRestore} accept=".json" />
+                        <Button onClick={() => document.getElementById('restore-file')?.click()} variant="secondary" disabled={isRestoreLoading}>
+                            {isRestoreLoading ? 'Restoring...' : 'Restore from File'}
                         </Button>
                     </div>
                     <div className="pt-4 border-t">
@@ -239,7 +291,7 @@ export const Settings: React.FC<SettingsProps> = (props) => {
             {activeTab === 'info' && <CompanyInfoForm companyInfo={props.companyInfo} onSave={props.onSave} />}
             {activeTab === 'export' && <BackupExport lorryReceipts={props.lorryReceipts} invoices={props.invoices} truckHiringNotes={props.truckHiringNotes} />}
             {activeTab === 'security' && <ChangePasswordForm onPasswordChange={props.onPasswordChange} />}
-            {activeTab === 'data' && <DataManagement onResetData={props.onResetData} onLoadMockData={props.onLoadMockData} />}
+            {activeTab === 'data' && <DataManagement onDataChange={props.onDataChange} />}
         </div>
     </Card>
   );
