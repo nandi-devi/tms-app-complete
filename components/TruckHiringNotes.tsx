@@ -148,24 +148,13 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.origin} to {note.destination}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{note.freight.toLocaleString('en-IN')}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">₹{note.balancePayable.toLocaleString('en-IN')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <Select
-                                            onChange={(e) => {
-                                                const action = e.target.value;
-                                                if (action === 'add_payment') handleOpenPaymentForm(note);
-                                                else if (action === 'view_history') handleOpenHistoryModal(note);
-                                                else if (action === 'view_pdf') onViewChange({ name: 'VIEW_THN', id: note._id });
-                                                else if (action === 'edit') handleEdit(note);
-                                                e.target.value = '';
-                                            }}
-                                            className="text-sm"
-                                        >
-                                            <option value="" disabled>Actions</option>
-                                            {note.status !== 'Paid' && <option value="add_payment">Add Payment</option>}
-                                            <option value="view_history">View History</option>
-                                            <option value="view_pdf">View PDF</option>
-                                            <option value="edit">Edit</option>
-                                        </Select>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                        {note.status !== 'Paid' && (
+                                            <button onClick={() => handleOpenPaymentForm(note)} className="text-blue-600 hover:text-blue-900 transition-colors">Add Payment</button>
+                                        )}
+                                        <button onClick={() => handleOpenHistoryModal(note)} className="text-gray-600 hover:text-gray-900 transition-colors">History</button>
+                                        <button onClick={() => onViewChange({ name: 'VIEW_THN', id: note._id })} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
+                                        <button onClick={() => handleEdit(note)} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
                                     </td>
                                 </tr>
                             ))}
