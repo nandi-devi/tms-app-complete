@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { LorryReceiptForm } from './components/LorryReceiptForm';
@@ -15,8 +15,8 @@ import { LedgerPDF } from './components/LedgerPDF';
 import { Login } from './components/Login';
 import { Setup } from './components/Setup';
 import { hashPassword } from './services/authService';
-import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment } from './types';
-import { LorryReceiptStatus } from './types';
+import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment, TruckHiringNote } from './types';
+import { LorryReceiptStatus, InvoiceStatus, THNStatus } from './types';
 import { initialCompanyInfo } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer as deleteCustomerService } from './services/customerService';
@@ -75,6 +75,38 @@ const App: React.FC = () => {
   const [passwordHash, setPasswordHash] = useLocalStorage<string | null>('app_password_hash', null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState('');
+
+  const processedInvoices = useMemo(() => {
+    return invoices.map(invoice => {
+      const paidAmount = payments
+        .filter(p => p.invoiceId === invoice._id)
+        .reduce((acc, p) => acc + p.amount, 0);
+      const balanceDue = invoice.grandTotal - paidAmount;
+      let status = InvoiceStatus.UNPAID;
+      if (balanceDue <= 0) {
+        status = InvoiceStatus.PAID;
+      } else if (paidAmount > 0) {
+        status = InvoiceStatus.PARTIALLY_PAID;
+      }
+      return { ...invoice, paidAmount, balanceDue, status };
+    });
+  }, [invoices, payments]);
+
+  const processedTruckHiringNotes = useMemo(() => {
+    return truckHiringNotes.map(note => {
+      const paidAmount = payments
+        .filter(p => p.truckHiringNoteId === note._id)
+        .reduce((acc, p) => acc + p.amount, 0);
+      const balancePayable = note.freight - paidAmount;
+      let status = THNStatus.UNPAID;
+      if (balancePayable <= 0) {
+        status = THNStatus.PAID;
+      } else if (paidAmount > 0) {
+        status = THNStatus.PARTIALLY_PAID;
+      }
+      return { ...note, paidAmount, balancePayable, status };
+    });
+  }, [truckHiringNotes, payments]);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -335,11 +367,11 @@ const App: React.FC = () => {
         const availableLrsForNewInvoice = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === currentView.lrId);
          return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} />;
       case 'EDIT_INVOICE':
-         const invoiceToEdit = invoices.find(inv => inv._id === currentView.id);
+         const invoiceToEdit = processedInvoices.find(inv => inv._id === currentView.id);
          const lrsForEdit = lorryReceipts.filter(lr => (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || invoiceToEdit?.lorryReceipts.some(ilr => ilr._id === lr._id));
          return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
-        const invoiceToView = invoices.find(inv => inv._id === currentView.id);
+        const invoiceToView = processedInvoices.find(inv => inv._id === currentView.id);
         return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} onBack={goBack} /> : <div>Invoice not found</div>;
       
       case 'SETTINGS':
@@ -347,11 +379,11 @@ const App: React.FC = () => {
                   companyInfo={companyInfo} 
                   onSave={setCompanyInfo} 
                   lorryReceipts={lorryReceipts}
-                  invoices={invoices}
+                  invoices={processedInvoices}
                   payments={payments}
                   customers={customers}
                   vehicles={vehicles}
-                  truckHiringNotes={truckHiringNotes}
+                  truckHiringNotes={processedTruckHiringNotes}
                   onPasswordChange={handleChangePassword}
                   onResetData={handleResetData}
                   onBackup={handleBackup}
@@ -360,20 +392,27 @@ const App: React.FC = () => {
                 />;
 
       case 'LEDGER':
-        return <Ledger customers={customers} invoices={invoices} payments={payments} truckHiringNotes={truckHiringNotes} onViewChange={navigateTo} onBack={goBack} />;
+        return <Ledger customers={customers} invoices={processedInvoices} payments={payments} truckHiringNotes={processedTruckHiringNotes} onViewChange={navigateTo} onBack={goBack} />;
 
       case 'VIEW_CLIENT_LEDGER_PDF':
         const customerId = currentView.customerId;
         const customer = customers.find(c => c._id === customerId);
-        const customerInvoices = invoices.filter(inv => inv.customer?._id === customerId);
-        const customerPayments = payments.filter(p => p.invoiceId?.customer?._id === customerId);
+        const customerInvoices = processedInvoices.filter(inv => inv.customer?._id === customerId);
+        const customerPayments = payments.filter(p => p.customerId === customerId);
 
         const invoiceTx = customerInvoices.map(inv => ({
             type: 'invoice', date: inv.date, particulars: `Invoice No: ${inv.invoiceNumber}`, debit: inv.grandTotal, credit: 0
         }));
-        const paymentTx = customerPayments.map(p => ({
-            type: 'payment', date: p.date, particulars: `Payment for INV-${p.invoiceId?.invoiceNumber}`, debit: 0, credit: p.amount
-        }));
+        const paymentTx = customerPayments.map(p => {
+          const invoice = invoices.find(inv => inv._id === p.invoiceId);
+          return {
+            type: 'payment',
+            date: p.date,
+            particulars: `Payment for INV-${invoice?.invoiceNumber || 'N/A'}`,
+            debit: 0,
+            credit: p.amount
+          };
+        });
 
         let runningBalance = 0;
         const transactions = [...invoiceTx, ...paymentTx]
@@ -402,8 +441,8 @@ const App: React.FC = () => {
                 /> : <div>Customer not found</div>;
 
       case 'VIEW_COMPANY_LEDGER_PDF':
-        const invoiceTxComp = invoices.map(inv => ({ type: 'income', date: inv.date, particulars: `Invoice No: ${inv.invoiceNumber} to ${inv.customer?.name}`, amount: inv.grandTotal }));
-        const thnTxComp = truckHiringNotes.map(thn => ({ type: 'expense', date: thn.date, particulars: `THN No: ${thn.thnNumber} to ${thn.truckOwnerName}`, amount: thn.freight }));
+        const invoiceTxComp = processedInvoices.map(inv => ({ type: 'income', date: inv.date, particulars: `Invoice No: ${inv.invoiceNumber} to ${inv.customer?.name}`, amount: inv.grandTotal }));
+        const thnTxComp = processedTruckHiringNotes.map(thn => ({ type: 'expense', date: thn.date, particulars: `THN No: ${thn.thnNumber} to ${thn.truckOwnerName}`, amount: thn.freight }));
         const companyTransactions = [...invoiceTxComp, ...thnTxComp].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return <LedgerPDF
@@ -420,23 +459,23 @@ const App: React.FC = () => {
                 />;
 
       case 'PENDING_PAYMENTS':
-        return <PendingPayments invoices={invoices} onSavePayment={savePayment} onBack={goBack} />;
+        return <PendingPayments invoices={processedInvoices} onSavePayment={savePayment} onBack={goBack} />;
       
       case 'CLIENTS':
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} onBack={goBack} />;
 
       case 'TRUCK_HIRING_NOTES':
-        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={navigateTo} onBack={goBack} />;
+        return <TruckHiringNotes notes={processedTruckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={navigateTo} onBack={goBack} />;
 
       case 'VIEW_THN':
-        const thnToView = truckHiringNotes.find(thn => thn._id === currentView.id);
+        const thnToView = processedTruckHiringNotes.find(thn => thn._id === currentView.id);
         return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} onBack={goBack} /> : <div>THN not found</div>;
 
       case 'DASHBOARD':
       default:
         return <Dashboard 
                  lorryReceipts={lorryReceipts} 
-                 invoices={invoices}
+                 invoices={processedInvoices}
                  payments={payments}
                  customers={customers}
                  vehicles={vehicles}
