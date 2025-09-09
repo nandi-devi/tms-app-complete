@@ -20,7 +20,8 @@ interface SettingsProps {
   truckHiringNotes: TruckHiringNote[];
   onPasswordChange: (currentPassword: string, newPassword: string) => Promise<{success: boolean, message: string}>;
   onResetData: () => Promise<void>;
-  onLoadMockData: () => Promise<void>;
+  onBackup: () => Promise<void>;
+  onRestore: (data: any) => Promise<void>;
   onBack: () => void;
 }
 
@@ -165,8 +166,9 @@ const ChangePasswordForm: React.FC<{ onPasswordChange: SettingsProps['onPassword
     );
 };
 
-const DataManagement: React.FC<{ onResetData: () => void, onLoadMockData: () => void }> = ({ onResetData, onLoadMockData }) => {
+const DataManagement: React.FC<{ onResetData: () => void, onBackup: () => void, onRestore: (data: any) => void }> = ({ onResetData, onBackup, onRestore }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleReset = async () => {
         if (window.confirm('Are you sure you want to reset all application data? This action cannot be undone.')) {
@@ -176,11 +178,45 @@ const DataManagement: React.FC<{ onResetData: () => void, onLoadMockData: () => 
         }
     };
 
-    const handleLoadMock = async () => {
-        if (window.confirm('This will replace all current data with a set of test data. Are you sure?')) {
-            setIsLoading(true);
-            await onLoadMockData();
-            setIsLoading(false);
+    const handleBackup = async () => {
+        setIsLoading(true);
+        await onBackup();
+        setIsLoading(false);
+    };
+
+    const handleRestoreClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const confirmation = window.confirm(
+            'This action will delete all existing data and replace it with the uploaded backup. This cannot be undone. Are you sure you want to proceed?'
+        );
+
+        if (confirmation) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const content = e.target?.result;
+                    if (typeof content === 'string') {
+                        const data = JSON.parse(content);
+                        setIsLoading(true);
+                        await onRestore(data);
+                        setIsLoading(false);
+                    }
+                } catch (error) {
+                    alert('Failed to read or parse the backup file. Please ensure it is a valid JSON file.');
+                    setIsLoading(false);
+                }
+            };
+            reader.readAsText(file);
+        }
+        // Reset file input
+        if(fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
@@ -189,12 +225,24 @@ const DataManagement: React.FC<{ onResetData: () => void, onLoadMockData: () => 
             <h3 className="text-xl font-bold text-gray-800">Data Management</h3>
             <Card>
                 <div className="space-y-4">
-                    <div>
-                        <h4 className="font-semibold text-lg">Load Test Data</h4>
-                        <p className="text-sm text-gray-500 mb-2">Populate the database with a set of sample customers and vehicles for testing purposes. This will wipe all existing data first.</p>
-                        <Button onClick={handleLoadMock} variant="secondary" disabled={isLoading}>
-                            {isLoading ? 'Loading...' : 'Load Test Data'}
-                        </Button>
+                     <div>
+                        <h4 className="font-semibold text-lg">Backup & Restore</h4>
+                        <p className="text-sm text-gray-500 mb-2">Download all your data into a single file or restore from a backup file.</p>
+                        <div className="flex space-x-2">
+                             <Button onClick={handleBackup} variant="secondary" disabled={isLoading}>
+                                {isLoading ? 'Backing up...' : 'Backup Data'}
+                            </Button>
+                            <Button onClick={handleRestoreClick} variant="secondary" disabled={isLoading}>
+                                {isLoading ? 'Restoring...' : 'Restore Data'}
+                            </Button>
+                             <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                className="hidden"
+                                accept="application/json"
+                            />
+                        </div>
                     </div>
                     <div className="pt-4 border-t">
                         <h4 className="font-semibold text-lg text-red-700">Reset Application Data</h4>
@@ -243,7 +291,7 @@ export const Settings: React.FC<SettingsProps> = (props) => {
             {activeTab === 'info' && <CompanyInfoForm companyInfo={props.companyInfo} onSave={props.onSave} />}
             {activeTab === 'export' && <BackupExport lorryReceipts={props.lorryReceipts} invoices={props.invoices} truckHiringNotes={props.truckHiringNotes} />}
             {activeTab === 'security' && <ChangePasswordForm onPasswordChange={props.onPasswordChange} />}
-            {activeTab === 'data' && <DataManagement onResetData={props.onResetData} onLoadMockData={props.onLoadMockData} />}
+            {activeTab === 'data' && <DataManagement onResetData={props.onResetData} onBackup={props.onBackup} onRestore={props.onRestore} />}
         </div>
     </Card>
   );

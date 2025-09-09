@@ -25,7 +25,7 @@ import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryRe
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
 import { getPayments, createPayment } from './services/paymentService';
 import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
-import { resetApplicationData, loadMockData } from './services/dataService';
+import { resetApplicationData, backupData, restoreData } from './services/dataService';
 
 export type View = 
   | { name: 'DASHBOARD' }
@@ -285,14 +285,33 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLoadMockData = async () => {
+  const handleBackup = async () => {
     try {
-      await loadMockData();
-      await fetchAllData();
-      alert('Mock data has been successfully loaded.');
+      const data = await backupData();
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error: any) {
-      console.error('Failed to load mock data:', error);
-      alert(`An error occurred while loading mock data: ${error.message}`);
+      console.error('Failed to backup data:', error);
+      alert(`An error occurred during backup: ${error.message}`);
+    }
+  };
+
+  const handleRestore = async (data: any) => {
+    try {
+      await restoreData(data);
+      await fetchAllData();
+      alert('Data has been successfully restored.');
+    } catch (error: any) {
+      console.error('Failed to restore data:', error);
+      alert(`An error occurred during restore: ${error.message}`);
     }
   };
 
@@ -335,7 +354,8 @@ const App: React.FC = () => {
                   truckHiringNotes={truckHiringNotes}
                   onPasswordChange={handleChangePassword}
                   onResetData={handleResetData}
-                  onLoadMockData={handleLoadMockData}
+                  onBackup={handleBackup}
+                  onRestore={handleRestore}
                   onBack={goBack}
                 />;
 
