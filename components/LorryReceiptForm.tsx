@@ -277,9 +277,6 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   const selectedConsignor = existingLr?.consignor || customers.find(c => c._id === lr.consignorId);
   const selectedConsignee = existingLr?.consignee || customers.find(c => c._id === lr.consigneeId);
 
-  const selectedConsignor = existingLr?.consignor || customers.find(c => c._id === lr.consignorId);
-  const selectedConsignee = existingLr?.consignee || customers.find(c => c._id === lr.consigneeId);
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'shipment':
