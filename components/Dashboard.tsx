@@ -205,6 +205,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
         <PaymentForm
           invoiceId={selectedInvoiceForPayment._id}
           customerId={selectedInvoiceForPayment.customerId}
+          grandTotal={selectedInvoiceForPayment.grandTotal}
           balanceDue={selectedInvoiceForPayment.balanceDue || selectedInvoiceForPayment.grandTotal}
           onSave={onSavePayment}
           onClose={() => setIsPaymentFormOpen(false)}
