@@ -290,7 +290,7 @@ const App: React.FC = () => {
         return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={() => setView({ name: 'DASHBOARD' })} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
       case 'VIEW_LR':
         const lrToView = lorryReceipts.find(lr => lr._id === view.id);
-        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} /> : <div>LR not found</div>;
+        return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} onBack={() => setView({ name: 'DASHBOARD' })} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
         const availableLrs = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status));
@@ -306,7 +306,7 @@ const App: React.FC = () => {
          return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={() => setView({ name: 'DASHBOARD' })} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} invoices={invoices} /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
         const invoiceToView = invoices.find(inv => inv._id === view.id);
-        return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} /> : <div>Invoice not found</div>;
+        return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} onBack={() => setView({ name: 'DASHBOARD' })} /> : <div>Invoice not found</div>;
       
       case 'SETTINGS':
         return <Settings 
@@ -348,7 +348,9 @@ const App: React.FC = () => {
             });
 
         return customer ? <LedgerPDF
-                    title={`Client-Ledger-${customer.name}`}
+                    title={`Client Ledger: ${customer.name}`}
+                    reportTitle={`Client Ledger for ${customer.name}`}
+                    onBack={() => setView({ name: 'LEDGER' })}
                     transactions={transactions}
                     companyInfo={companyInfo}
                     columns={[
@@ -370,7 +372,9 @@ const App: React.FC = () => {
         const companyTransactions = [...invoiceTxComp, ...thnTxComp].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return <LedgerPDF
-                    title="Company-Ledger"
+                    title="Company Ledger"
+                    reportTitle="Company Ledger"
+                    onBack={() => setView({ name: 'LEDGER' })}
                     transactions={companyTransactions}
                     companyInfo={companyInfo}
                     columns={[
@@ -392,7 +396,7 @@ const App: React.FC = () => {
 
       case 'VIEW_THN':
         const thnToView = truckHiringNotes.find(thn => thn._id === view.id);
-        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} /> : <div>THN not found</div>;
+        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} onBack={() => setView({ name: 'TRUCK_HIRING_NOTES' })} /> : <div>THN not found</div>;
 
       case 'DASHBOARD':
       default:

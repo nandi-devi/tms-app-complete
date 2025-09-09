@@ -174,6 +174,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isManualLr, setIsManualLr] = useState(false);
   const [customLrNumber, setCustomLrNumber] = useState('');
+  const [activeTab, setActiveTab] = useState('shipment');
   
   const [vehicleNumber, setVehicleNumber] = useState(() => {
     if (existingLr && existingLr.vehicle) {
@@ -276,6 +277,185 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
   const selectedConsignor = existingLr?.consignor || customers.find(c => c._id === lr.consignorId);
   const selectedConsignee = existingLr?.consignee || customers.find(c => c._id === lr.consigneeId);
 
+  const selectedConsignor = existingLr?.consignor || customers.find(c => c._id === lr.consignorId);
+  const selectedConsignee = existingLr?.consignee || customers.find(c => c._id === lr.consigneeId);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'shipment':
+        return (
+          <Card title="Shipment Details">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="md:col-span-1">
+                    <Input label="Date" type="date" name="date" value={lr.date || ''} onChange={handleChange} required error={errors.date} />
+                    {!existingLr && (
+                        <div className="flex items-center mt-2">
+                            <input type="checkbox" id="isManualLr" checked={isManualLr} onChange={e => setIsManualLr(e.target.checked)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                            <label htmlFor="isManualLr" className="ml-2 block text-sm text-gray-900">Set LR No. Manually</label>
+                        </div>
+                    )}
+                </div>
+                {isManualLr && !existingLr && <Input label="LR Number" type="number" value={customLrNumber} onChange={e => setCustomLrNumber(e.target.value)} required error={errors.lrNumber} />}
+                <Input
+                  label="Vehicle No."
+                  name="vehicleNumber"
+                  value={vehicleNumber}
+                  onChange={(e) => setVehicleNumber(e.target.value)}
+                  required
+                  error={errors.vehicleId}
+                  list="vehicles-list"
+                />
+                <Input label="From" name="from" value={lr.from || ''} onChange={handleChange} required error={errors.from} list="locations-list" />
+                <Input label="To" name="to" value={lr.to || ''} onChange={handleChange} required error={errors.to} list="locations-list" />
+            </div>
+          </Card>
+        );
+      case 'parties':
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card title="Consignor">
+                <div className="relative">
+                    <div className="flex items-center">
+                        <Select name="consignorId" label="Select Consignor" value={lr.consignorId || ''} onChange={handleChange} required error={errors.consignorId}>
+                            <option value="" disabled>Select Consignor</option>
+                            {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
+                        </Select>
+                        <NewCustomerSection onSaveCustomer={onSaveCustomer as any} onCustomerAdded={(c) => setLr(prev => ({...prev, consignorId: c._id}))}/>
+                    </div>
+                    {selectedConsignor && (
+                        <div className="text-sm p-3 bg-slate-50 rounded-lg mt-4 space-y-2">
+                            <div>
+                               <p className="font-bold text-base">{selectedConsignor.name}</p>
+                               {selectedConsignor.tradeName && <p className="text-gray-600 -mt-1 mb-1">({selectedConsignor.tradeName})</p>}
+                               <p className="whitespace-pre-line">{selectedConsignor.address}</p>
+                               <b>GST:</b> {selectedConsignor.gstin}
+                            </div>
+                            {(selectedConsignor.contactPerson || selectedConsignor.contactPhone || selectedConsignor.contactEmail) && (
+                                <div className="pt-2 border-t">
+                                    {selectedConsignor.contactPerson && <p><b>Contact:</b> {selectedConsignor.contactPerson}</p>}
+                                    {selectedConsignor.contactPhone && <p><b>Phone:</b> {selectedConsignor.contactPhone}</p>}
+                                    {selectedConsignor.contactEmail && <p><b>Email:</b> {selectedConsignor.contactEmail}</p>}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </Card>
+            <Card title="Consignee">
+               <div className="relative">
+                    <div className="flex items-center">
+                        <Select name="consigneeId" label="Select Consignee" value={lr.consigneeId || ''} onChange={handleChange} required error={errors.consigneeId}>
+                            <option value="" disabled>Select Consignee</option>
+                            {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
+                        </Select>
+                        <NewCustomerSection onSaveCustomer={onSaveCustomer as any} onCustomerAdded={(c) => setLr(prev => ({...prev, consigneeId: c._id}))}/>
+                    </div>
+                    {selectedConsignee && (
+                        <div className="text-sm p-3 bg-slate-50 rounded-lg mt-4 space-y-2">
+                            <div>
+                               <p className="font-bold text-base">{selectedConsignee.name}</p>
+                               {selectedConsignee.tradeName && <p className="text-gray-600 -mt-1 mb-1">({selectedConsignee.tradeName})</p>}
+                               <p className="whitespace-pre-line">{selectedConsignee.address}</p>
+                               <b>GST:</b> {selectedConsignee.gstin}
+                            </div>
+                            {(selectedConsignee.contactPerson || selectedConsignee.contactPhone || selectedConsignee.contactEmail) && (
+                                <div className="pt-2 border-t">
+                                    {selectedConsignee.contactPerson && <p><b>Contact:</b> {selectedConsignee.contactPerson}</p>}
+                                    {selectedConsignee.contactPhone && <p><b>Phone:</b> {selectedConsignee.contactPhone}</p>}
+                                    {selectedConsignee.contactEmail && <p><b>Email:</b> {selectedConsignee.contactEmail}</p>}
+                                </div>
+                            )}
+                        </div>
+                    )}
+               </div>
+            </Card>
+          </div>
+        );
+      case 'packages':
+        return (
+            <Card title="Packages">
+                {(lr.packages || []).map((pkg, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4 border-b pb-4 last:border-b-0 last:pb-0">
+                      <Input label="No. of Pkgs" type="number" name="count" value={pkg.count} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
+                      <Input label="Method of Packing" name="packingMethod" value={pkg.packingMethod} onChange={e => handlePackageChange(index, e)} />
+                      <Input label="Description" name="description" value={pkg.description} onChange={e => handlePackageChange(index, e)} wrapperClassName="md:col-span-3" />
+                      <Input label="Actual Weight" type="number" name="actualWeight" value={pkg.actualWeight} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
+                      <Input label="Charged Weight" type="number" name="chargedWeight" value={pkg.chargedWeight} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
+                  </div>
+                ))}
+                {errors.packages && <p className="mt-1 text-xs text-red-600">{errors.packages}</p>}
+            </Card>
+        );
+      case 'charges':
+        return (
+            <Card title="Charges">
+                <div className="space-y-4">
+                    <Input label="Freight" type="number" name="charges.freight" value={lr.charges?.freight || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                    <div className="flex items-center"><Input wrapperClassName="flex-grow" label="AOC" type="number" name="charges.aoc" value={lr.charges?.aoc || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Additional Operating Charges" /></div>
+                    <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Hamali" type="number" name="charges.hamali" value={lr.charges?.hamali || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Loading/Unloading Charges" /></div>
+                    <Input label="B. Ch." type="number" name="charges.bCh" value={lr.charges?.bCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                    <Input label="Tr. Ch." type="number" name="charges.trCh" value={lr.charges?.trCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                    <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Detention Ch." type="number" name="charges.detentionCh" value={lr.charges?.detentionCh || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Detention Charges" /></div>
+                </div>
+            </Card>
+        );
+      case 'other':
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card title="Other Details">
+                    <div className="space-y-4">
+                         <Input label="E-Way Bill No." name="eWayBillNo" value={lr.eWayBillNo || ''} onChange={handleChange} />
+                         <Input label="Value of Goods" type="number" name="valueGoods" value={lr.valueGoods || 0} onChange={handleChange} onFocus={e => e.target.select()} />
+                         <Input label="Invoice No." name="invoiceNo" value={lr.invoiceNo || ''} onChange={handleChange} />
+                         <Input label="Seal No." name="sealNo" value={lr.sealNo || ''} onChange={handleChange} />
+                         <div className="grid grid-cols-2 gap-4">
+                            <Input label="Reporting Date" type="date" name="reportingDate" value={lr.reportingDate || ''} onChange={handleChange} />
+                            <Input label="Delivery Date" type="date" name="deliveryDate" value={lr.deliveryDate || ''} onChange={handleChange} />
+                         </div>
+                         <Select label="GST Payable By" name="gstPayableBy" value={lr.gstPayableBy || GstPayableBy.CONSIGNOR} onChange={handleChange}>
+                            {Object.values(GstPayableBy).map(val => <option key={val} value={val}>{val}</option>)}
+                         </Select>
+                    </div>
+                </Card>
+                <Card title="Insurance">
+                    <div className="flex items-center mb-2">
+                        <input type="checkbox" id="hasInsured" name="insurance.hasInsured" checked={lr.insurance?.hasInsured || false} onChange={handleChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                        <label htmlFor="hasInsured" className="ml-3 block text-sm text-gray-900">The client has stated that they have insured the consignment.</label>
+                    </div>
+                    {lr.insurance?.hasInsured && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
+                            <Input label="Company" name="insurance.company" value={lr.insurance.company || ''} onChange={handleChange} />
+                            <Input label="Policy No." name="insurance.policyNo" value={lr.insurance.policyNo || ''} onChange={handleChange} />
+                            <Input label="Date" type="date" name="insurance.date" value={lr.insurance.date || ''} onChange={handleChange} />
+                            <Input label="Amount" type="number" name="insurance.amount" value={lr.insurance.amount || ''} onChange={handleChange} onFocus={e => e.target.select()} />
+                            <Input label="Risk" name="insurance.risk" value={lr.insurance.risk || ''} onChange={handleChange} />
+                        </div>
+                    )}
+                </Card>
+            </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const TabButton: React.FC<{ tabName: string; label: string }> = ({ tabName, label }) => {
+    const isActive = activeTab === tabName;
+    return (
+        <button
+            type="button"
+            onClick={() => setActiveTab(tabName)}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
+                isActive
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+        >
+            {label}
+        </button>
+    );
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <datalist id="locations-list">
@@ -293,146 +473,18 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         </div>
       </div>
       
-      <Card title="Shipment Details">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="md:col-span-1">
-                <Input label="Date" type="date" name="date" value={lr.date || ''} onChange={handleChange} required error={errors.date} />
-                {!existingLr && (
-                    <div className="flex items-center mt-2">
-                        <input type="checkbox" id="isManualLr" checked={isManualLr} onChange={e => setIsManualLr(e.target.checked)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                        <label htmlFor="isManualLr" className="ml-2 block text-sm text-gray-900">Set LR No. Manually</label>
-                    </div>
-                )}
-            </div>
-            {isManualLr && !existingLr && <Input label="LR Number" type="number" value={customLrNumber} onChange={e => setCustomLrNumber(e.target.value)} required error={errors.lrNumber} />}
-            <Input
-              label="Vehicle No."
-              name="vehicleNumber"
-              value={vehicleNumber}
-              onChange={(e) => setVehicleNumber(e.target.value)}
-              required
-              error={errors.vehicleId}
-              list="vehicles-list"
-            />
-            <Input label="From" name="from" value={lr.from || ''} onChange={handleChange} required error={errors.from} list="locations-list" />
-            <Input label="To" name="to" value={lr.to || ''} onChange={handleChange} required error={errors.to} list="locations-list" />
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Consignor">
-            <div className="relative">
-                <div className="flex items-center">
-                    <Select name="consignorId" label="Select Consignor" value={lr.consignorId || ''} onChange={handleChange} required error={errors.consignorId}>
-                        <option value="" disabled>Select Consignor</option>
-                        {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
-                    </Select>
-                    <NewCustomerSection onSaveCustomer={onSaveCustomer as any} onCustomerAdded={(c) => setLr(prev => ({...prev, consignorId: c._id}))}/>
-                </div>
-                {selectedConsignor && (
-                    <div className="text-sm p-3 bg-slate-50 rounded-lg mt-4 space-y-2">
-                        <div>
-                           <p className="font-bold text-base">{selectedConsignor.name}</p>
-                           {selectedConsignor.tradeName && <p className="text-gray-600 -mt-1 mb-1">({selectedConsignor.tradeName})</p>}
-                           <p className="whitespace-pre-line">{selectedConsignor.address}</p>
-                           <b>GST:</b> {selectedConsignor.gstin}
-                        </div>
-                        {(selectedConsignor.contactPerson || selectedConsignor.contactPhone || selectedConsignor.contactEmail) && (
-                            <div className="pt-2 border-t">
-                                {selectedConsignor.contactPerson && <p><b>Contact:</b> {selectedConsignor.contactPerson}</p>}
-                                {selectedConsignor.contactPhone && <p><b>Phone:</b> {selectedConsignor.contactPhone}</p>}
-                                {selectedConsignor.contactEmail && <p><b>Email:</b> {selectedConsignor.contactEmail}</p>}
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        </Card>
-        <Card title="Consignee">
-           <div className="relative">
-                <div className="flex items-center">
-                    <Select name="consigneeId" label="Select Consignee" value={lr.consigneeId || ''} onChange={handleChange} required error={errors.consigneeId}>
-                        <option value="" disabled>Select Consignee</option>
-                        {customers.map(c => <option key={c._id} value={c._id}>{c.tradeName || c.name}</option>)}
-                    </Select>
-                    <NewCustomerSection onSaveCustomer={onSaveCustomer as any} onCustomerAdded={(c) => setLr(prev => ({...prev, consigneeId: c._id}))}/>
-                </div>
-                {selectedConsignee && (
-                    <div className="text-sm p-3 bg-slate-50 rounded-lg mt-4 space-y-2">
-                        <div>
-                           <p className="font-bold text-base">{selectedConsignee.name}</p>
-                           {selectedConsignee.tradeName && <p className="text-gray-600 -mt-1 mb-1">({selectedConsignee.tradeName})</p>}
-                           <p className="whitespace-pre-line">{selectedConsignee.address}</p>
-                           <b>GST:</b> {selectedConsignee.gstin}
-                        </div>
-                        {(selectedConsignee.contactPerson || selectedConsignee.contactPhone || selectedConsignee.contactEmail) && (
-                            <div className="pt-2 border-t">
-                                {selectedConsignee.contactPerson && <p><b>Contact:</b> {selectedConsignee.contactPerson}</p>}
-                                {selectedConsignee.contactPhone && <p><b>Phone:</b> {selectedConsignee.contactPhone}</p>}
-                                {selectedConsignee.contactEmail && <p><b>Email:</b> {selectedConsignee.contactEmail}</p>}
-                            </div>
-                        )}
-                    </div>
-                )}
-           </div>
-        </Card>
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-2" aria-label="Tabs">
+            <TabButton tabName="shipment" label="Shipment" />
+            <TabButton tabName="parties" label="Parties" />
+            <TabButton tabName="packages" label="Packages" />
+            <TabButton tabName="charges" label="Charges" />
+            <TabButton tabName="other" label="Other Info" />
+        </nav>
       </div>
-      
-      <Card title="Insurance">
-        <div className="flex items-center mb-2">
-            <input type="checkbox" id="hasInsured" name="insurance.hasInsured" checked={lr.insurance?.hasInsured || false} onChange={handleChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-            <label htmlFor="hasInsured" className="ml-3 block text-sm text-gray-900">The client has stated that they have insured the consignment.</label>
-        </div>
-        {lr.insurance?.hasInsured && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
-                <Input label="Company" name="insurance.company" value={lr.insurance.company || ''} onChange={handleChange} />
-                <Input label="Policy No." name="insurance.policyNo" value={lr.insurance.policyNo || ''} onChange={handleChange} />
-                <Input label="Date" type="date" name="insurance.date" value={lr.insurance.date || ''} onChange={handleChange} />
-                <Input label="Amount" type="number" name="insurance.amount" value={lr.insurance.amount || ''} onChange={handleChange} onFocus={e => e.target.select()} />
-                <Input label="Risk" name="insurance.risk" value={lr.insurance.risk || ''} onChange={handleChange} />
-            </div>
-        )}
-      </Card>
 
-      <Card title="Packages">
-        {(lr.packages || []).map((pkg, index) => (
-          <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4 border-b pb-4 last:border-b-0 last:pb-0">
-              <Input label="No. of Pkgs" type="number" name="count" value={pkg.count} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
-              <Input label="Method of Packing" name="packingMethod" value={pkg.packingMethod} onChange={e => handlePackageChange(index, e)} />
-              <Input label="Description" name="description" value={pkg.description} onChange={e => handlePackageChange(index, e)} wrapperClassName="md:col-span-3" />
-              <Input label="Actual Weight" type="number" name="actualWeight" value={pkg.actualWeight} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
-              <Input label="Charged Weight" type="number" name="chargedWeight" value={pkg.chargedWeight} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
-          </div>
-        ))}
-        {errors.packages && <p className="mt-1 text-xs text-red-600">{errors.packages}</p>}
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card title="Other Details">
-            <div className="space-y-4">
-                 <Input label="E-Way Bill No." name="eWayBillNo" value={lr.eWayBillNo || ''} onChange={handleChange} />
-                 <Input label="Value of Goods" type="number" name="valueGoods" value={lr.valueGoods || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                 <Input label="Invoice No." name="invoiceNo" value={lr.invoiceNo || ''} onChange={handleChange} />
-                 <Input label="Seal No." name="sealNo" value={lr.sealNo || ''} onChange={handleChange} />
-                 <div className="grid grid-cols-2 gap-4">
-                    <Input label="Reporting Date" type="date" name="reportingDate" value={lr.reportingDate || ''} onChange={handleChange} />
-                    <Input label="Delivery Date" type="date" name="deliveryDate" value={lr.deliveryDate || ''} onChange={handleChange} />
-                 </div>
-                 <Select label="GST Payable By" name="gstPayableBy" value={lr.gstPayableBy || GstPayableBy.CONSIGNOR} onChange={handleChange}>
-                    {Object.values(GstPayableBy).map(val => <option key={val} value={val}>{val}</option>)}
-                 </Select>
-            </div>
-        </Card>
-        <Card title="Charges">
-            <div className="space-y-4">
-                <Input label="Freight" type="number" name="charges.freight" value={lr.charges?.freight || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="AOC" type="number" name="charges.aoc" value={lr.charges?.aoc || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Additional Operating Charges" /></div>
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Hamali" type="number" name="charges.hamali" value={lr.charges?.hamali || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Loading/Unloading Charges" /></div>
-                <Input label="B. Ch." type="number" name="charges.bCh" value={lr.charges?.bCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                <Input label="Tr. Ch." type="number" name="charges.trCh" value={lr.charges?.trCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Detention Ch." type="number" name="charges.detentionCh" value={lr.charges?.detentionCh || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Detention Charges" /></div>
-            </div>
-        </Card>
+      <div className="mt-4">
+        {renderTabContent()}
       </div>
       
       <div className="flex justify-end space-x-4 pt-4 border-t">

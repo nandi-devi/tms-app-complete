@@ -7,10 +7,13 @@ import { generatePdf } from '../services/pdfService';
 import { Button } from './ui/Button';
 import { numberToWords, formatDate } from '../services/utils';
 
+import { PdfViewWrapper } from './ui/PdfViewWrapper';
+
 interface InvoicePDFProps {
   invoice: Invoice;
   companyInfo: CompanyInfo;
   customers: Customer[];
+  onBack: () => void;
 }
 
 interface InvoiceViewProps {
@@ -196,17 +199,20 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
 };
 
 
-export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, customers }) => {
+export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, customers, onBack }) => {
     return (
-        <div>
-            <div className="mb-4 flex justify-end">
-                <Button onClick={() => generatePdf('invoice-pdf-container', `Invoice-${invoice.invoiceNumber}`)}>
+        <PdfViewWrapper
+            title={`Invoice #${invoice.invoiceNumber}`}
+            onBack={onBack}
+            actions={
+                <Button onClick={() => generatePdf('invoice-pdf-container', `Invoice-${invoice.invoiceNumber}.pdf`)}>
                     Download PDF
                 </Button>
-            </div>
-            <div id="invoice-pdf-container" className="flex justify-center bg-gray-300 p-8">
+            }
+        >
+            <div id="invoice-pdf-container">
                 <InvoiceView invoice={invoice} companyInfo={companyInfo} customers={customers} />
             </div>
-        </div>
+        </PdfViewWrapper>
     );
 }
