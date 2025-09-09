@@ -4,11 +4,14 @@ import { ClientLedger } from './ClientLedger';
 import { CompanyLedger } from './CompanyLedger';
 import { Card } from './ui/Card';
 
+import type { View } from '../App';
+
 interface LedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
   truckHiringNotes: TruckHiringNote[];
+  onViewChange: (view: View) => void;
 }
 
 type LedgerView = 'client' | 'company';

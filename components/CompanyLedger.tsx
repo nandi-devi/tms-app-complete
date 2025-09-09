@@ -6,14 +6,16 @@ import { Select } from './ui/Select';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { exportToCsv } from '../services/exportService';
+import type { View } from '../App';
 
 interface CompanyLedgerProps {
   invoices: Invoice[];
   payments: Payment[];
   truckHiringNotes: TruckHiringNote[];
+  onViewChange: (view: View) => void;
 }
 
-export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ invoices, payments, truckHiringNotes }) => {
+export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ invoices, payments, truckHiringNotes, onViewChange }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [transactionType, setTransactionType] = useState<'all' | 'income' | 'expense'>('all');
@@ -70,7 +72,8 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ invoices, payments
 
   return (
     <div className="space-y-6">
-       <div className="flex justify-end">
+       <div className="flex justify-end space-x-2">
+          <Button onClick={() => onViewChange({ name: 'VIEW_COMPANY_LEDGER_PDF' })} variant="secondary">Export to PDF</Button>
           <Button onClick={handleExport} variant="secondary">Export to CSV</Button>
       </div>
       <Card title="Filters">
