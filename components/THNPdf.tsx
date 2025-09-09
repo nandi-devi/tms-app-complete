@@ -3,12 +3,10 @@ import type { TruckHiringNote, CompanyInfo } from '../types';
 import { generatePdf } from '../services/pdfService';
 import { Button } from './ui/Button';
 import { formatDate, numberToWords } from '../services/utils';
-import { PdfViewWrapper } from './ui/PdfViewWrapper';
 
 interface THNPdfProps {
   truckHiringNote: TruckHiringNote;
   companyInfo: CompanyInfo;
-  onBack: () => void;
 }
 
 export const THNView: React.FC<THNPdfProps> = ({ truckHiringNote: thn, companyInfo }) => {
@@ -114,20 +112,17 @@ export const THNView: React.FC<THNPdfProps> = ({ truckHiringNote: thn, companyIn
     );
 };
 
-export const THNPdf: React.FC<THNPdfProps> = ({ truckHiringNote, companyInfo, onBack }) => {
+export const THNPdf: React.FC<THNPdfProps> = ({ truckHiringNote, companyInfo }) => {
     return (
-        <PdfViewWrapper
-            title={`Truck Hiring Note #${truckHiringNote.thnNumber}`}
-            onBack={onBack}
-            actions={
-                <Button onClick={() => generatePdf('thn-pdf-container', `THN-${truckHiringNote.thnNumber}.pdf`)}>
+        <div>
+            <div className="mb-4 flex justify-end">
+                <Button onClick={() => generatePdf('thn-pdf-container', `THN-${truckHiringNote.thnNumber}`)}>
                     Download PDF
                 </Button>
-            }
-        >
-            <div id="thn-pdf-container">
+            </div>
+            <div id="thn-pdf-container" className="flex justify-center bg-gray-300 p-8">
                 <THNView truckHiringNote={truckHiringNote} companyInfo={companyInfo} />
             </div>
-        </PdfViewWrapper>
+        </div>
     );
 }

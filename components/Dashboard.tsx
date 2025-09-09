@@ -10,7 +10,6 @@ import { InvoiceView } from './InvoicePDF';
 import { LorryReceiptView } from './LorryReceiptPDF';
 import { PaymentForm } from './PaymentForm';
 import { PaymentHistoryModal } from './PaymentHistoryModal';
-import { DashboardSummary } from './DashboardSummary';
 
 
 interface DashboardProps {
@@ -126,17 +125,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
 
-  const summaryData = useMemo(() => {
-    const totalOutstanding = invoices.reduce((sum, inv) => sum + (inv.balanceDue || 0), 0);
-    const lrsInTransit = lorryReceipts.filter(lr => lr.status === LorryReceiptStatus.IN_TRANSIT).length;
-    return {
-      totalInvoices: invoices.length,
-      totalLrs: lorryReceipts.length,
-      totalOutstanding,
-      lrsInTransit,
-    };
-  }, [invoices, lorryReceipts]);
-
 
   const handleOpenPaymentForm = (invoice: Invoice) => {
     setSelectedInvoiceForPayment(invoice);
@@ -213,12 +201,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, p
 
   return (
     <div className="space-y-8">
-      <DashboardSummary {...summaryData} />
       {isPaymentFormOpen && selectedInvoiceForPayment && (
         <PaymentForm
           invoiceId={selectedInvoiceForPayment._id}
           customerId={selectedInvoiceForPayment.customerId}
-          grandTotal={selectedInvoiceForPayment.grandTotal}
           balanceDue={selectedInvoiceForPayment.balanceDue || selectedInvoiceForPayment.grandTotal}
           onSave={onSavePayment}
           onClose={() => setIsPaymentFormOpen(false)}
