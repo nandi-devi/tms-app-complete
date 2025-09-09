@@ -11,12 +11,15 @@ import { getCurrentDate } from '../services/utils';
 interface PaymentFormProps {
     invoiceId: string;
     customerId: string;
+    grandTotal: number;
     balanceDue: number;
     onSave: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
     onClose: () => void;
 }
 
-export const PaymentForm: React.FC<PaymentFormProps> = ({ invoiceId, customerId, balanceDue, onSave, onClose }) => {
+export const PaymentForm: React.FC<PaymentFormProps> = ({ invoiceId, customerId, grandTotal, balanceDue, onSave, onClose }) => {
+    const totalPaid = grandTotal - balanceDue;
+
     const [payment, setPayment] = useState({
         invoiceId,
         customerId,
@@ -59,10 +62,24 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({ invoiceId, customerId,
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
-                    <Card title={`Add Payment`}>
+                    <Card title={`Add Payment for INV-${invoiceId.slice(-6)}`}>
+                        <div className="p-4 bg-slate-50 border rounded-lg mb-4 grid grid-cols-3 gap-x-4 text-center">
+                            <div>
+                                <p className="text-sm text-gray-600">Invoice Total</p>
+                                <p className="font-semibold text-lg">₹{grandTotal.toLocaleString('en-IN')}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">Total Paid</p>
+                                <p className="font-semibold text-lg text-green-600">₹{totalPaid.toLocaleString('en-IN')}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">Balance Due</p>
+                                <p className="font-semibold text-lg text-red-600">₹{balanceDue.toLocaleString('en-IN')}</p>
+                            </div>
+                        </div>
                         <div className="space-y-4">
                             <Input
-                                label="Amount (₹)"
+                                label="Amount to Pay (₹)"
                                 name="amount"
                                 type="number"
                                 value={payment.amount}
