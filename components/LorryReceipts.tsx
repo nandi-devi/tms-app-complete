@@ -27,6 +27,7 @@ interface LorryReceiptsTableFilters {
     endDate: string;
     selectedCustomerId: string;
     selectedStatus: LorryReceiptStatus[];
+    ids?: string[];
 }
 
 const statusColors: { [key in LorryReceiptStatus]: string } = {
@@ -137,11 +138,12 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
           lr.consignor?._id === selectedCustomerId ||
           lr.consignee?._id === selectedCustomerId;
         const matchesStatus = selectedStatus.length === 0 || selectedStatus.includes(lr.status);
+        const matchesId = !initialFilters?.ids || initialFilters.ids.includes(lr._id);
 
-        return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus;
+        return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus && matchesId;
       })
       .sort((a, b) => b.lrNumber - a.lrNumber); // Sort by new sequential ID
-  }, [lorryReceipts, searchTerm, startDate, endDate, selectedCustomerId, selectedStatus]);
+  }, [lorryReceipts, searchTerm, startDate, endDate, selectedCustomerId, selectedStatus, initialFilters]);
 
   return (
     <div className="space-y-8">
