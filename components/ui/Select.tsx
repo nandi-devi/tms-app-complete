@@ -19,7 +19,7 @@ export const Select: React.FC<SelectProps> = ({ label, id, error, wrapperClassNa
     <div className={`relative ${wrapperClassName}`}>
       <select
         id={selectId}
-        className={`peer block w-full rounded-lg shadow-sm appearance-none py-2 px-3 bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 ${error ? 'animate-shake' : ''}`}
+        className={`peer block w-full rounded-lg shadow-sm appearance-none py-2.5 px-3 bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 ${error ? 'animate-shake' : ''}`}
         {...props}
       >
         {children}

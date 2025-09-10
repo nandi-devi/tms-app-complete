@@ -26,7 +26,7 @@ interface LorryReceiptsTableFilters {
     startDate: string;
     endDate: string;
     selectedCustomerId: string;
-    selectedStatus: string;
+    selectedStatus: LorryReceiptStatus[];
 }
 
 const statusColors: { [key in LorryReceiptStatus]: string } = {
@@ -105,7 +105,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
   const [startDate, setStartDate] = useState(initialFilters?.startDate || '');
   const [endDate, setEndDate] = useState(initialFilters?.endDate || '');
   const [selectedCustomerId, setSelectedCustomerId] = useState(initialFilters?.selectedCustomerId || '');
-  const [selectedStatus, setSelectedStatus] = useState(initialFilters?.selectedStatus || '');
+  const [selectedStatus, setSelectedStatus] = useState<LorryReceiptStatus[]>(initialFilters?.selectedStatus || []);
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | null>(null);
 
   const filteredLrs = useMemo(() => {
@@ -136,7 +136,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
         const matchesCustomer = selectedCustomerId === '' ||
           lr.consignor?._id === selectedCustomerId ||
           lr.consignee?._id === selectedCustomerId;
-        const matchesStatus = selectedStatus === '' || lr.status === selectedStatus;
+        const matchesStatus = selectedStatus.length === 0 || selectedStatus.includes(lr.status);
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus;
       })
@@ -157,32 +157,34 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
             <h2 className="text-2xl font-bold text-gray-800">Lorry Receipts</h2>
             <Button onClick={onBack} variant="outline">Back to Dashboard</Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Input
             type="text"
             label="Search by LR No, Client, From, To..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            wrapperClassName="md:col-span-2 lg:col-span-2"
+            wrapperClassName="lg:col-span-3"
           />
           <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
           <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-          <Select
-            label="Client"
-            value={selectedCustomerId}
-            onChange={e => setSelectedCustomerId(e.target.value)}
-          >
-            <option value="">All Clients</option>
-            {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </Select>
-          <Select
-            label="LR Status"
-            value={selectedStatus}
-            onChange={e => setSelectedStatus(e.target.value)}
-          >
-            <option value="">All Statuses</option>
-            {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
-          </Select>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+           <Select
+              label="Client"
+              value={selectedCustomerId}
+              onChange={e => setSelectedCustomerId(e.target.value)}
+            >
+              <option value="">All Clients</option>
+              {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+            </Select>
+           <Select
+              label="LR Status"
+              value={selectedStatus.length > 0 ? selectedStatus[0] : ''}
+              onChange={e => setSelectedStatus(e.target.value ? [e.target.value as LorryReceiptStatus] : [])}
+            >
+              <option value="">All Statuses</option>
+              {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
+            </Select>
         </div>
       </Card>
 
