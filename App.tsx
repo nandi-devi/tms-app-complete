@@ -5,6 +5,8 @@ import { LorryReceiptForm } from './components/LorryReceiptForm';
 import { InvoiceForm } from './components/InvoiceForm';
 import { LorryReceiptPDF } from './components/LorryReceiptPDF';
 import { InvoicePDF } from './components/InvoicePDF';
+import { Invoices } from './components/Invoices';
+import { LorryReceipts } from './components/LorryReceipts';
 import { Settings } from './components/Settings';
 import { Ledger } from './components/Ledger';
 import { PendingPayments } from './components/PendingPayments';
@@ -27,8 +29,10 @@ import { getPayments, createPayment } from './services/paymentService';
 import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
 import { resetApplicationData, backupData, restoreData } from './services/dataService';
 
-export type View = 
+export type View =
   | { name: 'DASHBOARD' }
+  | { name: 'LORRY_RECEIPTS' }
+  | { name: 'INVOICES' }
   | { name: 'CREATE_LR' }
   | { name: 'EDIT_LR', id: string }
   | { name: 'VIEW_LR', id: string }
@@ -431,6 +435,30 @@ const App: React.FC = () => {
       case 'VIEW_THN':
         const thnToView = truckHiringNotes.find(thn => thn._id === currentView.id);
         return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} onBack={goBack} /> : <div>THN not found</div>;
+
+      case 'LORRY_RECEIPTS':
+        return <LorryReceipts
+                  lorryReceipts={lorryReceipts}
+                  customers={customers}
+                  vehicles={vehicles}
+                  companyInfo={companyInfo}
+                  onViewChange={navigateTo}
+                  onUpdateLrStatus={updateLrStatus}
+                  onDeleteLr={deleteLr}
+                  onBack={goBack}
+                />;
+
+      case 'INVOICES':
+        return <Invoices
+                  invoices={invoices}
+                  payments={payments}
+                  customers={customers}
+                  companyInfo={companyInfo}
+                  onViewChange={navigateTo}
+                  onDeleteInvoice={deleteInvoice}
+                  onSavePayment={savePayment}
+                  onBack={goBack}
+                />;
 
       case 'DASHBOARD':
       default:
