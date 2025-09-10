@@ -175,26 +175,24 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
             <h2 className="text-2xl font-bold text-gray-800">Invoices</h2>
             <Button onClick={onBack} variant="outline">Back to Dashboard</Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Input
             type="text"
             label="Search by Inv No, Client..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            wrapperClassName="lg:col-span-3"
+            wrapperClassName="md:col-span-2 lg:col-span-2"
           />
           <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
           <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-           <Select
-              label="Client"
-              value={selectedCustomerId}
-              onChange={e => setSelectedCustomerId(e.target.value)}
-            >
-              <option value="">All Clients</option>
-              {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-            </Select>
+          <Select
+            label="Client"
+            value={selectedCustomerId}
+            onChange={e => setSelectedCustomerId(e.target.value)}
+          >
+            <option value="">All Clients</option>
+            {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+          </Select>
         </div>
       </Card>
 
