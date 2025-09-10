@@ -53,9 +53,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
       return lrDate.getTime() === today.getTime();
     }).length;
 
-    const unbilledLrs = lorryReceipts.filter(lr =>
-      [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status)
-    ).length;
+    const invoicedLrIds = new Set(invoices.flatMap(inv => inv.lorryReceipts.map(lr => lr._id)));
+    const unbilledLrs = lorryReceipts.filter(lr => !invoicedLrIds.has(lr._id));
 
     const outstandingPayments = invoices.reduce((acc, inv) => {
         return acc + (inv.balanceDue || 0);
@@ -70,7 +69,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
 
     return {
       totalLrsToday,
-      unbilledLrs,
       outstandingPayments,
       totalFreightThisMonth,
       outstandingSupplierPayments,
@@ -89,11 +87,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
   const todayStr = today.toISOString().split('T')[0];
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
 
+  const unbilledLrIds = useMemo(() => {
+    const invoicedLrIds = new Set(invoices.flatMap(inv => inv.lorryReceipts.map(lr => lr._id)));
+    return lorryReceipts.filter(lr => !invoicedLrIds.has(lr._id)).map(lr => lr._id);
+    }, [lorryReceipts, invoices]);
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <KpiCard title="Total LRs Today" value={kpis.totalLrsToday} icon="🚚" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { startDate: todayStr, endDate: todayStr } })} />
-        <KpiCard title="Unbilled LRs" value={kpis.unbilledLrs} icon="📦" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { selectedStatus: [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED] } })} />
+        <KpiCard title="Unbilled LRs" value={unbilledLrIds.length} icon="📦" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { ids: unbilledLrIds } })} />
         <KpiCard title="Outstanding Payments" value={`₹${kpis.outstandingPayments.toLocaleString('en-IN')}`} icon="💰" onClick={() => onViewChange({ name: 'INVOICES', filters: { status: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIALLY_PAID] } })} />
         <KpiCard title="Total Freight This Month" value={`₹${kpis.totalFreightThisMonth.toLocaleString('en-IN')}`} icon="📊" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { startDate: firstDayOfMonth, endDate: todayStr } })} />
         <KpiCard title="Outstanding Supplier Payments" value={`₹${kpis.outstandingSupplierPayments.toLocaleString('en-IN')}`} icon="💳" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { showOnlyOutstanding: true } })} />
