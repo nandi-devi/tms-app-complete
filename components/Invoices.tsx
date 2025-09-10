@@ -20,6 +20,15 @@ interface InvoicesProps {
   onDeleteInvoice: (id: string) => void;
   onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>) => Promise<void>;
   onBack: () => void;
+  initialFilters?: Partial<Record<keyof InvoicesTableFilters, any>>;
+}
+
+interface InvoicesTableFilters {
+    searchTerm: string;
+    startDate: string;
+    endDate: string;
+    selectedCustomerId: string;
+    status: InvoiceStatus[];
 }
 
 const invoiceStatusColors: { [key in InvoiceStatus]: string } = {
@@ -93,11 +102,12 @@ const PreviewModal: React.FC<{
 };
 
 
-export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customers, companyInfo, onViewChange, onDeleteInvoice, onSavePayment, onBack }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customers, companyInfo, onViewChange, onDeleteInvoice, onSavePayment, onBack, initialFilters }) => {
+  const [searchTerm, setSearchTerm] = useState(initialFilters?.searchTerm || '');
+  const [startDate, setStartDate] = useState(initialFilters?.startDate || '');
+  const [endDate, setEndDate] = useState(initialFilters?.endDate || '');
+  const [selectedCustomerId, setSelectedCustomerId] = useState(initialFilters?.selectedCustomerId || '');
+  const [status, setStatus] = useState<InvoiceStatus[]>(initialFilters?.status || []);
   const [previewItem, setPreviewItem] = useState<{type: 'INVOICE', data: Invoice} | null>(null);
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
@@ -137,11 +147,12 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
         const matchesStartDate = !start || invDate >= start;
         const matchesEndDate = !end || invDate <= end;
         const matchesCustomer = selectedCustomerId === '' || inv.customer?._id === selectedCustomerId;
+        const matchesStatus = status.length === 0 || status.includes(inv.status);
 
-        return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer;
+        return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus;
       })
       .sort((a, b) => b.invoiceNumber - a.invoiceNumber); // Sort by new sequential ID
-  }, [invoices, searchTerm, startDate, endDate, selectedCustomerId]);
+  }, [invoices, searchTerm, startDate, endDate, selectedCustomerId, status]);
 
   return (
     <div className="space-y-8">

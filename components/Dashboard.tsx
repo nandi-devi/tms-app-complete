@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment } from '../types';
+import React, { useMemo } from 'react';
+import type { LorryReceipt, Invoice, Payment, TruckHiringNote } from '../types';
 import { LorryReceiptStatus, InvoiceStatus } from '../types';
 import type { View } from '../App';
 import { formatDate } from '../services/utils';
@@ -10,9 +10,7 @@ interface DashboardProps {
   lorryReceipts: LorryReceipt[];
   invoices: Invoice[];
   payments: Payment[];
-  customers: Customer[];
-  vehicles: Vehicle[];
-  companyInfo: CompanyInfo;
+  truckHiringNotes: TruckHiringNote[];
   onViewChange: (view: View) => void;
   onUpdateLrStatus: (id: string, status: LorryReceiptStatus) => void;
   onDeleteLr: (id: string) => void;
@@ -34,7 +32,51 @@ const invoiceStatusColors: { [key in InvoiceStatus]: string } = {
     [InvoiceStatus.PAID]: 'bg-green-100 text-green-800',
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, onViewChange, onUpdateLrStatus, onDeleteLr, onDeleteInvoice }) => {
+const KpiCard: React.FC<{ title: string; value: string | number; icon: string, onClick?: () => void }> = ({ title, value, icon, onClick }) => (
+    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 cursor-pointer" onClick={onClick}>
+    <div className="flex items-center justify-between">
+      <p className="text-sm font-medium text-gray-500">{title}</p>
+      <span className="text-2xl">{icon}</span>
+    </div>
+    <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+  </Card>
+);
+
+export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, truckHiringNotes, onViewChange, onUpdateLrStatus, onDeleteLr, onDeleteInvoice }) => {
+  const kpis = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const totalLrsToday = lorryReceipts.filter(lr => {
+      const lrDate = new Date(lr.date);
+      lrDate.setHours(0, 0, 0, 0);
+      return lrDate.getTime() === today.getTime();
+    }).length;
+
+    const unbilledLrs = lorryReceipts.filter(lr =>
+      [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status)
+    ).length;
+
+    const outstandingPayments = invoices.reduce((acc, inv) => {
+        return acc + (inv.balanceDue || 0);
+    }, 0);
+
+    const totalFreightThisMonth = truckHiringNotes.filter(thn => {
+        const thnDate = new Date(thn.date);
+        return thnDate.getMonth() === today.getMonth() && thnDate.getFullYear() === today.getFullYear();
+    }).reduce((acc, thn) => acc + thn.freight, 0);
+
+    const outstandingSupplierPayments = truckHiringNotes.reduce((acc, thn) => acc + thn.balancePayable, 0);
+
+    return {
+      totalLrsToday,
+      unbilledLrs,
+      outstandingPayments,
+      totalFreightThisMonth,
+      outstandingSupplierPayments,
+    };
+  }, [lorryReceipts, invoices, truckHiringNotes]);
+
   const recentLrs = useMemo(() => {
     return lorryReceipts.sort((a, b) => b.lrNumber - a.lrNumber).slice(0, 5);
   }, [lorryReceipts]);
@@ -43,8 +85,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, o
     return invoices.sort((a, b) => b.invoiceNumber - a.invoiceNumber).slice(0, 5);
   }, [invoices]);
 
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+
   return (
     <div className="space-y-8">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <KpiCard title="Total LRs Today" value={kpis.totalLrsToday} icon="🚚" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { startDate: todayStr, endDate: todayStr } })} />
+        <KpiCard title="Unbilled LRs" value={kpis.unbilledLrs} icon="📦" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { selectedStatus: [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED] } })} />
+        <KpiCard title="Outstanding Payments" value={`₹${kpis.outstandingPayments.toLocaleString('en-IN')}`} icon="💰" onClick={() => onViewChange({ name: 'INVOICES', filters: { status: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIALLY_PAID] } })} />
+        <KpiCard title="Total Freight This Month" value={`₹${kpis.totalFreightThisMonth.toLocaleString('en-IN')}`} icon="📊" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { startDate: firstDayOfMonth, endDate: todayStr } })} />
+        <KpiCard title="Outstanding Supplier Payments" value={`₹${kpis.outstandingSupplierPayments.toLocaleString('en-IN')}`} icon="💳" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { showOnlyOutstanding: true } })} />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card
           title="Lorry Receipts"
