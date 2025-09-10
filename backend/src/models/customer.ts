@@ -8,7 +8,7 @@ const CustomerSchema = new Schema({
   tradeName: { type: String },
   address: { type: String, required: true },
   state: { type: String, required: true },
-  gstin: { type: String },
+  gstin: { type: String, unique: true, sparse: true },
   contactPerson: { type: String },
   contactPhone: { type: String },
   contactEmail: { type: String },

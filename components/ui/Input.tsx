@@ -28,7 +28,7 @@ export const Input: React.FC<InputProps> = ({ label, id, type = 'text', error, w
       <input
         id={inputId}
         type={type}
-        className={`peer block w-full rounded-lg shadow-sm appearance-none py-2.5 pr-3 ${iconPadding} bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 ${error ? 'animate-shake' : ''}`}
+        className={`peer block w-full rounded-lg shadow-sm appearance-none py-2 pr-3 ${iconPadding} bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 ${error ? 'animate-shake' : ''}`}
         placeholder=" " 
         {...props}
       />

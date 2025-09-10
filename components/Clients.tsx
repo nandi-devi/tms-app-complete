@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Customer } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -142,6 +142,8 @@ const ClientFormModal: React.FC<{
 
 export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, onBack }) => {
     const [editingClient, setEditingClient] = useState<Partial<Customer> | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     const handleAddNew = () => {
         setEditingClient({ name: '', tradeName: '', address: '', state: '', gstin: '', contactPerson: '', contactPhone: '', contactEmail: '' });
@@ -155,6 +157,31 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, o
         setEditingClient(null);
     };
 
+    const toggleSortOrder = () => {
+        setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    };
+
+    const getTimestampFromObjectId = (objectId: string) => {
+        return new Date(parseInt(objectId.substring(0, 8), 16) * 1000);
+    };
+
+    const filteredAndSortedCustomers = useMemo(() => {
+        const filtered = customers.filter(client =>
+            client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (client.gstin && client.gstin.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+
+        return filtered.sort((a, b) => {
+            const dateA = getTimestampFromObjectId(a._id);
+            const dateB = getTimestampFromObjectId(b._id);
+            if (sortOrder === 'asc') {
+                return dateA.getTime() - dateB.getTime();
+            }
+            return dateB.getTime() - dateA.getTime();
+        });
+    }, [customers, searchTerm, sortOrder]);
+
     return (
         <div className="space-y-6">
             {editingClient && <ClientFormModal client={editingClient} onSave={onSave} onClose={handleCloseModal} />}
@@ -164,6 +191,18 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, o
                   <Button onClick={handleAddNew} className="mr-4">Add New Client</Button>
                   <Button variant="secondary" onClick={onBack}>Back</Button>
                 </div>
+            </div>
+             <div className="flex justify-between items-center">
+                <div className="w-1/3">
+                    <Input
+                        placeholder="Search by name, trade name, or GSTIN"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <Button variant="outline" onClick={toggleSortOrder}>
+                    Sort by Date ({sortOrder === 'asc' ? 'Oldest First' : 'Newest First'})
+                </Button>
             </div>
             <Card>
                 <div className="overflow-x-auto">
@@ -178,7 +217,7 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, o
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {customers.map(client => (
+                            {filteredAndSortedCustomers.map(client => (
                                 <tr key={client._id} className="hover:bg-slate-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm align-top">
                                         <div className="font-medium text-gray-900">{client.name}</div>
@@ -200,9 +239,11 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, o
                                     </td>
                                 </tr>
                             ))}
-                             {customers.length === 0 && (
+                             {filteredAndSortedCustomers.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-8 text-gray-500">No clients found. Click 'Add New Client' to get started.</td>
+                                    <td colSpan={5} className="text-center py-8 text-gray-500">
+                                        {searchTerm ? 'No clients match your search.' : "No clients found. Click 'Add New Client' to get started."}
+                                    </td>
                                 </tr>
                             )}
                         </tbody>

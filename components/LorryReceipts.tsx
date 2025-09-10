@@ -157,34 +157,32 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
             <h2 className="text-2xl font-bold text-gray-800">Lorry Receipts</h2>
             <Button onClick={onBack} variant="outline">Back to Dashboard</Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <Input
             type="text"
             label="Search by LR No, Client, From, To..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            wrapperClassName="lg:col-span-3"
+            wrapperClassName="md:col-span-2 lg:col-span-2"
           />
           <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
           <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-           <Select
-              label="Client"
-              value={selectedCustomerId}
-              onChange={e => setSelectedCustomerId(e.target.value)}
-            >
-              <option value="">All Clients</option>
-              {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-            </Select>
-           <Select
-              label="LR Status"
-              value={selectedStatus}
-              onChange={e => setSelectedStatus(e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
-            </Select>
+          <Select
+            label="Client"
+            value={selectedCustomerId}
+            onChange={e => setSelectedCustomerId(e.target.value)}
+          >
+            <option value="">All Clients</option>
+            {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+          </Select>
+          <Select
+            label="LR Status"
+            value={selectedStatus}
+            onChange={e => setSelectedStatus(e.target.value)}
+          >
+            <option value="">All Statuses</option>
+            {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
+          </Select>
         </div>
       </Card>
 

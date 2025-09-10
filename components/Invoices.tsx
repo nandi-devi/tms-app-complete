@@ -204,14 +204,6 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
             <option value="">All Clients</option>
             {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </Select>
-          <Select
-              label="Status"
-              value={status.length > 0 ? status[0] : ''}
-              onChange={e => setStatus(e.target.value ? [e.target.value as InvoiceStatus] : [])}
-          >
-              <option value="">All Statuses</option>
-              {Object.values(InvoiceStatus).map(s => <option key={s} value={s}>{s}</option>)}
-          </Select>
         </div>
       </Card>
 
