@@ -119,14 +119,14 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                 </div>
             </div>
 
-            <Card>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card title="Filters">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Input
                         type="text"
                         label="Search by THN No, Owner, Truck No, etc..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        wrapperClassName="md:col-span-2 lg:col-span-2"
+                        wrapperClassName="md:col-span-3"
                     />
                     <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                     <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />

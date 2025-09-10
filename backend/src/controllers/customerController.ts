@@ -35,35 +35,21 @@ export const getCustomerById = async (req: Request, res: Response) => {
 // @route   POST /api/customers
 // @access  Public
 export const createCustomer = async (req: Request, res: Response) => {
-  const { name, tradeName, address, state, gstin, contactPerson, contactPhone, contactEmail } = req.body;
+  const customer = new Customer({
+    name: req.body.name,
+    tradeName: req.body.tradeName,
+    address: req.body.address,
+    state: req.body.state,
+    gstin: req.body.gstin,
+    contactPerson: req.body.contactPerson,
+    contactPhone: req.body.contactPhone,
+    contactEmail: req.body.contactEmail,
+  });
 
   try {
-    // If gstin is provided, check for duplicates
-    if (gstin) {
-      const existingCustomer = await Customer.findOne({ gstin });
-      if (existingCustomer) {
-        return res.status(409).json({ message: `A client with GSTIN ${gstin} already exists.` });
-      }
-    }
-
-    const customer = new Customer({
-      name,
-      tradeName,
-      address,
-      state,
-      gstin,
-      contactPerson,
-      contactPhone,
-      contactEmail,
-    });
-
     const newCustomer = await customer.save();
     res.status(201).json(newCustomer);
   } catch (err: any) {
-    // Handle potential duplicate key error from MongoDB if two requests come at the same time
-    if (err.code === 11000 && err.keyPattern?.gstin) {
-        return res.status(409).json({ message: `A client with GSTIN ${req.body.gstin} already exists.` });
-    }
     res.status(400).json({ message: err.message });
   }
 };
