@@ -18,6 +18,15 @@ interface LorryReceiptsProps {
   onUpdateLrStatus: (id: string, status: LorryReceiptStatus) => void;
   onDeleteLr: (id: string) => void;
   onBack: () => void;
+  initialFilters?: Partial<Record<keyof LorryReceiptsTableFilters, any>>;
+}
+
+interface LorryReceiptsTableFilters {
+    searchTerm: string;
+    startDate: string;
+    endDate: string;
+    selectedCustomerId: string;
+    selectedStatus: string;
 }
 
 const statusColors: { [key in LorryReceiptStatus]: string } = {
@@ -91,12 +100,12 @@ const PreviewModal: React.FC<{
 };
 
 
-export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, customers, vehicles, companyInfo, onViewChange, onUpdateLrStatus, onDeleteLr, onBack }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, customers, companyInfo, onViewChange, onUpdateLrStatus, onDeleteLr, onBack, initialFilters }) => {
+  const [searchTerm, setSearchTerm] = useState(initialFilters?.searchTerm || '');
+  const [startDate, setStartDate] = useState(initialFilters?.startDate || '');
+  const [endDate, setEndDate] = useState(initialFilters?.endDate || '');
+  const [selectedCustomerId, setSelectedCustomerId] = useState(initialFilters?.selectedCustomerId || '');
+  const [selectedStatus, setSelectedStatus] = useState(initialFilters?.selectedStatus || '');
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | null>(null);
 
   const filteredLrs = useMemo(() => {

@@ -31,8 +31,8 @@ import { resetApplicationData, backupData, restoreData } from './services/dataSe
 
 export type View =
   | { name: 'DASHBOARD' }
-  | { name: 'LORRY_RECEIPTS' }
-  | { name: 'INVOICES' }
+  | { name: 'LORRY_RECEIPTS', filters?: any }
+  | { name: 'INVOICES', filters?: any }
   | { name: 'CREATE_LR' }
   | { name: 'EDIT_LR', id: string }
   | { name: 'VIEW_LR', id: string }
@@ -44,7 +44,7 @@ export type View =
   | { name: 'CLIENTS' }
   | { name: 'LEDGER' }
   | { name: 'PENDING_PAYMENTS' }
-  | { name: 'TRUCK_HIRING_NOTES' }
+  | { name: 'TRUCK_HIRING_NOTES', filters?: any }
   | { name: 'VIEW_THN', id: string }
   | { name: 'VIEW_CLIENT_LEDGER_PDF', customerId: string }
   | { name: 'VIEW_COMPANY_LEDGER_PDF' };
@@ -430,7 +430,7 @@ const App: React.FC = () => {
         return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} onBack={goBack} />;
 
       case 'TRUCK_HIRING_NOTES':
-        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={navigateTo} onBack={goBack} />;
+        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={navigateTo} onBack={goBack} initialFilters={currentView.filters} />;
 
       case 'VIEW_THN':
         const thnToView = truckHiringNotes.find(thn => thn._id === currentView.id);
@@ -446,6 +446,7 @@ const App: React.FC = () => {
                   onUpdateLrStatus={updateLrStatus}
                   onDeleteLr={deleteLr}
                   onBack={goBack}
+                  initialFilters={currentView.filters}
                 />;
 
       case 'INVOICES':
@@ -458,6 +459,7 @@ const App: React.FC = () => {
                   onDeleteInvoice={deleteInvoice}
                   onSavePayment={savePayment}
                   onBack={goBack}
+                  initialFilters={currentView.filters}
                 />;
 
       case 'DASHBOARD':
@@ -468,6 +470,7 @@ const App: React.FC = () => {
                  payments={payments}
                  customers={customers}
                  vehicles={vehicles}
+                 truckHiringNotes={truckHiringNotes}
                  companyInfo={companyInfo}
                  onViewChange={navigateTo}
                  onUpdateLrStatus={updateLrStatus}

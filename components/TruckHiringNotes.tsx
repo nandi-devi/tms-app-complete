@@ -16,9 +16,17 @@ interface TruckHiringNotesProps {
     onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => Promise<void>;
     onViewChange: (view: View) => void;
     onBack: () => void;
+    initialFilters?: Partial<Record<keyof THNTableFilters, any>>;
 }
 
-export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment, onViewChange, onBack }) => {
+interface THNTableFilters {
+    searchTerm: string;
+    startDate: string;
+    endDate: string;
+    showOnlyOutstanding: boolean;
+}
+
+export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment, onViewChange, onBack, initialFilters }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<TruckHiringNote | undefined>(undefined);
     const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
@@ -26,9 +34,10 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [selectedNoteForHistory, setSelectedNoteForHistory] = useState<TruckHiringNote | null>(null);
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [searchTerm, setSearchTerm] = useState(initialFilters?.searchTerm || '');
+    const [startDate, setStartDate] = useState(initialFilters?.startDate || '');
+    const [endDate, setEndDate] = useState(initialFilters?.endDate || '');
+    const [showOnlyOutstanding, setShowOnlyOutstanding] = useState(initialFilters?.showOnlyOutstanding || false);
 
     const filteredNotes = useMemo(() => {
         return notes
@@ -47,11 +56,12 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
 
                 const matchesStartDate = !start || noteDate >= start;
                 const matchesEndDate = !end || noteDate <= end;
+                const matchesOutstanding = !showOnlyOutstanding || note.balancePayable > 0;
 
-                return matchesSearch && matchesStartDate && matchesEndDate;
+                return matchesSearch && matchesStartDate && matchesEndDate && matchesOutstanding;
             })
             .sort((a, b) => b.thnNumber - a.thnNumber);
-    }, [notes, searchTerm, startDate, endDate]);
+    }, [notes, searchTerm, startDate, endDate, showOnlyOutstanding]);
 
     const handleSave = async (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => {
         await onSave(note);
@@ -120,6 +130,18 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                     />
                     <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                     <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                    <div className="flex items-center pt-6">
+                        <input
+                            id="outstanding-checkbox"
+                            type="checkbox"
+                            checked={showOnlyOutstanding}
+                            onChange={(e) => setShowOnlyOutstanding(e.target.checked)}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="outstanding-checkbox" className="ml-2 block text-sm text-gray-900">
+                            Show Only Outstanding
+                        </label>
+                    </div>
                 </div>
             </Card>
 
