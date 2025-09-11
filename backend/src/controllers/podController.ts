@@ -8,7 +8,8 @@ import { LorryReceiptStatus } from '../types';
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const lrId = req.params.id;
-    const dest = path.join(process.cwd(), 'uploads', 'pod', lrId);
+    const uploadsRoot = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+    const dest = path.join(uploadsRoot, 'pod', lrId);
     fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);
   },

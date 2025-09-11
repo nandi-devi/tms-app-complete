@@ -9,6 +9,7 @@ import { Select } from './ui/Select';
 import { Button } from './ui/Button';
 import { LorryReceiptView } from './LorryReceiptPDF';
 import { uploadPod } from '../services/lorryReceiptService';
+import { API_BASE_URL } from '../constants';
 
 interface LorryReceiptsProps {
   lorryReceipts: LorryReceipt[];
@@ -211,11 +212,15 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
                   <div>
                     <span className="font-semibold">Photos:</span>
                     <div className="mt-2 grid grid-cols-3 gap-2">
-                      {viewPodFor.delivery.photos.map((url, idx) => (
-                        <a key={idx} href={url} target="_blank" rel="noreferrer">
-                          <img src={url} alt={`POD ${idx+1}`} className="w-full h-24 object-cover rounded border" />
+                      {viewPodFor.delivery.photos.map((url, idx) => {
+                        const apiBase = API_BASE_URL.replace(/\/?api\/?$/, '');
+                        const absoluteUrl = url.startsWith('http') ? url : `${apiBase}${url}`;
+                        return (
+                        <a key={idx} href={absoluteUrl} target="_blank" rel="noreferrer">
+                          <img src={absoluteUrl} alt={`POD ${idx+1}`} className="w-full h-24 object-cover rounded border" />
                         </a>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

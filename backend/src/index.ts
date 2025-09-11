@@ -32,9 +32,10 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
-// Static serving for uploaded POD images
+// Static serving for uploaded POD images (supports persistent disk via UPLOADS_DIR)
 import path from 'path';
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsDir));
 
 // Routes
 app.get('/', (req, res) => {
