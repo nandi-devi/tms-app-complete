@@ -38,7 +38,7 @@ const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'
 app.use('/uploads', express.static(uploadsDir));
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/', (req: express.Request, res: express.Response) => {
   res.send('API is running...');
 });
 

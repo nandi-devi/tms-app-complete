@@ -6,14 +6,14 @@ import LorryReceipt from '../models/lorryReceipt';
 import { LorryReceiptStatus } from '../types';
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
     const lrId = req.params.id;
     const uploadsRoot = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
     const dest = path.join(uploadsRoot, 'pod', lrId);
     fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);
   },
-  filename: (req, file, cb) => {
+  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const ts = Date.now();
     const ext = path.extname(file.originalname || '') || '.jpg';
     cb(null, `${ts}-${Math.round(Math.random()*1e6)}${ext}`);
