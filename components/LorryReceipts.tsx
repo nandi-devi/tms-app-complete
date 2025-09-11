@@ -8,6 +8,7 @@ import { Card } from './ui/Card';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
 import { LorryReceiptView } from './LorryReceiptPDF';
+import { uploadPod } from '../services/lorryReceiptService';
 
 interface LorryReceiptsProps {
   lorryReceipts: LorryReceipt[];
@@ -108,6 +109,12 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
   const [selectedCustomerId, setSelectedCustomerId] = useState(initialFilters?.selectedCustomerId || '');
   const [selectedStatus, setSelectedStatus] = useState<LorryReceiptStatus[]>(initialFilters?.selectedStatus || []);
   const [previewItem, setPreviewItem] = useState<{type: 'LR', data: LorryReceipt} | null>(null);
+  const [podFor, setPodFor] = useState<LorryReceipt | null>(null);
+  const [podReceiverName, setPodReceiverName] = useState('');
+  const [podRemarks, setPodRemarks] = useState('');
+  const [podFiles, setPodFiles] = useState<File[]>([]);
+  const [isSubmittingPod, setIsSubmittingPod] = useState(false);
+  const [viewPodFor, setViewPodFor] = useState<LorryReceipt | null>(null);
 
   const filteredLrs = useMemo(() => {
     return lorryReceipts
@@ -147,6 +154,79 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
 
   return (
     <div className="space-y-8">
+      {podFor && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4" onClick={() => setPodFor(null)}>
+          <div className="w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <Card title={`Record POD for LR #${podFor.lrNumber}`}>
+              <div className="space-y-4">
+                <Input label="Receiver Name" value={podReceiverName} onChange={e => setPodReceiverName(e.target.value)} />
+                <Textarea label="Remarks" value={podRemarks} onChange={e => setPodRemarks(e.target.value)} rows={3} />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Photos (up to 4)</label>
+                  <input type="file" accept="image/*" multiple onChange={e => setPodFiles(Array.from(e.target.files || []).slice(0,4))} />
+                </div>
+                <div className="flex justify-end space-x-2 pt-2 border-t">
+                  <Button variant="secondary" onClick={() => setPodFor(null)} disabled={isSubmittingPod}>Cancel</Button>
+                  <Button onClick={async () => {
+                    if (!podReceiverName.trim()) { alert('Receiver name is required'); return; }
+                    setIsSubmittingPod(true);
+                    try {
+                      await uploadPod(podFor._id, { receiverName: podReceiverName.trim(), remarks: podRemarks.trim(), photos: podFiles });
+                      setPodFor(null);
+                      // Soft refresh: just hint the user to refresh or navigate
+                      window.location.reload();
+                    } catch (err: any) {
+                      alert(err.message || 'Failed to submit POD');
+                    } finally {
+                      setIsSubmittingPod(false);
+                    }
+                  }}>{isSubmittingPod ? 'Saving...' : 'Save POD'}</Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {viewPodFor && viewPodFor.delivery && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4" onClick={() => setViewPodFor(null)}>
+          <div className="w-full max-w-xl" onClick={e => e.stopPropagation()}>
+            <Card title={`POD Details for LR #${viewPodFor.lrNumber}`}>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div><span className="font-semibold">Delivered At:</span> {viewPodFor.delivery.deliveredAt ? new Date(viewPodFor.delivery.deliveredAt).toLocaleString() : '-'}</div>
+                  <div><span className="font-semibold">Receiver:</span> {viewPodFor.delivery.receiverName || '-'}</div>
+                  {viewPodFor.delivery.receiverPhone && (<div><span className="font-semibold">Phone:</span> {viewPodFor.delivery.receiverPhone}</div>)}
+                  {(viewPodFor.delivery.latitude !== undefined && viewPodFor.delivery.longitude !== undefined) && (
+                    <div className="col-span-2"><span className="font-semibold">Location:</span> {viewPodFor.delivery.latitude}, {viewPodFor.delivery.longitude}</div>
+                  )}
+                </div>
+                {viewPodFor.delivery.remarks && (
+                  <div>
+                    <span className="font-semibold">Remarks:</span>
+                    <p className="text-gray-700 mt-1 whitespace-pre-line">{viewPodFor.delivery.remarks}</p>
+                  </div>
+                )}
+                {Array.isArray(viewPodFor.delivery.photos) && viewPodFor.delivery.photos.length > 0 && (
+                  <div>
+                    <span className="font-semibold">Photos:</span>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      {viewPodFor.delivery.photos.map((url, idx) => (
+                        <a key={idx} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt={`POD ${idx+1}`} className="w-full h-24 object-cover rounded border" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end pt-2 border-t">
+                  <Button variant="secondary" onClick={() => setViewPodFor(null)}>Close</Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
        {previewItem && (
         <PreviewModal
           item={previewItem}
@@ -157,8 +237,12 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
       <Card>
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-800">Lorry Receipts</h2>
-            <Button onClick={onBack} variant="outline">Back to Dashboard</Button>
+            <div className="space-x-2">
+              <Button onClick={() => onViewChange({ name: 'CREATE_LR' })}>Create New Lorry Receipt</Button>
+              <Button onClick={onBack} variant="secondary">Back to Dashboard</Button>
+            </div>
         </div>
+        <div className="sticky top-[72px] z-10 -mx-6 px-6 py-3 bg-white/95 backdrop-blur border-b">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Input
             type="text"
@@ -187,6 +271,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
               <option value="">All Statuses</option>
               {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
             </Select>
+        </div>
         </div>
       </Card>
 
@@ -231,7 +316,13 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
                         <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'CREATE_INVOICE_FROM_LR', lrId: lr._id }); }} className="text-blue-600 hover:text-blue-900 transition-colors">Create Invoice</button>
                     )}
                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_LR', id: lr._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
+                    {lr.delivery && (
+                      <button onClick={(e) => { e.stopPropagation(); setViewPodFor(lr); }} className="text-amber-700 hover:text-amber-900 transition-colors">View POD</button>
+                    )}
                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'EDIT_LR', id: lr._id }); }} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
+                    {![LorryReceiptStatus.PAID].includes(lr.status) && (
+                      <button onClick={(e) => { e.stopPropagation(); setPodFor(lr); setPodReceiverName(''); setPodRemarks(''); setPodFiles([]); }} className="text-emerald-700 hover:text-emerald-900 transition-colors">Record POD</button>
+                    )}
                     <button onClick={(e) => { e.stopPropagation(); onDeleteLr(lr._id); }} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
                   </td>
                 </tr>

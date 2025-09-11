@@ -53,6 +53,11 @@ const InvoiceSchema = new Schema({
   toObject: { virtuals: true }
 });
 
+// Indexes for common queries
+InvoiceSchema.index({ customer: 1, date: -1 });
+InvoiceSchema.index({ status: 1, date: -1 });
+InvoiceSchema.index({ invoiceNumber: -1 });
+
 // Virtual for total paid amount
 InvoiceSchema.virtual('paidAmount').get(function(this: IInvoice) {
   // Ensure payments are populated and it's an array of documents, not just ObjectIDs

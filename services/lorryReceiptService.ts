@@ -48,3 +48,24 @@ export const deleteLorryReceipt = async (id: string): Promise<void> => {
         throw new Error('Failed to delete lorry receipt');
     }
 };
+
+export const uploadPod = async (id: string, data: { receiverName: string; receiverPhone?: string; remarks?: string; photos?: File[]; latitude?: number; longitude?: number; recordedBy?: string; }): Promise<LorryReceipt> => {
+    const form = new FormData();
+    form.append('receiverName', data.receiverName || '');
+    if (data.receiverPhone) form.append('receiverPhone', data.receiverPhone);
+    if (data.remarks) form.append('remarks', data.remarks);
+    if (typeof data.latitude === 'number') form.append('latitude', String(data.latitude));
+    if (typeof data.longitude === 'number') form.append('longitude', String(data.longitude));
+    if (data.recordedBy) form.append('recordedBy', data.recordedBy);
+    (data.photos || []).forEach(f => form.append('photos', f));
+
+    const response = await fetch(`${API_BASE_URL}/lorryreceipts/${id}/delivery`, {
+        method: 'POST',
+        body: form,
+    });
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to upload POD: ${text}`);
+    }
+    return response.json();
+};

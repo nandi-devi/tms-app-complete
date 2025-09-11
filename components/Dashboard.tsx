@@ -69,9 +69,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
 
     return {
       totalLrsToday,
+      totalLrs: lorryReceipts.length,
+      totalInvoices: invoices.length,
       outstandingPayments,
       totalFreightThisMonth,
       outstandingSupplierPayments,
+      unbilledCount: unbilledLrs.length,
     };
   }, [lorryReceipts, invoices, truckHiringNotes]);
 
@@ -94,30 +97,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard title="Total Lorry Receipts" value={kpis.totalLrs} icon="📄" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS' })} />
+        <KpiCard title="Total Invoices" value={kpis.totalInvoices} icon="🧾" onClick={() => onViewChange({ name: 'INVOICES' })} />
         <KpiCard title="Total LRs Today" value={kpis.totalLrsToday} icon="🚚" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { startDate: todayStr, endDate: todayStr } })} />
-        <KpiCard title="Unbilled LRs" value={unbilledLrIds.length} icon="📦" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { ids: unbilledLrIds } })} />
+        <KpiCard title="Unbilled LRs" value={kpis.unbilledCount} icon="📦" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { ids: unbilledLrIds } })} />
         <KpiCard title="Outstanding Payments" value={`₹${kpis.outstandingPayments.toLocaleString('en-IN')}`} icon="💰" onClick={() => onViewChange({ name: 'INVOICES', filters: { status: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIALLY_PAID] } })} />
         <KpiCard title="Total Freight This Month" value={`₹${kpis.totalFreightThisMonth.toLocaleString('en-IN')}`} icon="📊" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { startDate: firstDayOfMonth, endDate: todayStr } })} />
         <KpiCard title="Outstanding Supplier Payments" value={`₹${kpis.outstandingSupplierPayments.toLocaleString('en-IN')}`} icon="💳" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { showOnlyOutstanding: true } })} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card
-          title="Lorry Receipts"
-          className="hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-          onClick={() => onViewChange({ name: 'LORRY_RECEIPTS' })}
-        >
-          <p className="text-gray-600">View and manage all your Lorry Receipts.</p>
-        </Card>
-        <Card
-          title="Invoices"
-          className="hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-          onClick={() => onViewChange({ name: 'INVOICES' })}
-        >
-          <p className="text-gray-600">View and manage all your Invoices.</p>
-        </Card>
-      </div>
+      
 
       <Card>
         <div className="flex justify-between items-center mb-4">
@@ -146,16 +136,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{lr.totalAmount.toLocaleString('en-IN')}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                     <select
-                      value={lr.status} 
-                      onClick={e => e.stopPropagation()}
-                      onChange={(e) => onUpdateLrStatus(lr._id, e.target.value as LorryReceiptStatus)}
-                      className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full ${statusColors[lr.status]} border-0 bg-opacity-80 focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 focus:outline-none`}
-                    >
-                      {Object.values(LorryReceiptStatus).map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
+                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[lr.status]}`}>
+                       {lr.status}
+                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'VIEW_LR', id: lr._id }); }} className="text-indigo-600 hover:text-indigo-900 transition-colors">View</button>

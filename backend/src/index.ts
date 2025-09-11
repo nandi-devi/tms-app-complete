@@ -28,10 +28,13 @@ connectDB();
 // Middleware
 app.use(express.json());
 const corsOptions = {
-  origin: 'https://allindialo.netlify.app',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
+// Static serving for uploaded POD images
+import path from 'path';
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Routes
 app.get('/', (req, res) => {

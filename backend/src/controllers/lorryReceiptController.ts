@@ -1,15 +1,52 @@
 import { Request, Response } from 'express';
 import LorryReceipt from '../models/lorryReceipt';
 import { getNextSequenceValue } from '../utils/sequence';
+import { lrListQuerySchema, createLrSchema, updateLrSchema } from '../utils/validation';
 
 export const getLorryReceipts = async (req: Request, res: Response) => {
   try {
-    const lorryReceipts = await LorryReceipt.find()
-      .populate('consignor')
-      .populate('consignee')
-      .populate('vehicle')
-      .sort({ lrNumber: -1 }); // Sort by the new sequential ID
-    res.json(lorryReceipts);
+    const parsed = lrListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ message: 'Invalid query', errors: parsed.error.flatten() });
+    }
+    const { page = '1', limit = '20', startDate, endDate, customerId, status, search } = parsed.data as any;
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 200);
+
+    const query: any = {};
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = startDate;
+      if (endDate) query.date.$lte = endDate;
+    }
+    if (customerId) {
+      query.$or = [{ consignor: customerId }, { consignee: customerId }];
+    }
+    if (status) query.status = status;
+    if (search) {
+      const asNum = Number(search);
+      if (!isNaN(asNum)) query.lrNumber = asNum;
+      else query.$text = { $search: search };
+    }
+
+    const [items, total] = await Promise.all([
+      LorryReceipt.find(query)
+        .populate('consignor')
+        .populate('consignee')
+        .populate('vehicle')
+        .sort({ lrNumber: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum),
+      LorryReceipt.countDocuments(query)
+    ]);
+
+    const paginationRequested = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
+    if (paginationRequested) {
+      res.json({ items, total, page: pageNum, limit: limitNum });
+    } else {
+      res.json(items);
+    }
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
@@ -31,7 +68,11 @@ export const getLorryReceiptById = async (req: Request, res: Response) => {
 };
 
 export const createLorryReceipt = async (req: Request, res: Response) => {
-  const { consignorId, consigneeId, vehicleId, ...rest } = req.body;
+  const parsed = createLrSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+  }
+  const { consignorId, consigneeId, vehicleId, ...rest } = parsed.data as any;
 
   try {
     const nextLrNumber = await getNextSequenceValue('lorryReceiptId');
@@ -56,7 +97,11 @@ export const createLorryReceipt = async (req: Request, res: Response) => {
 
 export const updateLorryReceipt = async (req: Request, res: Response) => {
     try {
-        const { consignorId, consigneeId, vehicleId, ...rest } = req.body;
+        const parsed = updateLrSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        }
+        const { consignorId, consigneeId, vehicleId, ...rest } = parsed.data as any;
 
         const updatedData = {
             ...rest,

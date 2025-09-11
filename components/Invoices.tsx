@@ -87,11 +87,11 @@ const PreviewModal: React.FC<{
         </div>
         <div className="overflow-y-auto bg-gray-200">
            <div className="p-4 sm:p-8 flex justify-center">
-            {item.type === 'INVOICE' && item.data.customer && ( // Ensure data is populated
+            {item.type === 'INVOICE' && item.data.customer && (
               <InvoiceView
                 invoice={item.data as Invoice}
                 companyInfo={companyInfo}
-                customers={customers} // InvoiceView still uses this, can be refactored later
+                customers={customers}
               />
             )}
            </div>
@@ -113,7 +113,6 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
-
 
   const handleOpenPaymentForm = (invoice: Invoice) => {
     setSelectedInvoiceForPayment(invoice);
@@ -151,7 +150,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
 
         return matchesSearch && matchesStartDate && matchesEndDate && matchesCustomer && matchesStatus;
       })
-      .sort((a, b) => b.invoiceNumber - a.invoiceNumber); // Sort by new sequential ID
+      .sort((a, b) => b.invoiceNumber - a.invoiceNumber);
   }, [invoices, searchTerm, startDate, endDate, selectedCustomerId, status]);
 
   return (
@@ -184,39 +183,44 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
       <Card>
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-800">Invoices</h2>
-            <Button onClick={onBack} variant="outline">Back to Dashboard</Button>
+            <div className="space-x-2">
+              <Button onClick={() => onViewChange({ name: 'CREATE_INVOICE' })}>Create New Invoice</Button>
+              <Button onClick={onBack} variant="secondary">Back to Dashboard</Button>
+            </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Input
-            type="text"
-            label="Search by Inv No, Client..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            wrapperClassName="md:col-span-2 lg:col-span-2"
-          />
-          <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-          <Select
-            label="Client"
-            value={selectedCustomerId}
-            onChange={e => setSelectedCustomerId(e.target.value)}
-          >
-            <option value="">All Clients</option>
-            {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </Select>
-          <Select
-              label="Status"
-              value={status.length > 0 ? status[0] : ''}
-              onChange={e => setStatus(e.target.value ? [e.target.value as InvoiceStatus] : [])}
-          >
-              <option value="">All Statuses</option>
-              {Object.values(InvoiceStatus).map(s => <option key={s} value={s}>{s}</option>)}
-          </Select>
+        <div className="sticky top-[72px] z-10 -mx-6 px-6 py-3 bg-white/95 backdrop-blur border-b">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Input
+              type="text"
+              label="Search by Inv No, Client..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              wrapperClassName="md:col-span-2 lg:col-span-2"
+            />
+            <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            <Select
+              label="Client"
+              value={selectedCustomerId}
+              onChange={e => setSelectedCustomerId(e.target.value)}
+            >
+              <option value="">All Clients</option>
+              {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+            </Select>
+            <Select
+                label="Status"
+                value={status.length > 0 ? status[0] : ''}
+                onChange={e => setStatus(e.target.value ? [e.target.value as InvoiceStatus] : [])}
+            >
+                <option value="">All Statuses</option>
+                {Object.values(InvoiceStatus).map(s => <option key={s} value={s}>{s}</option>)}
+            </Select>
+          </div>
         </div>
       </Card>
 
       <Card>
-         <div className="overflow-x-auto mt-4">
+         <div className="overflow-x-auto mt-2">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>

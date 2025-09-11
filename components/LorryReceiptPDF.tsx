@@ -222,6 +222,24 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                             }
                         </div>
                         <p className="text-[10px] italic">Goods accepted for carriage on the terms and conditions printed overleaf.</p>
+                        {/* POD section only for Consignor copy */}
+                        {copyType === 'Original for Consignor' && lorryReceipt.delivery && (
+                          <div className="border border-black p-1 mt-1">
+                            <p className="font-bold underline">Proof of Delivery (Consignor Copy)</p>
+                            <div className="grid grid-cols-2 gap-1 text-[11px]">
+                              <div><span className="font-bold">Delivered At:</span> {new Date(lorryReceipt.delivery.deliveredAt).toLocaleString()}</div>
+                              <div><span className="font-bold">Receiver:</span> {lorryReceipt.delivery.receiverName}</div>
+                              {lorryReceipt.delivery.remarks && (<div className="col-span-2"><span className="font-bold">Remarks:</span> {lorryReceipt.delivery.remarks}</div>)}
+                            </div>
+                            {Array.isArray(lorryReceipt.delivery.photos) && lorryReceipt.delivery.photos.length > 0 && (
+                              <div className="mt-1 grid grid-cols-3 gap-1">
+                                {lorryReceipt.delivery.photos.slice(0,3).map((url, i) => (
+                                  <img key={i} src={url} alt={`POD ${i+1}`} className="w-full h-20 object-cover border" />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                     </div>
                     <div className="col-span-2 flex flex-col justify-end items-center">
                         <p className="font-bold mt-8 pt-4 border-t-2 border-black w-full text-center">Signature of the Transport Operator</p>

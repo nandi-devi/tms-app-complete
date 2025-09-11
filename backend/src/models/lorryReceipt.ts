@@ -44,6 +44,17 @@ export interface ILorryReceipt extends Document {
   truckRental?: Schema.Types.ObjectId;
   rentalCost?: number;
   rentalUsageValue?: number;
+  delivery?: {
+    deliveredAt: string;
+    receiverName: string;
+    receiverPhone?: string;
+    remarks?: string;
+    photos?: string[];
+    signatureUrl?: string;
+    recordedBy?: string;
+    latitude?: number;
+    longitude?: number;
+  };
 }
 
 const LorryReceiptSchema = new Schema({
@@ -91,6 +102,25 @@ const LorryReceiptSchema = new Schema({
   truckRental: { type: Schema.Types.ObjectId, ref: 'TruckRental' },
   rentalCost: { type: Number },
   rentalUsageValue: { type: Number },
+  delivery: {
+    deliveredAt: { type: String },
+    receiverName: { type: String },
+    receiverPhone: { type: String },
+    remarks: { type: String },
+    photos: [{ type: String }],
+    signatureUrl: { type: String },
+    recordedBy: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+  },
 });
+
+// Indexes for common queries
+LorryReceiptSchema.index({ date: -1, status: 1 });
+LorryReceiptSchema.index({ consignor: 1, date: -1 });
+LorryReceiptSchema.index({ consignee: 1, date: -1 });
+LorryReceiptSchema.index({ lrNumber: -1 });
+// Text index for simple search on from/to
+LorryReceiptSchema.index({ from: 'text', to: 'text' });
 
 export default model<ILorryReceipt>('LorryReceipt', LorryReceiptSchema);

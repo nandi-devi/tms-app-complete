@@ -166,6 +166,12 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, o
                 </div>
             </div>
             <Card>
+                <div className="sticky top-[72px] z-10 -mx-6 px-6 py-3 bg-white/95 backdrop-blur border-b">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600">Total Clients: <span className="font-semibold text-gray-800">{customers.length}</span></p>
+                    <Button onClick={handleAddNew} size="sm">Add Client</Button>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-slate-100">

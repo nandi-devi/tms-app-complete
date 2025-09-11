@@ -305,7 +305,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
         <Textarea label="Remarks" name="remarks" value={invoice.remarks || ''} onChange={handleChange} rows={3}/>
       </Card>
 
-      <div className="flex justify-end space-x-4 pt-4 border-t">
+      <div className="sticky bottom-0 z-10 bg-white/95 backdrop-blur border-t -mx-6 px-6 py-3 flex justify-end space-x-3 shadow-sm">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit">Save Invoice</Button>
       </div>
