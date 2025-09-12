@@ -172,6 +172,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     
   const [lr, setLr] = useState<Partial<LorryReceipt>>(existingLr ? { ...existingLr } : getInitialState());
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [useCustomNumber, setUseCustomNumber] = useState(false);
+  const [customNumber, setCustomNumber] = useState<string>('');
   
   const [vehicleNumber, setVehicleNumber] = useState(() => {
     if (existingLr && existingLr.vehicle) {
@@ -237,6 +239,11 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     if (!lr.packages || lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
         newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
     }
+    if (useCustomNumber) {
+        const n = parseInt(customNumber, 10);
+        if (!Number.isInteger(n) || n <= 0) newErrors.lrNumber = 'Enter a valid positive LR number.';
+        else if (lorryReceipts.some(x => x.lrNumber === n && x._id !== (existingLr?._id))) newErrors.lrNumber = 'LR number already exists.';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -258,6 +265,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       const lrDataToSave = {
         ...lr,
         vehicleId: finalVehicleId,
+        ...(useCustomNumber ? { lrNumber: parseInt(customNumber, 10) } : {}),
       };
 
       await onSave(lrDataToSave);
@@ -286,6 +294,17 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       
       <Card title="Shipment Details">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">LR Number</label>
+                <div className="flex items-center space-x-3">
+                    <input type="checkbox" id="lr-custom-num" checked={useCustomNumber} onChange={e => setUseCustomNumber(e.target.checked)} />
+                    <label htmlFor="lr-custom-num" className="text-sm text-gray-700">Enter custom LR number</label>
+                    {useCustomNumber && (
+                        <input type="number" className="border rounded px-2 py-1 w-40" value={customNumber} onChange={e => setCustomNumber(e.target.value)} placeholder="e.g. 1001" />
+                    )}
+                </div>
+                {errors.lrNumber && <p className="text-xs text-red-600 mt-1">{errors.lrNumber}</p>}
+            </div>
             <Input label="Date" type="date" name="date" value={lr.date || ''} onChange={handleChange} required error={errors.date} />
             <Input
               label="Vehicle No."

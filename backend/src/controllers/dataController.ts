@@ -6,6 +6,7 @@ import Invoice from '../models/invoice';
 import TruckHiringNote from '../models/truckHiringNote';
 import Payment from '../models/payment';
 import Counter from '../models/counter';
+import NumberingConfig from '../models/numbering';
 
 export const resetData = async (req: Request, res: Response) => {
     try {
@@ -31,6 +32,7 @@ export const backupData = async (req: Request, res: Response) => {
         const truckHiringNotes = await TruckHiringNote.find({});
         const payments = await Payment.find({});
         const counters = await Counter.find({});
+        const numberingConfigs = await NumberingConfig.find({});
 
         const backup = {
             customers,
@@ -40,6 +42,7 @@ export const backupData = async (req: Request, res: Response) => {
             truckHiringNotes,
             payments,
             counters,
+            numberingConfigs,
         };
 
         res.status(200).json(backup);
@@ -50,7 +53,7 @@ export const backupData = async (req: Request, res: Response) => {
 
 export const restoreData = async (req: Request, res: Response) => {
     try {
-        const { customers, vehicles, lorryReceipts, invoices, truckHiringNotes, payments, counters } = req.body;
+        const { customers, vehicles, lorryReceipts, invoices, truckHiringNotes, payments, counters, numberingConfigs } = req.body;
 
         // Clear existing data
         await Customer.deleteMany({});
@@ -60,6 +63,7 @@ export const restoreData = async (req: Request, res: Response) => {
         await TruckHiringNote.deleteMany({});
         await Payment.deleteMany({});
         await Counter.deleteMany({});
+        await NumberingConfig.deleteMany({});
 
         // Insert new data
         if (customers) await Customer.insertMany(customers);
@@ -69,6 +73,7 @@ export const restoreData = async (req: Request, res: Response) => {
         if (truckHiringNotes) await TruckHiringNote.insertMany(truckHiringNotes);
         if (payments) await Payment.insertMany(payments);
         if (counters) await Counter.insertMany(counters);
+        if (numberingConfigs) await NumberingConfig.insertMany(numberingConfigs);
 
         res.status(200).json({ message: 'Data restored successfully.' });
     } catch (err: any) {

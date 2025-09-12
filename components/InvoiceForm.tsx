@@ -53,6 +53,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
       }
   );
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [useCustomNumber, setUseCustomNumber] = useState(false);
+  const [customNumber, setCustomNumber] = useState<string>('');
   const [selectedLrs, setSelectedLrs] = useState<Set<string>>(
     new Set(existingInvoice?.lorryReceipts.map(lr => lr._id) || [])
   );
@@ -151,6 +153,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     if (!invoice.customerId) newErrors.customerId = 'Client is required.';
     if (!invoice.date) newErrors.date = 'Invoice date is required.';
     if (selectedLrs.size === 0) newErrors.lrs = 'At least one Lorry Receipt must be selected.';
+    if (useCustomNumber) {
+        const n = parseInt(customNumber, 10);
+        if (!Number.isInteger(n) || n <= 0) newErrors.invoiceNumber = 'Enter a valid positive invoice number.';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -164,6 +170,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
       const invoiceToSave = {
         ...invoice,
         lorryReceipts: (invoice.lorryReceipts || []).map(lr => ({ _id: lr._id })),
+        ...(useCustomNumber ? { invoiceNumber: parseInt(customNumber, 10) } : {}),
       };
       onSave(invoiceToSave as Partial<Invoice>);
     }
@@ -188,6 +195,17 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
             {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </Select>
           <Input label="Invoice Date" type="date" name="date" value={invoice.date || ''} onChange={handleChange} required error={errors.date} />
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Number</label>
+            <div className="flex items-center space-x-3">
+              <input type="checkbox" id="inv-custom-num" checked={useCustomNumber} onChange={e => setUseCustomNumber(e.target.checked)} />
+              <label htmlFor="inv-custom-num" className="text-sm text-gray-700">Enter custom invoice number</label>
+              {useCustomNumber && (
+                <input type="number" className="border rounded px-2 py-1 w-40" value={customNumber} onChange={e => setCustomNumber(e.target.value)} placeholder="e.g. 5001" />
+              )}
+            </div>
+            {errors.invoiceNumber && <p className="text-xs text-red-600 mt-1">{errors.invoiceNumber}</p>}
+          </div>
         </div>
         {customer && <p className="text-sm text-gray-500 mt-2">Client State: <span className="font-medium text-gray-700">{customer.state}</span></p>}
       </Card>

@@ -37,3 +37,29 @@ export const restoreData = async (data: any): Promise<any> => {
     }
     return response.json();
 };
+
+export interface NumberingConfigDto {
+    key: 'invoiceId' | 'lorryReceiptId';
+    start: number;
+    end: number;
+    allowOutsideRange?: boolean;
+}
+
+export const getNumberingConfigs = async (): Promise<Array<{ _id: string; start: number; end: number; next: number; allowOutsideRange?: boolean }>> => {
+    const response = await fetch(`${API_BASE_URL}/data/numbering`);
+    if (!response.ok) throw new Error('Failed to load numbering config');
+    return response.json();
+};
+
+export const saveNumberingConfig = async (config: NumberingConfigDto) => {
+    const response = await fetch(`${API_BASE_URL}/data/numbering`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: config.key, start: config.start, end: config.end, allowOutsideRange: !!config.allowOutsideRange }),
+    });
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Failed to save numbering config');
+    }
+    return response.json();
+};
