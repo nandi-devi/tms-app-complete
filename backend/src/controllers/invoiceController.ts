@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Invoice from '../models/invoice';
 import { getNextSequenceValue } from '../utils/sequence';
 import { InvoiceStatus } from '../types';
+import NumberingConfig from '../models/numbering';
 import { invoiceListQuerySchema, createInvoiceSchema, updateInvoiceSchema } from '../utils/validation';
 
 export const getInvoices = async (req: Request, res: Response) => {
@@ -87,13 +88,27 @@ export const createInvoice = async (req: Request, res: Response) => {
   if (!parsed.success) {
     return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
   }
-  const { customerId, lorryReceipts, ...rest } = parsed.data;
+  const { customerId, lorryReceipts, invoiceNumber: customInvoiceNumber, ...rest } = parsed.data as any;
 
   try {
-    const nextInvoiceNumber = await getNextSequenceValue('invoiceId');
+    let invoiceNumberToUse: number;
+    if (typeof customInvoiceNumber === 'number' && !isNaN(customInvoiceNumber)) {
+      const cfg = await NumberingConfig.findById('invoiceId');
+      if (cfg && !cfg.allowOutsideRange) {
+        if (customInvoiceNumber < cfg.start || customInvoiceNumber > cfg.end) {
+          return res.status(400).json({ message: `Invoice number must be within range ${cfg.start}-${cfg.end}` });
+        }
+      }
+      const exists = await Invoice.findOne({ invoiceNumber: customInvoiceNumber });
+      if (exists) return res.status(400).json({ message: 'Invoice number already exists' });
+      invoiceNumberToUse = customInvoiceNumber;
+    } else {
+      const nextInvoiceNumber = await getNextSequenceValue('invoiceId');
+      invoiceNumberToUse = nextInvoiceNumber;
+    }
     const invoice = new Invoice({
       ...rest,
-      invoiceNumber: nextInvoiceNumber,
+      invoiceNumber: invoiceNumberToUse,
       customer: customerId,
       lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
       status: InvoiceStatus.UNPAID,

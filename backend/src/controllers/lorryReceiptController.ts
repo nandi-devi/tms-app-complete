@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import LorryReceipt from '../models/lorryReceipt';
 import { getNextSequenceValue } from '../utils/sequence';
+import NumberingConfig from '../models/numbering';
 import { lrListQuerySchema, createLrSchema, updateLrSchema } from '../utils/validation';
 
 export const getLorryReceipts = async (req: Request, res: Response) => {
@@ -72,13 +73,27 @@ export const createLorryReceipt = async (req: Request, res: Response) => {
   if (!parsed.success) {
     return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
   }
-  const { consignorId, consigneeId, vehicleId, ...rest } = parsed.data as any;
+  const { consignorId, consigneeId, vehicleId, lrNumber: customLrNumber, ...rest } = parsed.data as any;
 
   try {
-    const nextLrNumber = await getNextSequenceValue('lorryReceiptId');
+    let lrNumberToUse: number;
+    if (typeof customLrNumber === 'number' && !isNaN(customLrNumber)) {
+      const cfg = await NumberingConfig.findById('lorryReceiptId');
+      if (cfg && !cfg.allowOutsideRange) {
+        if (customLrNumber < cfg.start || customLrNumber > cfg.end) {
+          return res.status(400).json({ message: `LR number must be within range ${cfg.start}-${cfg.end}` });
+        }
+      }
+      // Ensure uniqueness
+      const exists = await LorryReceipt.findOne({ lrNumber: customLrNumber });
+      if (exists) return res.status(400).json({ message: 'LR number already exists' });
+      lrNumberToUse = customLrNumber;
+    } else {
+      lrNumberToUse = await getNextSequenceValue('lorryReceiptId');
+    }
     const lorryReceipt = new LorryReceipt({
       ...rest,
-      lrNumber: nextLrNumber,
+      lrNumber: lrNumberToUse,
       consignor: consignorId,
       consignee: consigneeId,
       vehicle: vehicleId,
