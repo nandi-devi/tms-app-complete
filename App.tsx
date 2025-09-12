@@ -28,6 +28,7 @@ import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoi
 import { getPayments, createPayment } from './services/paymentService';
 import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
 import { resetApplicationData, backupData, restoreData } from './services/dataService';
+import { ToastContainer, type Toast } from './components/ui/Toast';
 
 export type View =
   | { name: 'DASHBOARD' }
@@ -105,7 +106,7 @@ const App: React.FC = () => {
       setTruckHiringNotes(fetchedTruckHiringNotes);
     } catch (error) {
       console.error('Failed to fetch initial data:', error);
-      alert('Failed to load data from the server. Please check your connection and refresh the page.');
+      pushToast('error', 'Failed to load data from the server. Please check your connection and refresh.');
     }
   }, []);
 
@@ -156,10 +157,10 @@ const App: React.FC = () => {
       } else {
         await createLorryReceipt(lr as Omit<LorryReceipt, '_id' | 'id'>);
       }
-      await fetchAllData(); // Refetch all data for consistency
+      await fetchAllData();
       navigateHome();
     } catch (error) {
-      console.error('Failed to save lorry receipt:', error);
+      handleAndToastApiError(error, 'Failed to create lorry receipt');
     }
   };
   
@@ -174,8 +175,8 @@ const App: React.FC = () => {
       await fetchAllData(); // Refetch all data
       return savedCustomer;
     } catch (error) {
-      console.error('Failed to save customer:', error);
-      throw error;
+      handleAndToastApiError(error, 'Failed to save customer');
+      throw error as any;
     }
   };
 
@@ -219,7 +220,7 @@ const App: React.FC = () => {
       await fetchAllData();
       navigateHome();
     } catch (error) {
-      console.error('Failed to save invoice:', error);
+      handleAndToastApiError(error, 'Failed to save invoice');
     }
   };
 
@@ -241,7 +242,7 @@ const App: React.FC = () => {
       await createPayment(payment);
       await fetchAllData(); // Refetch all data to update invoices, THNs, and payments
     } catch (error) {
-      console.error('Failed to save payment:', error);
+      handleAndToastApiError(error, 'Failed to save payment');
     }
   };
   
@@ -250,7 +251,7 @@ const App: React.FC = () => {
         await updateLorryReceipt(id, { status });
         await fetchAllData();
     } catch (error) {
-        console.error('Failed to update LR status:', error);
+        handleAndToastApiError(error, 'Failed to update LR status');
     }
   };
   
@@ -260,8 +261,7 @@ const App: React.FC = () => {
         await deleteLorryReceipt(id);
         await fetchAllData();
       } catch (error: any) {
-        console.error('Failed to delete lorry receipt:', error);
-        alert(`Failed to delete lorry receipt: ${error.message}`);
+        handleAndToastApiError(error, 'Failed to delete lorry receipt');
       }
     }
   };
@@ -272,8 +272,7 @@ const App: React.FC = () => {
         await deleteInvoiceService(id);
         await fetchAllData();
       } catch (error: any) {
-        console.error('Failed to delete invoice:', error);
-        alert(`Failed to delete invoice: ${error.message}`);
+        handleAndToastApiError(error, 'Failed to delete invoice');
       }
     }
   };
@@ -282,10 +281,9 @@ const App: React.FC = () => {
     try {
       await resetApplicationData();
       await fetchAllData();
-      alert('Application data has been successfully reset.');
+      pushToast('success', 'Application data has been successfully reset.');
     } catch (error: any) {
-      console.error('Failed to reset data:', error);
-      alert(`An error occurred while resetting data: ${error.message}`);
+      handleAndToastApiError(error, 'Failed to reset data');
     }
   };
 
@@ -303,8 +301,7 @@ const App: React.FC = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error: any) {
-      console.error('Failed to backup data:', error);
-      alert(`An error occurred during backup: ${error.message}`);
+      handleAndToastApiError(error, 'Failed to backup data');
     }
   };
 
@@ -312,10 +309,30 @@ const App: React.FC = () => {
     try {
       await restoreData(data);
       await fetchAllData();
-      alert('Data has been successfully restored.');
+      pushToast('success', 'Data has been successfully restored.');
     } catch (error: any) {
-      console.error('Failed to restore data:', error);
-      alert(`An error occurred during restore: ${error.message}`);
+      handleAndToastApiError(error, 'Failed to restore data');
+    }
+  };
+
+  // Toast state and helpers
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const pushToast = (kind: Toast['kind'], message: string) => {
+    const id = Date.now() + Math.floor(Math.random()*1000);
+    setToasts(prev => [...prev, { id, kind, message }]);
+    // auto-dismiss after 5s
+    setTimeout(() => dismissToast(id), 5000);
+  };
+  const dismissToast = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
+
+  const handleAndToastApiError = (err: any, fallback: string) => {
+    // Try to surface server message or field errors when available
+    if (err && typeof err === 'object') {
+      // If service returned structured error
+      const msg = (err.message && typeof err.message === 'string') ? err.message : '';
+      pushToast('error', msg || fallback || 'Something went wrong. Please try again or contact support.');
+    } else {
+      pushToast('error', fallback || 'Something went wrong. Please try again or contact support.');
     }
   };
 
@@ -508,6 +525,7 @@ const App: React.FC = () => {
         </div>
       </nav>
       <div className="h-16 md:h-0" />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };
