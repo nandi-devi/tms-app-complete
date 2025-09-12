@@ -157,7 +157,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     vehicleId: '',
     from: '',
     to: '',
-    packages: [{ count: 0, packingMethod: '', description: '', actualWeight: 0, chargedWeight: 0 }],
+    packages: [{ count: 1, packingMethod: '', description: '', actualWeight: 0, chargedWeight: 0 }],
     charges: { freight: 0, aoc: 0, hamali: 0, bCh: 0, trCh: 0, detentionCh: 0 },
     totalAmount: 0,
     eWayBillNo: '',

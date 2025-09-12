@@ -21,7 +21,12 @@ export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' |
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
         console.error('Server validation error:', errorData);
-        throw new Error(`Failed to create lorry receipt: ${errorData.message || 'Unknown server error'}`);
+        const details = (errorData?.errors?.fieldErrors) ?
+          Object.entries(errorData.errors.fieldErrors)
+            .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
+            .join(' | ') : undefined;
+        const composed = [errorData?.message, details].filter(Boolean).join(' - ');
+        throw new Error(`Failed to create lorry receipt: ${composed || 'Unknown server error'}`);
     }
     return response.json();
 };
