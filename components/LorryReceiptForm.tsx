@@ -268,7 +268,22 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         ...(useCustomNumber ? { lrNumber: parseInt(customNumber, 10) } : {}),
       };
 
-      await onSave(lrDataToSave);
+      try {
+        await onSave(lrDataToSave);
+      } catch (err: any) {
+        // Map backend zod fieldErrors to our local errors map
+        const fe = err?.fieldErrors as Record<string, string[]> | undefined;
+        if (fe) {
+          const newErrors: { [key: string]: string } = {};
+          Object.entries(fe).forEach(([key, messages]) => {
+            // Attempt simple mapping from backend keys to our form keys
+            // e.g., 'packages.0.count' -> 'packages'
+            if (key.startsWith('packages')) newErrors.packages = messages.join(', ');
+            else newErrors[key] = messages.join(', ');
+          });
+          setErrors(newErrors);
+        }
+      }
     }
   };
   

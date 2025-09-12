@@ -161,7 +161,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
     return Object.keys(newErrors).length === 0;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
       // Create a copy of the invoice object for saving
@@ -172,7 +172,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
         lorryReceipts: (invoice.lorryReceipts || []).map(lr => ({ _id: lr._id })),
         ...(useCustomNumber ? { invoiceNumber: parseInt(customNumber, 10) } : {}),
       };
-      onSave(invoiceToSave as Partial<Invoice>);
+      try {
+        await onSave(invoiceToSave as Partial<Invoice>);
+      } catch (err: any) {
+        const fe = err?.fieldErrors as Record<string, string[]> | undefined;
+        if (fe) {
+          const newErrors: { [key: string]: string } = {};
+          Object.entries(fe).forEach(([key, messages]) => {
+            newErrors[key] = messages.join(', ');
+          });
+          setErrors(newErrors);
+        }
+      }
     }
   };
   

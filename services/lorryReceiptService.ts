@@ -26,7 +26,9 @@ export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' |
             .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
             .join(' | ') : undefined;
         const composed = [errorData?.message, details].filter(Boolean).join(' - ');
-        throw new Error(`Failed to create lorry receipt: ${composed || 'Unknown server error'}`);
+        const err = new Error(`Failed to create lorry receipt: ${composed || 'Unknown server error'}`);
+        (err as any).fieldErrors = errorData?.errors?.fieldErrors;
+        throw err;
     }
     return response.json();
 };

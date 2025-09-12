@@ -19,7 +19,15 @@ export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promi
         body: JSON.stringify(invoice),
     });
     if (!response.ok) {
-        throw new Error('Failed to create invoice');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+        const details = (errorData?.errors?.fieldErrors) ?
+          Object.entries(errorData.errors.fieldErrors)
+            .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
+            .join(' | ') : undefined;
+        const composed = [errorData?.message, details].filter(Boolean).join(' - ');
+        const err = new Error(composed || 'Failed to create invoice');
+        (err as any).fieldErrors = errorData?.errors?.fieldErrors;
+        throw err;
     }
     return response.json();
 };

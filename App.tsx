@@ -160,7 +160,9 @@ const App: React.FC = () => {
       await fetchAllData();
       navigateHome();
     } catch (error) {
+      // Bubble fieldErrors to LR form via toast and return them for inline mapping
       handleAndToastApiError(error, 'Failed to create lorry receipt');
+      throw error;
     }
   };
   
@@ -221,6 +223,7 @@ const App: React.FC = () => {
       navigateHome();
     } catch (error) {
       handleAndToastApiError(error, 'Failed to save invoice');
+      throw error;
     }
   };
 
