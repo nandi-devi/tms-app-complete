@@ -22,13 +22,13 @@ try {
 // Compile TypeScript with more permissive settings
 console.log('Compiling TypeScript...');
 try {
-  execSync('npx tsc --noEmitOnError false --skipLibCheck true', { stdio: 'inherit' });
+  execSync('./node_modules/.bin/tsc --noEmitOnError false --skipLibCheck true', { stdio: 'inherit' });
   console.log('Build completed successfully!');
 } catch (error) {
   console.error('TypeScript compilation failed, but continuing...');
   // Try to compile anyway
   try {
-    execSync('npx tsc --noEmitOnError false --skipLibCheck true --noImplicitAny false', { stdio: 'inherit' });
+    execSync('./node_modules/.bin/tsc --noEmitOnError false --skipLibCheck true --noImplicitAny false', { stdio: 'inherit' });
     console.log('Build completed with warnings!');
   } catch (error2) {
     console.error('Build failed:', error2.message);

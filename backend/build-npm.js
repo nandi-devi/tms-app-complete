@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-console.log('Starting simple build process...');
+console.log('Starting npm build process...');
 
 // Clean dist directory
 if (fs.existsSync('./dist')) {
@@ -18,12 +18,12 @@ try {
   process.exit(1);
 }
 
-// Compile TypeScript with simple config
-console.log('Compiling TypeScript with simple config...');
+// Use npm script to build
+console.log('Building with npm script...');
 try {
-  execSync('./node_modules/.bin/tsc --project tsconfig.simple.json --skipLibCheck true --noImplicitAny false', { stdio: 'inherit' });
+  execSync('npm run build:tsc', { stdio: 'inherit' });
   console.log('Build completed successfully!');
 } catch (error) {
-  console.error('Simple build failed:', error.message);
+  console.error('NPM build failed:', error.message);
   process.exit(1);
 }
