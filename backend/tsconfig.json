@@ -9,6 +9,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "express", "multer", "cors"]
+    "types": ["node"]
   }
 }
