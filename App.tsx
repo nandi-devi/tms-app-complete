@@ -21,8 +21,8 @@ import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment } f
 import { LorryReceiptStatus } from './types';
 import { initialCompanyInfo } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { getCustomers, createCustomer, updateCustomer, deleteCustomer as deleteCustomerService } from './services/customerService';
-import { getVehicles, createVehicle } from './services/vehicleService';
+import { useCustomers } from './hooks/useCustomers';
+import { useVehicles } from './hooks/useVehicles';
 import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryReceipt } from './services/lorryReceiptService';
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
 import { getPayments, createPayment } from './services/paymentService';
@@ -71,8 +71,8 @@ const App: React.FC = () => {
   const [lorryReceipts, setLorryReceipts] = useState<LorryReceipt[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const { customers, fetchCustomers, createCustomer, updateCustomer, deleteCustomer } = useCustomers();
+  const { vehicles, fetchVehicles, createVehicle } = useVehicles();
   const [truckHiringNotes, setTruckHiringNotes] = useState<TruckHiringNote[]>([]);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo>('companyInfo', initialCompanyInfo);
 
@@ -84,22 +84,18 @@ const App: React.FC = () => {
   const fetchAllData = useCallback(async () => {
     try {
       const [
-        fetchedCustomers,
-        fetchedVehicles,
         fetchedLorryReceipts,
         fetchedInvoices,
         fetchedPayments,
         fetchedTruckHiringNotes,
       ] = await Promise.all([
-        getCustomers(),
-        getVehicles(),
         getLorryReceipts(),
         getInvoices(),
         getPayments(),
         getTruckHiringNotes(),
       ]);
-      setCustomers(fetchedCustomers);
-      setVehicles(fetchedVehicles);
+      fetchCustomers();
+      fetchVehicles();
       setLorryReceipts(fetchedLorryReceipts);
       setInvoices(fetchedInvoices);
       setPayments(fetchedPayments);
@@ -108,7 +104,7 @@ const App: React.FC = () => {
       console.error('Failed to fetch initial data:', error);
       pushToast('error', 'Failed to load data from the server. Please check your connection and refresh.');
     }
-  }, []);
+  }, [fetchCustomers, fetchVehicles]);
 
   useEffect(() => {
     fetchAllData();
@@ -174,7 +170,6 @@ const App: React.FC = () => {
       } else {
         savedCustomer = await createCustomer(customerData as Omit<Customer, 'id'>);
       }
-      await fetchAllData(); // Refetch all data
       return savedCustomer;
     } catch (error) {
       handleAndToastApiError(error, 'Failed to save customer');
@@ -182,11 +177,10 @@ const App: React.FC = () => {
     }
   };
 
-  const deleteCustomer = async (id: string) => {
+  const handleDeleteCustomer = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
       try {
-        await deleteCustomerService(id);
-        await fetchAllData();
+        await deleteCustomer(id);
       } catch (error: any) {
         console.error('Failed to delete customer:', error);
         alert(`Failed to delete client: ${error.message}`);
@@ -197,7 +191,6 @@ const App: React.FC = () => {
   const saveVehicle = async (vehicleData: Partial<Vehicle>): Promise<Vehicle> => {
     try {
       const newVehicle = await createVehicle(vehicleData as Omit<Vehicle, 'id'>);
-      await fetchAllData();
       return newVehicle;
     } catch (error) {
       console.error('Failed to save vehicle:', error);
@@ -447,7 +440,7 @@ const App: React.FC = () => {
         return <PendingPayments invoices={invoices} onSavePayment={savePayment} onBack={goBack} />;
       
       case 'CLIENTS':
-        return <Clients customers={customers} onSave={saveCustomer} onDelete={deleteCustomer} onBack={goBack} />;
+        return <Clients customers={customers} onSave={saveCustomer} onDelete={handleDeleteCustomer} onBack={goBack} />;
 
       case 'TRUCK_HIRING_NOTES':
         return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={navigateTo} onBack={goBack} initialFilters={currentView.filters} />;

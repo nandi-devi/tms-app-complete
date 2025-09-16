@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { resetData, backupData, restoreData } from '../controllers/dataController';
 import expressAsyncHandler from 'express-async-handler';
 import NumberingConfig from '../models/numbering';
@@ -18,15 +18,16 @@ router.get('/backup', backupData);
 router.post('/restore', restoreData);
 
 // Numbering config endpoints
-router.get('/numbering', expressAsyncHandler(async (req, res) => {
+router.get('/numbering', expressAsyncHandler(async (req: Request, res: Response) => {
   const items = await NumberingConfig.find({});
   res.json(items);
 }));
 
-router.post('/numbering', expressAsyncHandler(async (req, res) => {
+router.post('/numbering', expressAsyncHandler(async (req: Request, res: Response) => {
   const { key, start, end, allowOutsideRange } = req.body;
   if (!key || typeof start !== 'number' || typeof end !== 'number' || start > end) {
-    return res.status(400).json({ message: 'Invalid numbering configuration payload' });
+    res.status(400).json({ message: 'Invalid numbering configuration payload' });
+    return;
   }
   const existing = await NumberingConfig.findById(key);
   if (existing) {
@@ -36,7 +37,8 @@ router.post('/numbering', expressAsyncHandler(async (req, res) => {
     existing.next = Math.max(start, Math.min(existing.next, end + 1));
     existing.allowOutsideRange = !!allowOutsideRange;
     await existing.save();
-    return res.json(existing);
+    res.json(existing);
+    return;
   }
   const created = await NumberingConfig.create({ _id: key, start, end, next: start, allowOutsideRange: !!allowOutsideRange });
   res.status(201).json(created);

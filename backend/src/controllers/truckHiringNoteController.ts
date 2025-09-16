@@ -1,71 +1,57 @@
 import { Request, Response } from 'express';
+import asyncHandler from 'express-async-handler';
 import TruckHiringNote from '../models/truckHiringNote';
 import { getNextSequenceValue } from '../utils/sequence';
+import { createTruckHiringNoteSchema, updateTruckHiringNoteSchema } from '../utils/validation';
 
-export const getTruckHiringNotes = async (req: Request, res: Response) => {
-  try {
-    const notes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
-    res.json(notes);
-  } catch (err: any) {
-    res.status(500).json({ message: err.message });
+export const getTruckHiringNotes = asyncHandler(async (req: Request, res: Response) => {
+  const notes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
+  res.json(notes);
+});
+
+export const getTruckHiringNoteById = asyncHandler(async (req: Request, res: Response) => {
+  const note = await TruckHiringNote.findById(req.params.id).populate('payments');
+  if (note) {
+    res.json(note);
+  } else {
+    res.status(404);
+    throw new Error('Truck Hiring Note not found');
   }
-};
+});
 
-export const getTruckHiringNoteById = async (req: Request, res: Response) => {
-    try {
-        const note = await TruckHiringNote.findById(req.params.id).populate('payments');
-        if (note == null) {
-            return res.status(404).json({ message: 'Cannot find Truck Hiring Note' });
-        }
-        res.json(note);
-    } catch (err: any) {
-        return res.status(500).json({ message: err.message });
-    }
-};
+export const createTruckHiringNote = asyncHandler(async (req: Request, res: Response) => {
+  const thnData = createTruckHiringNoteSchema.parse(req.body);
+  const { freight, advancePaid } = thnData;
 
-export const createTruckHiringNote = async (req: Request, res: Response) => {
-  const { freight, advancePaid, ...rest } = req.body;
+  const nextThnNumber = await getNextSequenceValue('truckHiringNoteId');
+  const balancePayable = freight - advancePaid;
 
-  try {
-    const nextThnNumber = await getNextSequenceValue('truckHiringNoteId');
+  const note = new TruckHiringNote({
+    ...thnData,
+    thnNumber: nextThnNumber,
+    balancePayable,
+  });
 
-    const balancePayable = freight - advancePaid;
+  const newNote = await note.save();
+  res.status(201).json(newNote);
+});
 
-    const note = new TruckHiringNote({
-      ...rest,
-      thnNumber: nextThnNumber,
-      freight,
-      advancePaid,
-      balancePayable,
-    });
+export const updateTruckHiringNote = asyncHandler(async (req: Request, res: Response) => {
+  const thnData = updateTruckHiringNoteSchema.parse(req.body);
+  const { freight, advancePaid } = thnData;
 
-    const newNote = await note.save();
-    res.status(201).json(newNote);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
+  const balancePayable = freight && advancePaid ? freight - advancePaid : undefined;
+
+  const updatedData: any = { ...thnData };
+  if (balancePayable !== undefined) {
+    updatedData.balancePayable = balancePayable;
   }
-};
 
-export const updateTruckHiringNote = async (req: Request, res: Response) => {
-    try {
-        const { freight, advancePaid, ...rest } = req.body;
+  const updatedNote = await TruckHiringNote.findByIdAndUpdate(req.params.id, updatedData, { new: true });
 
-        const balancePayable = freight - advancePaid;
-
-        const updatedData = {
-            ...rest,
-            freight,
-            advancePaid,
-            balancePayable,
-        };
-
-        const updatedNote = await TruckHiringNote.findByIdAndUpdate(req.params.id, updatedData, { new: true });
-
-        if (updatedNote == null) {
-            return res.status(404).json({ message: 'Cannot find Truck Hiring Note' });
-        }
-        res.json(updatedNote);
-    } catch (err: any) {
-        res.status(400).json({ message: err.message });
-    }
-};
+  if (!updatedNote) {
+    res.status(404);
+    throw new Error('Truck Hiring Note not found');
+  }
+  res.json(updatedNote);
+});

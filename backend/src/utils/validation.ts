@@ -71,4 +71,63 @@ export const createLrSchema = z.object({
 
 export const updateLrSchema = createLrSchema.partial();
 
+export const createPaymentSchema = z.object({
+  invoiceId: z.string().optional(),
+  truckHiringNoteId: z.string().optional(),
+  amount: z.number().positive(),
+  date: z.string().min(1),
+  paymentMethod: z.string().min(1),
+  remarks: z.string().optional(),
+}).refine(data => data.invoiceId || data.truckHiringNoteId, {
+  message: 'Either invoiceId or truckHiringNoteId is required',
+});
+
+export const updatePaymentSchema = createPaymentSchema.partial();
+
+export const createTruckHiringNoteSchema = z.object({
+  date: z.string().min(1),
+  truckOwnerName: z.string().min(1),
+  truckOwnerAddress: z.string().optional(),
+  truckOwnerPhone: z.string().optional(),
+  truckNumber: z.string().min(1),
+  from: z.string().min(1),
+  to: z.string().min(1),
+  freight: z.number().nonnegative(),
+  advancePaid: z.number().nonnegative(),
+  remarks: z.string().optional(),
+});
+
+export const updateTruckHiringNoteSchema = createTruckHiringNoteSchema.partial();
+
+export const createPromissoryNoteSchema = z.object({
+  supplier: z.string().min(1),
+  amount: z.number().positive(),
+  issueDate: z.string().min(1),
+  dueDate: z.string().min(1),
+  paymentTerms: z.string().optional(),
+  isPaid: z.boolean().optional(),
+});
+
+export const updatePromissoryNoteSchema = createPromissoryNoteSchema.partial();
+
+export const podUploadSchema = z.object({
+  receiverName: z.string().min(1),
+  receiverPhone: z.string().optional(),
+  remarks: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  recordedBy: z.string().optional(),
+});
+
+export const backupDataSchema = z.object({
+  customers: z.array(z.any()),
+  vehicles: z.array(z.any()),
+  lorryReceipts: z.array(z.any()),
+  invoices: z.array(z.any()),
+  truckHiringNotes: z.array(z.any()),
+  payments: z.array(z.any()),
+  counters: z.array(z.any()),
+  numberingConfigs: z.array(z.any()),
+});
+
 

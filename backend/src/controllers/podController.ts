@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
+import asyncHandler from 'express-async-handler';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import LorryReceipt from '../models/lorryReceipt';
 import { LorryReceiptStatus } from '../types';
+import { podUploadSchema } from '../utils/validation';
 
 const storage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
@@ -16,7 +18,7 @@ const storage = multer.diskStorage({
   filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const ts = Date.now();
     const ext = path.extname(file.originalname || '') || '.jpg';
-    cb(null, `${ts}-${Math.round(Math.random()*1e6)}${ext}`);
+    cb(null, `${ts}-${Math.round(Math.random() * 1e6)}${ext}`);
   }
 });
 
@@ -24,50 +26,42 @@ const upload = multer({ storage });
 
 export const uploadDelivery = [
   upload.array('photos', 4),
-  async (req: Request, res: Response) => {
-    try {
-      const lrId = req.params.id;
-      const { receiverName, receiverPhone, remarks, latitude, longitude, recordedBy } = req.body as any;
+  asyncHandler(async (req: Request, res: Response) => {
+    const lrId = req.params.id;
+    const deliveryData = podUploadSchema.parse(req.body);
 
-      const lr = await LorryReceipt.findById(lrId);
-      if (!lr) return res.status(404).json({ message: 'Lorry Receipt not found' });
-
-      const files = (req.files as Express.Multer.File[]) || [];
-      const photos = files.map(f => `/uploads/pod/${lrId}/${path.basename(f.path)}`);
-
-      lr.delivery = {
-        deliveredAt: new Date().toISOString(),
-        receiverName: receiverName || 'N/A',
-        receiverPhone,
-        remarks,
-        photos,
-        recordedBy,
-        latitude: latitude ? Number(latitude) : undefined,
-        longitude: longitude ? Number(longitude) : undefined,
-      } as any;
-      lr.status = LorryReceiptStatus.DELIVERED;
-
-      await lr.save();
-      const updated = await LorryReceipt.findById(lrId)
-        .populate('consignor')
-        .populate('consignee')
-        .populate('vehicle');
-      res.json(updated);
-    } catch (err: any) {
-      console.error(err);
-      res.status(400).json({ message: err.message });
+    const lr = await LorryReceipt.findById(lrId);
+    if (!lr) {
+      res.status(404);
+      throw new Error('Lorry Receipt not found');
     }
-  }
+
+    const files = (req.files as Express.Multer.File[]) || [];
+    const photos = files.map(f => `/uploads/pod/${lrId}/${path.basename(f.path)}`);
+
+    lr.delivery = {
+      ...deliveryData,
+      deliveredAt: new Date().toISOString(),
+      photos,
+    } as any;
+    lr.status = LorryReceiptStatus.DELIVERED;
+
+    await lr.save();
+    const updated = await LorryReceipt.findById(lrId)
+      .populate('consignor')
+      .populate('consignee')
+      .populate('vehicle');
+    res.json(updated);
+  })
 ];
 
-export const getDelivery = async (req: Request, res: Response) => {
-  try {
-    const lr = await LorryReceipt.findById(req.params.id);
-    if (!lr) return res.status(404).json({ message: 'Lorry Receipt not found' });
-    res.json(lr.delivery || null);
-  } catch (err: any) {
-    res.status(500).json({ message: err.message });
+export const getDelivery = asyncHandler(async (req: Request, res: Response) => {
+  const lr = await LorryReceipt.findById(req.params.id);
+  if (!lr) {
+    res.status(404);
+    throw new Error('Lorry Receipt not found');
   }
-};
+  res.json(lr.delivery || null);
+});
 
 

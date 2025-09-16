@@ -1,178 +1,137 @@
 import { Request, Response } from 'express';
+import asyncHandler from 'express-async-handler';
 import Invoice from '../models/invoice';
+import LorryReceipt from '../models/lorryReceipt';
 import { getNextSequenceValue } from '../utils/sequence';
-import { InvoiceStatus } from '../types';
-import NumberingConfig from '../models/numbering';
+import { LorryReceiptStatus, InvoiceStatus } from '../types';
 import { invoiceListQuerySchema, createInvoiceSchema, updateInvoiceSchema } from '../utils/validation';
 
-export const getInvoices = async (req: Request, res: Response) => {
-  try {
-    const parsed = invoiceListQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      return res.status(400).json({ message: 'Invalid query', errors: parsed.error.flatten() });
-    }
-    const { page = '1', limit = '20', startDate, endDate, customerId, status, search } = parsed.data as any;
+export const getInvoices = asyncHandler(async (req: Request, res: Response) => {
+  const { page = '1', limit = '20', ...filters } = invoiceListQuerySchema.parse(req.query);
 
-    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 200);
-
-    const query: any = {};
-    if (startDate || endDate) {
-      query.date = {};
-      if (startDate) query.date.$gte = startDate;
-      if (endDate) query.date.$lte = endDate;
-    }
-    if (customerId) query.customer = customerId;
-    if (status) query.status = status;
-    if (search) {
-      // Search by invoiceNumber via regex on string form not efficient; better to try numeric
-      const asNum = Number(search);
-      if (!isNaN(asNum)) query.invoiceNumber = asNum;
-      // Client name search would require join; keep client-side for now
-    }
-
-    const [items, total] = await Promise.all([
-      Invoice.find(query)
-        .populate('customer')
-        .populate('payments')
-        .populate({
-          path: 'lorryReceipts',
-          populate: [
-            { path: 'consignor' },
-            { path: 'consignee' },
-            { path: 'vehicle' }
-          ]
-        })
-        .sort({ invoiceNumber: -1 })
-        .skip((pageNum - 1) * limitNum)
-        .limit(limitNum),
-      Invoice.countDocuments(query)
-    ]);
-
-    // Backward compatibility: if no explicit pagination requested, return array only
-    const paginationRequested = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
-    if (paginationRequested) {
-      res.json({ items, total, page: pageNum, limit: limitNum });
-    } else {
-      res.json(items);
-    }
-  } catch (err: any) {
-    res.status(500).json({ message: err.message });
+  const query: any = {};
+  if (filters.startDate) query.date = { ...query.date, $gte: new Date(filters.startDate) };
+  if (filters.endDate) query.date = { ...query.date, $lte: new Date(filters.endDate) };
+  if (filters.customerId) query.customer = filters.customerId;
+  if (filters.status) query.status = filters.status;
+  if (filters.search) {
+    query.$or = [
+      { invoiceNumber: { $regex: filters.search, $options: 'i' } },
+      { 'customer.name': { $regex: filters.search, $options: 'i' } },
+    ];
   }
-};
 
-export const getInvoiceById = async (req: Request, res: Response) => {
-    try {
-        const invoice = await Invoice.findById(req.params.id)
-            .populate('customer')
-            .populate('payments')
-            .populate({
-                path: 'lorryReceipts',
-                populate: [
-                    { path: 'consignor' },
-                    { path: 'consignee' },
-                    { path: 'vehicle' }
-                ]
-            });
-        if (invoice == null) {
-            return res.status(404).json({ message: 'Cannot find invoice' });
-        }
-        res.json(invoice);
-    } catch (err: any) {
-        return res.status(500).json({ message: err.message });
-    }
-};
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+  const skip = (pageNum - 1) * limitNum;
 
-export const createInvoice = async (req: Request, res: Response) => {
-  const parsed = createInvoiceSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+  const items = await Invoice.find(query)
+    .populate('customer')
+    .populate('lorryReceipts')
+    .populate('payments')
+    .sort({ invoiceNumber: -1 })
+    .skip(skip)
+    .limit(limitNum);
+
+  const total = await Invoice.countDocuments(query);
+
+  res.json({ items, total, page: pageNum, limit: limitNum });
+});
+
+export const getInvoiceById = asyncHandler(async (req: Request, res: Response) => {
+  const invoice = await Invoice.findById(req.params.id)
+    .populate('customer')
+    .populate('lorryReceipts')
+    .populate('payments');
+
+  if (invoice) {
+    res.json(invoice);
+  } else {
+    res.status(404);
+    throw new Error('Invoice not found');
   }
-  const { customerId, lorryReceipts, invoiceNumber: customInvoiceNumber, ...rest } = parsed.data as any;
+});
 
-  try {
-    let invoiceNumberToUse: number;
-    if (typeof customInvoiceNumber === 'number' && !isNaN(customInvoiceNumber)) {
-      const cfg = await NumberingConfig.findById('invoiceId');
-      if (cfg && !cfg.allowOutsideRange) {
-        if (customInvoiceNumber < cfg.start || customInvoiceNumber > cfg.end) {
-          return res.status(400).json({ message: `Invoice number must be within range ${cfg.start}-${cfg.end}` });
-        }
-      }
-      const exists = await Invoice.findOne({ invoiceNumber: customInvoiceNumber });
-      if (exists) return res.status(400).json({ message: 'Invoice number already exists' });
-      invoiceNumberToUse = customInvoiceNumber;
-    } else {
-      const nextInvoiceNumber = await getNextSequenceValue('invoiceId');
-      invoiceNumberToUse = nextInvoiceNumber;
+export const createInvoice = asyncHandler(async (req: Request, res: Response) => {
+  const invoiceData = createInvoiceSchema.parse(req.body);
+  const invoiceNumber = await getNextSequenceValue('invoiceId');
+
+  const invoice = new Invoice({
+    ...invoiceData,
+    invoiceNumber,
+    status: InvoiceStatus.PENDING,
+  });
+
+  const createdInvoice = await invoice.save();
+
+  // Update status of associated lorry receipts
+  await LorryReceipt.updateMany(
+    { _id: { $in: invoiceData.lorryReceipts.map(lr => lr._id) } },
+    { $set: { status: LorryReceiptStatus.INVOICED } }
+  );
+
+  res.status(201).json(createdInvoice);
+});
+
+export const updateInvoice = asyncHandler(async (req: Request, res: Response) => {
+  const invoiceData = updateInvoiceSchema.parse(req.body);
+  const invoice = await Invoice.findById(req.params.id);
+
+  if (invoice) {
+    const originalLrIds = invoice.lorryReceipts.map(lr => lr.toString());
+
+    Object.assign(invoice, invoiceData);
+    const updatedInvoice = await invoice.save();
+
+    const newLrIds = updatedInvoice.lorryReceipts.map(lr => lr.toString());
+
+    // LRs to be marked as invoiced
+    const toInvoice = newLrIds.filter(id => !originalLrIds.includes(id));
+    if (toInvoice.length > 0) {
+      await LorryReceipt.updateMany(
+        { _id: { $in: toInvoice } },
+        { $set: { status: LorryReceiptStatus.INVOICED } }
+      );
     }
-    const invoice = new Invoice({
-      ...rest,
-      invoiceNumber: invoiceNumberToUse,
-      customer: customerId,
-      lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
-      status: InvoiceStatus.UNPAID,
-    });
 
-    const newInvoice = await invoice.save();
-    const populatedInvoice = await Invoice.findById(newInvoice._id)
-        .populate('customer')
-        .populate('payments')
-        .populate({
-            path: 'lorryReceipts',
-            populate: [
-                { path: 'consignor' },
-                { path: 'consignee' },
-                { path: 'vehicle' }
-            ]
-        });
-    res.status(201).json(populatedInvoice);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
+    // LRs to be marked as created (or other status)
+    const toUnInvoice = originalLrIds.filter(id => !newLrIds.includes(id));
+    if (toUnInvoice.length > 0) {
+      await LorryReceipt.updateMany(
+        { _id: { $in: toUnInvoice } },
+        { $set: { status: LorryReceiptStatus.CREATED } } // Or whatever default status is appropriate
+      );
+    }
+
+    res.json(updatedInvoice);
+  } else {
+    res.status(404);
+    throw new Error('Invoice not found');
   }
-};
+});
 
-export const updateInvoice = async (req: Request, res: Response) => {
-    try {
-        const parsed = updateInvoiceSchema.safeParse(req.body);
-        if (!parsed.success) {
-          return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
-        }
-        const { customerId, lorryReceipts, ...rest } = parsed.data as any;
-        const updatedData = {
-            ...rest,
-            customer: customerId,
-            lorryReceipts: lorryReceipts.map((lr: any) => lr._id),
-        };
-        const updatedInvoice = await Invoice.findByIdAndUpdate(req.params.id, updatedData, { new: true })
-            .populate('customer')
-            .populate('payments')
-            .populate({
-                path: 'lorryReceipts',
-                populate: [
-                    { path: 'consignor' },
-                    { path: 'consignee' },
-                    { path: 'vehicle' }
-                ]
-            });
+export const deleteInvoice = asyncHandler(async (req: Request, res: Response) => {
+  const invoice = await Invoice.findById(req.params.id);
 
-        if (updatedInvoice == null) {
-            return res.status(404).json({ message: 'Cannot find invoice' });
-        }
-        res.json(updatedInvoice);
-    } catch (err: any) {
-        res.status(400).json({ message: err.message });
+  if (invoice) {
+    if (invoice.payments && invoice.payments.length > 0) {
+      res.status(400);
+      throw new Error('Cannot delete an invoice with payments.');
     }
-};
 
-export const deleteInvoice = async (req: Request, res: Response) => {
-    try {
-        const invoice = await Invoice.findByIdAndDelete(req.params.id);
-        if (invoice == null) {
-            return res.status(404).json({ message: 'Cannot find invoice' });
-        }
-        res.json({ message: 'Deleted Invoice' });
-    } catch (err: any) {
-        res.status(500).json({ message: err.message });
-    }
-};
+    const lrIds = invoice.lorryReceipts.map(lr => lr.toString());
+
+    await invoice.deleteOne();
+
+    // Update status of associated lorry receipts
+    await LorryReceipt.updateMany(
+      { _id: { $in: lrIds } },
+      { $set: { status: LorryReceiptStatus.CREATED } } // Or whatever default status is appropriate
+    );
+
+    res.json({ message: 'Invoice removed' });
+  } else {
+    res.status(404);
+    throw new Error('Invoice not found');
+  }
+});
