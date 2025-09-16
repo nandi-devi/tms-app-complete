@@ -22,12 +22,11 @@ try {
 // Compile TypeScript with more permissive settings
 console.log('Compiling TypeScript...');
 try {
-  // Try different ways to find tsc
+  // Try different ways to find tsc (prefer local installations)
   const tscPaths = [
     './node_modules/.bin/tsc',
     './node_modules/typescript/bin/tsc',
-    'npx tsc',
-    'tsc'
+    'npx tsc'
   ];
   
   let tscCommand = null;
