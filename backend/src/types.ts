@@ -53,11 +53,18 @@ export interface Customer {
   contactPerson?: string;
   contactPhone?: string;
   contactEmail?: string;
+  city?: string;
+  pin?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface Vehicle {
   _id: string;
   number: string;
+  vehicleNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
 }
 
 export interface LorryReceipt {

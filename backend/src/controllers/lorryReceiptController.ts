@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import LorryReceipt from '../models/lorryReceipt';
 import { getNextSequenceValue } from '../utils/sequence';
 import { lrListQuerySchema, createLrSchema, updateLrSchema } from '../utils/validation';
+import { LorryReceiptStatus } from '../types';
 
 export const getLorryReceipts = asyncHandler(async (req: Request, res: Response) => {
   const { page = '1', limit = '20', ...filters } = lrListQuerySchema.parse(req.query);
@@ -82,7 +83,7 @@ export const deleteLorryReceipt = asyncHandler(async (req: Request, res: Respons
   const lorryReceipt = await LorryReceipt.findById(req.params.id);
 
   if (lorryReceipt) {
-    if (lorryReceipt.status === 'invoiced') {
+    if (lorryReceipt.status === LorryReceiptStatus.INVOICED) {
       res.status(400);
       throw new Error('Cannot delete an invoiced lorry receipt.');
     }

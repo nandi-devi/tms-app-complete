@@ -28,7 +28,7 @@ connectDB();
 // Middleware
 app.use(express.json());
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'https://tms-app-ist1.onrender.com'],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));

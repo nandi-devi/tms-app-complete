@@ -59,7 +59,7 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
   const invoice = new Invoice({
     ...invoiceData,
     invoiceNumber,
-    status: InvoiceStatus.PENDING,
+    status: InvoiceStatus.UNPAID,
   });
 
   const createdInvoice = await invoice.save();

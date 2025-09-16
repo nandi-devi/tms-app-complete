@@ -12,6 +12,10 @@ const CustomerSchema = new Schema({
   contactPerson: { type: String },
   contactPhone: { type: String },
   contactEmail: { type: String },
+  city: { type: String },
+  pin: { type: String },
+  phone: { type: String },
+  email: { type: String },
 });
 
 export default model<ICustomer>('Customer', CustomerSchema);
