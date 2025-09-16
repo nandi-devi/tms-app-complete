@@ -29,7 +29,7 @@ connectDB();
 // Middleware
 app.use(express.json());
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'https://tms-app-ist1.onrender.com'],
+  origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'https://allindialo.netlify.app'],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
