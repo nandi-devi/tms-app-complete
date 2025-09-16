@@ -7,6 +7,8 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "build": "node build.js",
+    "build:universal": "node build-universal.js",
+    "build:copy": "node build-copy.js",
     "build:config": "node build-config.js",
     "build:simple-direct": "node build-simple-direct.js",
     "build:robust": "node build-robust.js",
