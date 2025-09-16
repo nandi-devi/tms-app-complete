@@ -16,6 +16,7 @@ import invoiceRoutes from './routes/invoiceRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import dataRoutes from './routes/dataRoutes';
 import truckHiringNoteRoutes from './routes/truckHiringNoteRoutes';
+import authRoutes from './routes/authRoutes';
 
 
 dotenv.config();
@@ -43,6 +44,7 @@ app.get('/', (req: express.Request, res: express.Response) => {
 });
 
 // Use Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/lorryreceipts', lorryReceiptRoutes);

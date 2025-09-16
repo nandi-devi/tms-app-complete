@@ -16,7 +16,7 @@ import { THNPdf } from './components/THNPdf';
 import { LedgerPDF } from './components/LedgerPDF';
 import { Login } from './components/Login';
 import { Setup } from './components/Setup';
-import { hashPassword } from './services/authService';
+import { hashPassword, login, getStoredToken, storeToken, removeToken } from './services/authService';
 import type { LorryReceipt, Invoice, Customer, Vehicle, CompanyInfo, Payment } from './types';
 import { LorryReceiptStatus } from './types';
 import { initialCompanyInfo } from './constants';
@@ -80,6 +80,7 @@ const App: React.FC = () => {
   const [passwordHash, setPasswordHash] = useLocalStorage<string | null>('app_password_hash', null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -107,6 +108,11 @@ const App: React.FC = () => {
   }, [fetchCustomers, fetchVehicles]);
 
   useEffect(() => {
+    // Check if user has a valid token on app load
+    const token = getStoredToken();
+    if (token) {
+      setIsAuthenticated(true);
+    }
     fetchAllData();
   }, [fetchAllData]);
 
@@ -117,18 +123,45 @@ const App: React.FC = () => {
   };
 
   const handleLogin = async (password: string) => {
-      if (!passwordHash) return;
-      const inputHash = await hashPassword(password);
-      if (inputHash === passwordHash) {
+      setIsLoading(true);
+      setLoginError('');
+      
+      try {
+        // First try JWT authentication with the backend
+        const loginResult = await login(password);
+        
+        if (loginResult.success && loginResult.token) {
+          storeToken(loginResult.token);
           setIsAuthenticated(true);
           setLoginError('');
-      } else {
-          setLoginError('Incorrect password. Please try again.');
-          setIsAuthenticated(false);
+        } else {
+          // Fallback to local password hash verification
+          if (!passwordHash) {
+            setLoginError('No password set. Please set up a password first.');
+            setIsLoading(false);
+            return;
+          }
+          
+          const inputHash = await hashPassword(password);
+          if (inputHash === passwordHash) {
+            setIsAuthenticated(true);
+            setLoginError('');
+          } else {
+            setLoginError('Incorrect password. Please try again.');
+            setIsAuthenticated(false);
+          }
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        setLoginError('Login failed. Please try again.');
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
       }
   };
 
   const handleLogout = () => {
+      removeToken();
       setIsAuthenticated(false);
       navigateHome();
   };
@@ -499,7 +532,7 @@ const App: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-      return <Login onLogin={handleLogin} error={loginError} />;
+      return <Login onLogin={handleLogin} error={loginError} isLoading={isLoading} />;
   }
 
   return (

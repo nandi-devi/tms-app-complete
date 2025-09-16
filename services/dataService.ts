@@ -1,10 +1,12 @@
 import { API_BASE_URL } from '../constants';
+import { getAuthHeader } from './authService';
 
 export const resetApplicationData = async (): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/data/reset`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeader(),
         },
     });
     if (!response.ok) {
@@ -15,7 +17,11 @@ export const resetApplicationData = async (): Promise<any> => {
 };
 
 export const backupData = async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/data/backup`);
+    const response = await fetch(`${API_BASE_URL}/data/backup`, {
+        headers: {
+            ...getAuthHeader(),
+        },
+    });
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to backup data');
@@ -28,6 +34,7 @@ export const restoreData = async (data: any): Promise<any> => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeader(),
         },
         body: JSON.stringify(data),
     });
@@ -46,7 +53,11 @@ export interface NumberingConfigDto {
 }
 
 export const getNumberingConfigs = async (): Promise<Array<{ _id: string; start: number; end: number; next: number; allowOutsideRange?: boolean }>> => {
-    const response = await fetch(`${API_BASE_URL}/data/numbering`);
+    const response = await fetch(`${API_BASE_URL}/data/numbering`, {
+        headers: {
+            ...getAuthHeader(),
+        },
+    });
     if (!response.ok) throw new Error('Failed to load numbering config');
     return response.json();
 };
@@ -54,7 +65,10 @@ export const getNumberingConfigs = async (): Promise<Array<{ _id: string; start:
 export const saveNumberingConfig = async (config: NumberingConfigDto) => {
     const response = await fetch(`${API_BASE_URL}/data/numbering`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            ...getAuthHeader(),
+        },
         body: JSON.stringify({ key: config.key, start: config.start, end: config.end, allowOutsideRange: !!config.allowOutsideRange }),
     });
     if (!response.ok) {

@@ -1,9 +1,15 @@
 import { API_BASE_URL } from '../constants';
 import type { Customer } from '../types';
+import { getAuthHeader } from './authService';
 
 
 export const getCustomers = async (): Promise<Customer[]> => {
-    const response = await fetch(`${API_BASE_URL}/customers`);
+    const response = await fetch(`${API_BASE_URL}/customers`, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader(),
+        },
+    });
     if (!response.ok) {
         throw new Error('Failed to fetch customers');
     }
@@ -15,6 +21,7 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<Cu
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeader(),
         },
         body: JSON.stringify(customer),
     });
@@ -29,6 +36,7 @@ export const updateCustomer = async (id: string, customer: Partial<Customer>): P
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeader(),
         },
         body: JSON.stringify(customer),
     });
@@ -41,6 +49,9 @@ export const updateCustomer = async (id: string, customer: Partial<Customer>): P
 export const deleteCustomer = async (id: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/customers/${id}`, {
         method: 'DELETE',
+        headers: {
+            ...getAuthHeader(),
+        },
     });
     if (!response.ok) {
         throw new Error('Failed to delete customer');

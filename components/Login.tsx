@@ -5,9 +5,10 @@ import { Button } from './ui/Button';
 interface LoginProps {
   onLogin: (password: string) => void;
   error?: string;
+  isLoading?: boolean;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, error, isLoading = false }) => {
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +36,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
             autoComplete="current-password"
             error={error}
           />
-          <Button type="submit" className="w-full !py-3">Login</Button>
+          <Button type="submit" className="w-full !py-3" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </Button>
         </form>
       </div>
     </div>

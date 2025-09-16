@@ -16,3 +16,58 @@ export const hashPassword = async (password: string): Promise<string> => {
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   return bufferToHex(hashBuffer);
 };
+
+/**
+ * Login with password and get JWT token
+ */
+export const login = async (password: string): Promise<{ success: boolean; token?: string; message: string }> => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://tms-app-ist1.onrender.com/api'}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      return { success: true, token: data.token, message: data.message };
+    } else {
+      return { success: false, message: data.message || 'Login failed' };
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    return { success: false, message: 'Network error during login' };
+  }
+};
+
+/**
+ * Get stored token from localStorage
+ */
+export const getStoredToken = (): string | null => {
+  return localStorage.getItem('auth_token');
+};
+
+/**
+ * Store token in localStorage
+ */
+export const storeToken = (token: string): void => {
+  localStorage.setItem('auth_token', token);
+};
+
+/**
+ * Remove token from localStorage
+ */
+export const removeToken = (): void => {
+  localStorage.removeItem('auth_token');
+};
+
+/**
+ * Get authorization header for API requests
+ */
+export const getAuthHeader = (): { Authorization: string } | {} => {
+  const token = getStoredToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
