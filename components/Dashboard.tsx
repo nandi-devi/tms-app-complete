@@ -102,9 +102,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
         <KpiCard title="Total Invoices" value={kpis.totalInvoices} icon="🧾" onClick={() => onViewChange({ name: 'INVOICES' })} />
         <KpiCard title="Total LRs Today" value={kpis.totalLrsToday} icon="🚚" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { startDate: todayStr, endDate: todayStr } })} />
         <KpiCard title="Unbilled LRs" value={kpis.unbilledCount} icon="📦" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { ids: unbilledLrIds } })} />
-        <KpiCard title="Outstanding Payments" value={`₹${kpis.outstandingPayments.toLocaleString('en-IN')}`} icon="💰" onClick={() => onViewChange({ name: 'INVOICES', filters: { status: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIALLY_PAID] } })} />
-        <KpiCard title="Total Freight This Month" value={`₹${kpis.totalFreightThisMonth.toLocaleString('en-IN')}`} icon="📊" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { startDate: firstDayOfMonth, endDate: todayStr } })} />
-        <KpiCard title="Outstanding Supplier Payments" value={`₹${kpis.outstandingSupplierPayments.toLocaleString('en-IN')}`} icon="💳" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { showOnlyOutstanding: true } })} />
+        <KpiCard title="Outstanding Payments" value={`₹${(kpis.outstandingPayments || 0).toLocaleString('en-IN')}`} icon="💰" onClick={() => onViewChange({ name: 'INVOICES', filters: { status: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIALLY_PAID] } })} />
+        <KpiCard title="Total Freight This Month" value={`₹${(kpis.totalFreightThisMonth || 0).toLocaleString('en-IN')}`} icon="📊" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { startDate: firstDayOfMonth, endDate: todayStr } })} />
+        <KpiCard title="Outstanding Supplier Payments" value={`₹${(kpis.outstandingSupplierPayments || 0).toLocaleString('en-IN')}`} icon="💳" onClick={() => onViewChange({ name: 'TRUCK_HIRING_NOTES', filters: { showOnlyOutstanding: true } })} />
       </div>
 
       
@@ -134,7 +134,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(lr.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignor?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{lr.totalAmount.toLocaleString('en-IN')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[lr.status]}`}>
                        {lr.status}

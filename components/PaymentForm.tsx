@@ -66,11 +66,11 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({ invoiceId, customerId,
                         <div className="p-4 bg-slate-50 border rounded-lg mb-4 grid grid-cols-3 gap-x-4 text-center">
                             <div>
                                 <p className="text-sm text-gray-600">Invoice Total</p>
-                                <p className="font-semibold text-lg">₹{grandTotal.toLocaleString('en-IN')}</p>
+                                <p className="font-semibold text-lg">₹{(grandTotal || 0).toLocaleString('en-IN')}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Total Paid</p>
-                                <p className="font-semibold text-lg text-green-600">₹{totalPaid.toLocaleString('en-IN')}</p>
+                                <p className="font-semibold text-lg text-green-600">₹{(totalPaid || 0).toLocaleString('en-IN')}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Balance Due</p>

@@ -163,10 +163,8 @@ export interface TruckHiringNote {
   _id: string;
   thnNumber: number;
   date: string;
-  truckOwnerName: string;
+  transporterCompanyName: string;
   truckNumber: string;
-  driverName: string;
-  driverLicense: string;
   origin: string;
   destination: string;
   goodsType: string;
@@ -179,4 +177,16 @@ export interface TruckHiringNote {
   status: THNStatus;
   paidAmount: number;
   payments: Payment[];
+  // New financial fields
+  paymentTerms: 'COD' | 'Credit' | 'Advance';
+  reminders: string;
+  gstRate: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
+  loadingCharges: number;
+  unloadingCharges: number;
+  detentionCharges: number;
+  totalGstAmount: number;
+  grandTotal: number;
 }

@@ -168,8 +168,8 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.truckOwnerName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.truckNumber}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.origin} to {note.destination}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{note.freight.toLocaleString('en-IN')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">₹{note.balancePayable.toLocaleString('en-IN')}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{(note.freight || 0).toLocaleString('en-IN')}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">₹{(note.balancePayable || 0).toLocaleString('en-IN')}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                         {note.status !== 'Paid' && (
                                             <button onClick={() => handleOpenPaymentForm(note)} className="text-blue-600 hover:text-blue-900 transition-colors">Add Payment</button>

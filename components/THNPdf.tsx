@@ -34,18 +34,12 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
                 <table className="w-full border-collapse border border-gray-400 mb-4">
                     <tbody>
                         <tr>
-                            <td className="font-bold border p-2 w-1/4">Truck Owner Name</td>
-                            <td className="border p-2 w-3/4" colSpan={3}>{thn.truckOwnerName}</td>
+                            <td className="font-bold border p-2 w-1/4">Transporter/Company Name</td>
+                            <td className="border p-2 w-3/4" colSpan={3}>{thn.transporterCompanyName}</td>
                         </tr>
                         <tr>
                             <td className="font-bold border p-2">Truck Number</td>
                             <td className="border p-2">{thn.truckNumber}</td>
-                            <td className="font-bold border p-2">Driver Name</td>
-                            <td className="border p-2">{thn.driverName}</td>
-                        </tr>
-                        <tr>
-                            <td className="font-bold border p-2">Driver License</td>
-                            <td className="border p-2">{thn.driverLicense}</td>
                             <td className="font-bold border p-2">Expected Delivery</td>
                             <td className="border p-2">{formatDate(thn.expectedDeliveryDate)}</td>
                         </tr>
@@ -74,12 +68,44 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="border p-2">Total Freight</td>
+                            <td className="border p-2">Freight</td>
                             <td className="border p-2 text-right">{thn.freight.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td className="border p-2">Loading Charges</td>
+                            <td className="border p-2 text-right">{(thn.loadingCharges || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td className="border p-2">Unloading Charges</td>
+                            <td className="border p-2 text-right">{(thn.unloadingCharges || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td className="border p-2">Detention Charges</td>
+                            <td className="border p-2 text-right">{(thn.detentionCharges || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr className="font-bold">
+                            <td className="border p-2">Subtotal</td>
+                            <td className="border p-2 text-right">{((thn.freight || 0) + (thn.loadingCharges || 0) + (thn.unloadingCharges || 0) + (thn.detentionCharges || 0)).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td className="border p-2">CGST @ {(thn.gstRate || 0)/2}%</td>
+                            <td className="border p-2 text-right">{(thn.cgstAmount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td className="border p-2">SGST @ {(thn.gstRate || 0)/2}%</td>
+                            <td className="border p-2 text-right">{(thn.sgstAmount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td className="border p-2">IGST @ {thn.gstRate || 0}%</td>
+                            <td className="border p-2 text-right">{(thn.igstAmount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr className="font-bold bg-gray-100">
+                            <td className="border p-2">Grand Total</td>
+                            <td className="border p-2 text-right">{(thn.grandTotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                          <tr>
                             <td className="border p-2">Advance Paid</td>
-                            <td className="border p-2 text-right text-red-600">(-) {thn.advancePaid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td className="border p-2 text-right text-red-600">(-) {(thn.advancePaid || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                         <tr className="font-bold bg-gray-100">
                             <td className="border p-2">Balance Payable</td>
@@ -88,6 +114,16 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
                     </tbody>
                 </table>
                 <p className="text-sm font-semibold mb-4">Amount in Words: {numberToWords(thn.balancePayable)} Only /-</p>
+                
+                {/* Payment Terms and Reminders */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <p className="font-bold">Payment Terms: {thn.paymentTerms || 'COD'}</p>
+                    </div>
+                    <div>
+                        <p className="font-bold">Reminders: {thn.reminders || 'None'}</p>
+                    </div>
+                </div>
 
                 {/* Instructions */}
                 <div className="border border-gray-400 p-2 mb-8 min-h-[5rem]">
@@ -99,7 +135,7 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
                 <div className="flex justify-between items-end pt-8 mt-16">
                     <div className="w-1/2">
                         <div className="border-t-2 border-black pt-1">
-                            <p>Signature of Truck Owner / Driver</p>
+                            <p>Signature of Transporter / Company</p>
                         </div>
                     </div>
                     <div className="w-1/2 text-right">

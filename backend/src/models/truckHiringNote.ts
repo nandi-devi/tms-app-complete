@@ -4,10 +4,8 @@ import { THNStatus } from '../types';
 export interface ITruckHiringNote extends Document {
   thnNumber: number;
   date: string;
-  truckOwnerName: string;
+  transporterCompanyName: string;
   truckNumber: string;
-  driverName: string;
-  driverLicense: string;
   origin: string;
   destination: string;
   goodsType: string;
@@ -20,15 +18,25 @@ export interface ITruckHiringNote extends Document {
   status: THNStatus;
   paidAmount: number;
   payments: Schema.Types.ObjectId[];
+  // New financial fields
+  paymentTerms: 'COD' | 'Credit' | 'Advance';
+  reminders: string;
+  gstRate: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
+  loadingCharges: number;
+  unloadingCharges: number;
+  detentionCharges: number;
+  totalGstAmount: number;
+  grandTotal: number;
 }
 
 const TruckHiringNoteSchema = new Schema({
   thnNumber: { type: Number, unique: true },
   date: { type: String, required: true },
-  truckOwnerName: { type: String, required: true },
+  transporterCompanyName: { type: String, required: true },
   truckNumber: { type: String, required: true },
-  driverName: { type: String, required: true },
-  driverLicense: { type: String, required: true },
   origin: { type: String, required: true },
   destination: { type: String, required: true },
   goodsType: { type: String, required: true },
@@ -41,6 +49,18 @@ const TruckHiringNoteSchema = new Schema({
   status: { type: String, enum: Object.values(THNStatus), default: THNStatus.UNPAID },
   paidAmount: { type: Number, default: 0 },
   payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }],
+  // New financial fields
+  paymentTerms: { type: String, enum: ['COD', 'Credit', 'Advance'], default: 'COD' },
+  reminders: { type: String, default: '' },
+  gstRate: { type: Number, default: 18 },
+  cgstAmount: { type: Number, default: 0 },
+  sgstAmount: { type: Number, default: 0 },
+  igstAmount: { type: Number, default: 0 },
+  loadingCharges: { type: Number, default: 0 },
+  unloadingCharges: { type: Number, default: 0 },
+  detentionCharges: { type: Number, default: 0 },
+  totalGstAmount: { type: Number, default: 0 },
+  grandTotal: { type: Number, default: 0 },
 }, {
   timestamps: true,
 });
