@@ -5,6 +5,7 @@ import LorryReceipt from '../models/lorryReceipt';
 import { getNextSequenceValue } from '../utils/sequence';
 import { LorryReceiptStatus, InvoiceStatus } from '../types';
 import { invoiceListQuerySchema, createInvoiceSchema, updateInvoiceSchema } from '../utils/validation';
+import mongoose from 'mongoose';
 
 export const getInvoices = asyncHandler(async (req: Request, res: Response) => {
   const { page = '1', limit = '20', ...filters } = invoiceListQuerySchema.parse(req.query);
@@ -54,9 +55,15 @@ export const getInvoiceById = asyncHandler(async (req: Request, res: Response) =
 
 export const createInvoice = asyncHandler(async (req: Request, res: Response) => {
   try {
-    console.log('Received Invoice data:', JSON.stringify(req.body, null, 2));
+    console.log('=== INVOICE CREATION START ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Request headers:', JSON.stringify(req.headers, null, 2));
     
     // Transform frontend data format to backend format before validation
+    console.log('Original customerId:', req.body.customerId);
+    console.log('Original customer:', req.body.customer);
+    console.log('Original lorryReceipts:', req.body.lorryReceipts);
+    
     const transformedData = {
       ...req.body,
       customer: req.body.customerId || req.body.customer,
@@ -67,9 +74,24 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
     delete transformedData.customerId;
     
     console.log('Transformed data:', JSON.stringify(transformedData, null, 2));
+    console.log('Transformed customer:', transformedData.customer);
+    console.log('Transformed lorryReceipts:', transformedData.lorryReceipts);
+    
+    // Check database connection
+    console.log('Database connection state:', mongoose.connection.readyState);
+    console.log('Database name:', mongoose.connection.name);
+    
+    console.log('About to validate with schema...');
+    try {
+      const invoiceData = createInvoiceSchema.parse(transformedData);
+      console.log('Validation successful! Validated data:', JSON.stringify(invoiceData, null, 2));
+    } catch (validationError) {
+      console.error('Validation failed:', validationError);
+      console.error('Validation error details:', JSON.stringify(validationError, null, 2));
+      throw validationError;
+    }
     
     const invoiceData = createInvoiceSchema.parse(transformedData);
-    console.log('Validated data:', JSON.stringify(invoiceData, null, 2));
     
     // Use custom Invoice number if provided, otherwise generate one
     let invoiceNumber;
@@ -101,10 +123,13 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
     
     console.log('Invoice to create:', JSON.stringify(invoiceToCreate, null, 2));
     
+    console.log('Creating new Invoice instance...');
     const invoice = new Invoice(invoiceToCreate);
+    console.log('Invoice instance created');
 
+    console.log('Saving invoice to database...');
     const createdInvoice = await invoice.save();
-    console.log('Saved Invoice:', createdInvoice._id);
+    console.log('Invoice saved successfully:', createdInvoice._id);
     
     // Populate the created invoice before sending response
     const populatedInvoice = await Invoice.findById(createdInvoice._id)
@@ -123,7 +148,12 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
 
     res.status(201).json(populatedInvoice || createdInvoice);
   } catch (error) {
-    console.error('Error creating Invoice:', error);
+    console.error('=== INVOICE CREATION ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    console.error('Full error object:', JSON.stringify(error, null, 2));
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     
     // Handle validation errors specifically
     if (error instanceof Error && error.name === 'ValidationError') {
