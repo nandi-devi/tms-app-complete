@@ -6,7 +6,7 @@ import { Card } from './ui/Card';
 import { Select } from './ui/Select';
 import { Textarea } from './ui/Textarea';
 import { exportToCsv } from '../services/exportService';
-import { getNumberingConfigs, saveNumberingConfig, type NumberingConfigDto } from '../services/dataService';
+import { NumberingSettings } from './NumberingSettings';
 import { formatDate } from '../services/utils';
 import { indianStates } from '../constants';
 
@@ -298,88 +298,4 @@ export const Settings: React.FC<SettingsProps> = (props) => {
         </div>
     </Card>
   );
-};
-
-const NumberingSettings: React.FC = () => {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [invoice, setInvoice] = useState<{ start: number; end: number; next?: number; allowOutsideRange?: boolean }>({ start: 1, end: 999999 });
-    const [lr, setLr] = useState<{ start: number; end: number; next?: number; allowOutsideRange?: boolean }>({ start: 1, end: 999999 });
-    const [saved, setSaved] = useState(false);
-
-    const load = async () => {
-        try {
-            setLoading(true); setError('');
-            const configs = await getNumberingConfigs();
-            const inv = configs.find(c => c._id === 'invoiceId');
-            const lrr = configs.find(c => c._id === 'lorryReceiptId');
-            if (inv) setInvoice({ start: inv.start, end: inv.end, next: inv.next, allowOutsideRange: inv.allowOutsideRange });
-            if (lrr) setLr({ start: lrr.start, end: lrr.end, next: lrr.next, allowOutsideRange: lrr.allowOutsideRange });
-        } catch (e: any) {
-            setError(e.message || 'Failed to load numbering config');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    React.useEffect(() => { load(); }, []);
-
-    const save = async (key: NumberingConfigDto['key'], cfg: { start: number; end: number; allowOutsideRange?: boolean }) => {
-        if (!Number.isInteger(cfg.start) || !Number.isInteger(cfg.end) || cfg.start <= 0 || cfg.end < cfg.start) {
-            setError('Please enter valid positive integers. Start must be <= End.');
-            return;
-        }
-        setError(''); setSaved(false);
-        await saveNumberingConfig({ key, start: cfg.start, end: cfg.end, allowOutsideRange: !!cfg.allowOutsideRange });
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
-        await load();
-    };
-
-    if (loading) return <p className="text-sm text-gray-500">Loading numbering settings...</p>;
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-800">Numbering Settings</h3>
-                {saved && <span className="text-green-600 bg-green-100 px-3 py-1 rounded-md text-sm font-medium">Saved!</span>}
-            </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <Card title="Invoice Number Range">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <Input label="Start" type="number" value={invoice.start} onChange={e => setInvoice(prev => ({...prev, start: parseInt(e.target.value) || 0}))} />
-                    <Input label="End" type="number" value={invoice.end} onChange={e => setInvoice(prev => ({...prev, end: parseInt(e.target.value) || 0}))} />
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Next</label>
-                        <div className="p-2 bg-slate-100 rounded-md">{invoice.next ?? '-'}</div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <input id="inv-allow" type="checkbox" checked={!!invoice.allowOutsideRange} onChange={e => setInvoice(prev => ({...prev, allowOutsideRange: e.target.checked}))} />
-                        <label htmlFor="inv-allow" className="text-sm text-gray-700">Allow outside range when exhausted</label>
-                    </div>
-                </div>
-                <div className="flex justify-end pt-3">
-                    <Button onClick={() => save('invoiceId', invoice)}>Save Invoice Range</Button>
-                </div>
-            </Card>
-            <Card title="LR Number Range">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <Input label="Start" type="number" value={lr.start} onChange={e => setLr(prev => ({...prev, start: parseInt(e.target.value) || 0}))} />
-                    <Input label="End" type="number" value={lr.end} onChange={e => setLr(prev => ({...prev, end: parseInt(e.target.value) || 0}))} />
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Next</label>
-                        <div className="p-2 bg-slate-100 rounded-md">{lr.next ?? '-'}</div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <input id="lr-allow" type="checkbox" checked={!!lr.allowOutsideRange} onChange={e => setLr(prev => ({...prev, allowOutsideRange: e.target.checked}))} />
-                        <label htmlFor="lr-allow" className="text-sm text-gray-700">Allow outside range when exhausted</label>
-                    </div>
-                </div>
-                <div className="flex justify-end pt-3">
-                    <Button onClick={() => save('lorryReceiptId', lr)}>Save LR Range</Button>
-                </div>
-            </Card>
-            <p className="text-xs text-gray-500">When a range is configured, new numbers are assigned sequentially. If the range is exhausted and "Allow outside range" is disabled, creation will be blocked until a new range is set.</p>
-        </div>
-    );
 };
