@@ -34,22 +34,35 @@ router.get('/numbering', async (req: Request, res: Response) => {
 
 router.post('/numbering', async (req: Request, res: Response) => {
   try {
-    const { key, start, end, allowOutsideRange } = req.body;
-    if (!key || typeof start !== 'number' || typeof end !== 'number' || start > end) {
+    const { type, prefix, startNumber, endNumber, allowOutsideRange } = req.body;
+    if (!type || !prefix || typeof startNumber !== 'number' || typeof endNumber !== 'number' || startNumber > endNumber) {
       res.status(400).json({ message: 'Invalid numbering configuration payload' });
       return;
     }
-    const existing = await NumberingConfig.findById(key);
+    const existing = await NumberingConfig.findOne({ type });
     if (existing) {
-      existing.start = start;
-      existing.end = end;
-      existing.next = Math.max(start, Math.min(existing.next, end + 1));
+      existing.prefix = prefix;
+      existing.startNumber = startNumber;
+      existing.endNumber = endNumber;
       existing.allowOutsideRange = !!allowOutsideRange;
+      // If current number is outside new range, reset to start
+      if (existing.currentNumber < startNumber) {
+        existing.currentNumber = startNumber;
+      } else if (existing.currentNumber > endNumber && !allowOutsideRange) {
+        existing.currentNumber = startNumber;
+      }
       await existing.save();
       res.json(existing);
       return;
     }
-    const created = await NumberingConfig.create({ _id: key, start, end, next: start, allowOutsideRange: !!allowOutsideRange });
+    const created = await NumberingConfig.create({ 
+      type, 
+      prefix, 
+      startNumber, 
+      endNumber, 
+      currentNumber: startNumber, 
+      allowOutsideRange: !!allowOutsideRange 
+    });
     res.status(201).json(created);
   } catch (error) {
     res.status(500).json({ message: 'Error saving numbering config' });
