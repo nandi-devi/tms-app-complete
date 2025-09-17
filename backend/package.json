@@ -15,6 +15,7 @@
     "build:working": "node build-working.js",
     "build:simple-working": "node build-simple-working.js",
     "build:basic": "node build-basic.js",
+    "build:complete": "node build-complete.js",
     "build:config": "node build-config.js",
     "build:simple-direct": "node build-simple-direct.js",
     "build:robust": "node build-robust.js",
