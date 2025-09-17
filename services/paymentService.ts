@@ -7,7 +7,9 @@ export const getPayments = async (): Promise<Payment[]> => {
     if (!response.ok) {
         throw new Error('Failed to fetch payments');
     }
-    return response.json();
+    const data = await response.json();
+    // Handle both paginated and direct array responses
+    return Array.isArray(data) ? data : (data.items || []);
 };
 
 export const createPayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>): Promise<Payment> => {

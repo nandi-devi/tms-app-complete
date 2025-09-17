@@ -74,8 +74,9 @@ export const createLorryReceipt = asyncHandler(async (req: Request, res: Respons
     const lrData = createLrSchema.parse(transformedData);
     console.log('Validated data:', JSON.stringify(lrData, null, 2));
     
-    const lrNumber = await getNextSequenceValue('lorryReceiptId');
-    console.log('Generated LR number:', lrNumber);
+    // Use custom LR number if provided, otherwise generate one
+    const lrNumber = lrData.lrNumber || await getNextSequenceValue('lorryReceiptId');
+    console.log('Using LR number:', lrNumber);
     
     const lorryReceipt = new LorryReceipt({
       ...lrData,

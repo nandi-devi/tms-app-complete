@@ -7,7 +7,9 @@ export const getLorryReceipts = async (): Promise<LorryReceipt[]> => {
     if (!response.ok) {
         throw new Error('Failed to fetch lorry receipts');
     }
-    return response.json();
+    const data = await response.json();
+    // Handle both paginated and direct array responses
+    return Array.isArray(data) ? data : (data.items || []);
 };
 
 export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' | '_id'>): Promise<LorryReceipt> => {

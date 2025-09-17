@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import TruckHiringNote from '../models/truckHiringNote';
 import { getNextSequenceValue } from '../utils/sequence';
 import { createTruckHiringNoteSchema, updateTruckHiringNoteSchema } from '../utils/validation';
+import { THNStatus } from '../types';
 
 export const getTruckHiringNotes = asyncHandler(async (req: Request, res: Response) => {
   const notes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
@@ -20,23 +21,78 @@ export const getTruckHiringNoteById = asyncHandler(async (req: Request, res: Res
 });
 
 export const createTruckHiringNote = asyncHandler(async (req: Request, res: Response) => {
-  const noteData = createTruckHiringNoteSchema.parse(req.body);
-  const nextThnNumber = await getNextSequenceValue('truckHiringNoteId');
-  const balanceAmount = noteData.freightRate - (noteData.advanceAmount || 0);
+  try {
+    console.log('Received THN data:', JSON.stringify(req.body, null, 2));
+    
+    const noteData = createTruckHiringNoteSchema.parse(req.body);
+    console.log('Validated data:', JSON.stringify(noteData, null, 2));
+    
+    const nextThnNumber = await getNextSequenceValue('truckHiringNoteId');
+    console.log('Generated THN number:', nextThnNumber);
+    
+    const balanceAmount = noteData.freightRate - (noteData.advanceAmount || 0);
 
-  const note = new TruckHiringNote({
-    thnNumber: nextThnNumber,
-    ...noteData,
-    advanceAmount: noteData.advanceAmount || 0,
-    balanceAmount,
-    additionalCharges: noteData.additionalCharges || 0,
-    status: 'UNPAID',
-    paidAmount: 0,
-    payments: []
-  });
+    const note = new TruckHiringNote({
+      thnNumber: nextThnNumber,
+      ...noteData,
+      advanceAmount: noteData.advanceAmount || 0,
+      balanceAmount,
+      additionalCharges: noteData.additionalCharges || 0,
+      status: THNStatus.UNPAID,
+      paidAmount: 0,
+      payments: []
+    });
 
-  const newNote = await note.save();
-  res.status(201).json(newNote);
+    const newNote = await note.save();
+    console.log('Saved THN:', newNote._id);
+    res.status(201).json(newNote);
+  } catch (error) {
+    console.error('Error creating THN:', error);
+    
+    // Handle validation errors specifically
+    if (error instanceof Error && error.name === 'ValidationError') {
+      const validationErrors: { [key: string]: string[] } = {};
+      if ((error as any).errors) {
+        Object.keys((error as any).errors).forEach(key => {
+          validationErrors[key] = [(error as any).errors[key].message];
+        });
+      }
+      
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: {
+          fieldErrors: validationErrors
+        }
+      });
+      return;
+    }
+    
+    // Handle Zod validation errors
+    if (error instanceof Error && error.name === 'ZodError') {
+      const zodErrors: { [key: string]: string[] } = {};
+      if ((error as any).issues) {
+        (error as any).issues.forEach((issue: any) => {
+          const field = issue.path.join('.');
+          if (!zodErrors[field]) zodErrors[field] = [];
+          zodErrors[field].push(issue.message);
+        });
+      }
+      
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: {
+          fieldErrors: zodErrors
+        }
+      });
+      return;
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to create truck hiring note', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      details: error
+    });
+  }
 });
 
 export const updateTruckHiringNote = asyncHandler(async (req: Request, res: Response) => {

@@ -22,6 +22,7 @@ export const lrListQuerySchema = paginationQuerySchema.extend({
 });
 
 export const createInvoiceSchema = z.object({
+  invoiceNumber: z.number().positive().optional(),
   customer: z.string().min(1),
   lorryReceipts: z.array(z.string().min(1)).min(1),
   date: z.string().min(1),
@@ -42,6 +43,7 @@ export const createInvoiceSchema = z.object({
 export const updateInvoiceSchema = createInvoiceSchema.partial();
 
 export const createLrSchema = z.object({
+  lrNumber: z.number().positive().optional(),
   date: z.string().min(1),
   consignor: z.string().min(1),
   consignee: z.string().min(1),
@@ -100,7 +102,7 @@ export const createTruckHiringNoteSchema = z.object({
   date: z.string().min(1),
   truckNumber: z.string().min(1),
   truckType: z.string().min(1),
-  vehicleCapacity: z.string().min(1),
+  vehicleCapacity: z.number().positive(),
   loadingLocation: z.string().min(1),
   unloadingLocation: z.string().min(1),
   loadingDateTime: z.string().min(1),

@@ -1,7 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface INumberingConfig extends Document {
-  type: 'lr' | 'invoice';
+  type: 'lr' | 'invoice' | 'lorryReceiptId' | 'invoiceId' | 'truckHiringNoteId';
   prefix: string;
   startNumber: number;
   endNumber: number;
@@ -11,7 +11,7 @@ export interface INumberingConfig extends Document {
 }
 
 const NumberingConfigSchema = new Schema({
-  type: { type: String, required: true, enum: ['lr', 'invoice'] },
+  type: { type: String, required: true, enum: ['lr', 'invoice', 'lorryReceiptId', 'invoiceId', 'truckHiringNoteId'] },
   prefix: { type: String, required: true },
   startNumber: { type: Number, required: true },
   endNumber: { type: Number, required: true },

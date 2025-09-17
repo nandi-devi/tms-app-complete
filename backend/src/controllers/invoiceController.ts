@@ -53,34 +53,91 @@ export const getInvoiceById = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const createInvoice = asyncHandler(async (req: Request, res: Response) => {
-  // Transform frontend data format to backend format before validation
-  const transformedData = {
-    ...req.body,
-    customer: req.body.customerId || req.body.customer,
-    lorryReceipts: req.body.lorryReceipts?.map((lr: any) => lr._id || lr) || req.body.lorryReceipts,
-  };
-  
-  // Remove frontend-specific fields
-  delete transformedData.customerId;
-  
-  const invoiceData = createInvoiceSchema.parse(transformedData);
-  const invoiceNumber = await getNextSequenceValue('invoiceId');
+  try {
+    console.log('Received Invoice data:', JSON.stringify(req.body, null, 2));
+    
+    // Transform frontend data format to backend format before validation
+    const transformedData = {
+      ...req.body,
+      customer: req.body.customerId || req.body.customer,
+      lorryReceipts: req.body.lorryReceipts?.map((lr: any) => lr._id || lr) || req.body.lorryReceipts,
+    };
+    
+    // Remove frontend-specific fields
+    delete transformedData.customerId;
+    
+    console.log('Transformed data:', JSON.stringify(transformedData, null, 2));
+    
+    const invoiceData = createInvoiceSchema.parse(transformedData);
+    console.log('Validated data:', JSON.stringify(invoiceData, null, 2));
+    
+    // Use custom Invoice number if provided, otherwise generate one
+    const invoiceNumber = invoiceData.invoiceNumber || await getNextSequenceValue('invoiceId');
+    console.log('Using Invoice number:', invoiceNumber);
+    
+    const invoice = new Invoice({
+      ...invoiceData,
+      invoiceNumber,
+      status: InvoiceStatus.UNPAID,
+    });
 
-  const invoice = new Invoice({
-    ...invoiceData,
-    invoiceNumber,
-    status: InvoiceStatus.UNPAID,
-  });
+    const createdInvoice = await invoice.save();
+    console.log('Saved Invoice:', createdInvoice._id);
 
-  const createdInvoice = await invoice.save();
+    // Update status of associated lorry receipts
+    await LorryReceipt.updateMany(
+      { _id: { $in: invoiceData.lorryReceipts } },
+      { $set: { status: LorryReceiptStatus.INVOICED } }
+    );
 
-  // Update status of associated lorry receipts
-  await LorryReceipt.updateMany(
-    { _id: { $in: invoiceData.lorryReceipts } },
-    { $set: { status: LorryReceiptStatus.INVOICED } }
-  );
-
-  res.status(201).json(createdInvoice);
+    res.status(201).json(createdInvoice);
+  } catch (error) {
+    console.error('Error creating Invoice:', error);
+    
+    // Handle validation errors specifically
+    if (error instanceof Error && error.name === 'ValidationError') {
+      const validationErrors: { [key: string]: string[] } = {};
+      if ((error as any).errors) {
+        Object.keys((error as any).errors).forEach(key => {
+          validationErrors[key] = [(error as any).errors[key].message];
+        });
+      }
+      
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: {
+          fieldErrors: validationErrors
+        }
+      });
+      return;
+    }
+    
+    // Handle Zod validation errors
+    if (error instanceof Error && error.name === 'ZodError') {
+      const zodErrors: { [key: string]: string[] } = {};
+      if ((error as any).issues) {
+        (error as any).issues.forEach((issue: any) => {
+          const field = issue.path.join('.');
+          if (!zodErrors[field]) zodErrors[field] = [];
+          zodErrors[field].push(issue.message);
+        });
+      }
+      
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: {
+          fieldErrors: zodErrors
+        }
+      });
+      return;
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to create invoice', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      details: error
+    });
+  }
 });
 
 export const updateInvoice = asyncHandler(async (req: Request, res: Response) => {

@@ -7,7 +7,9 @@ export const getInvoices = async (): Promise<Invoice[]> => {
     if (!response.ok) {
         throw new Error('Failed to fetch invoices');
     }
-    return response.json();
+    const data = await response.json();
+    // Handle both paginated and direct array responses
+    return Array.isArray(data) ? data : (data.items || []);
 };
 
 export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promise<Invoice> => {

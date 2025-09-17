@@ -169,7 +169,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
       // And we can format the lorryReceipts to just be their IDs if needed by the backend
       const invoiceToSave = {
         ...invoice,
-        lorryReceipts: (invoice.lorryReceipts || []).map(lr => ({ _id: lr._id })),
+        lorryReceipts: (invoice.lorryReceipts || []).map(lr => lr._id),
         ...(useCustomNumber ? { invoiceNumber: parseInt(customNumber, 10) } : {}),
       };
       try {
