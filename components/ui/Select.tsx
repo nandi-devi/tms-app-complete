@@ -6,7 +6,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   wrapperClassName?: string;
 }
 
-export const Select: React.FC<SelectProps> = ({ label, id, error, wrapperClassName, children, ...props }) => {
+export const Select: React.FC<SelectProps> = ({ label, id, error, wrapperClassName, className, children, ...props }) => {
   const selectId = id || `select-${(label || '').replace(/\s+/g, '-')}`;
   
   const errorClasses = error 
@@ -19,7 +19,7 @@ export const Select: React.FC<SelectProps> = ({ label, id, error, wrapperClassNa
     <div className={`relative ${wrapperClassName}`}>
       <select
         id={selectId}
-        className={`peer block w-full rounded-lg shadow-sm appearance-none py-2.5 px-3 bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 ${error ? 'animate-shake' : ''}`}
+        className={`peer block w-full rounded-lg shadow-sm appearance-none py-3 px-3 bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 text-base ${error ? 'animate-shake' : ''} ${className || ''}`}
         {...props}
       >
         {children}

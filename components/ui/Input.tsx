@@ -8,7 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactElement<{ className?: string }>;
 }
 
-export const Input: React.FC<InputProps> = ({ label, id, type = 'text', error, wrapperClassName, icon, ...props }) => {
+export const Input: React.FC<InputProps> = ({ label, id, type = 'text', error, wrapperClassName, icon, className, ...props }) => {
   const inputId = id || `input-${(label || '').replace(/\s+/g, '-')}`;
   
   const errorClasses = error 
@@ -28,7 +28,7 @@ export const Input: React.FC<InputProps> = ({ label, id, type = 'text', error, w
       <input
         id={inputId}
         type={type}
-        className={`peer block w-full rounded-lg shadow-sm appearance-none py-2.5 pr-3 ${iconPadding} bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 ${error ? 'animate-shake' : ''}`}
+        className={`peer block w-full rounded-lg shadow-sm appearance-none py-3 pr-3 ${iconPadding} bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 text-base ${error ? 'animate-shake' : ''} ${className || ''}`}
         placeholder=" " 
         {...props}
       />

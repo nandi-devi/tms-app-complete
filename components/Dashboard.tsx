@@ -33,12 +33,12 @@ const invoiceStatusColors: { [key in InvoiceStatus]: string } = {
 };
 
 const KpiCard: React.FC<{ title: string; value: string | number; icon: string, onClick?: () => void }> = ({ title, value, icon, onClick }) => (
-    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 cursor-pointer" onClick={onClick}>
-    <div className="flex items-center justify-between">
-      <p className="text-sm font-medium text-gray-500">{title}</p>
-      <span className="text-2xl">{icon}</span>
+    <Card className="flex flex-col hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer group" onClick={onClick}>
+    <div className="flex items-center justify-between mb-3">
+      <p className="text-xs sm:text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors">{title}</p>
+      <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform duration-200">{icon}</span>
     </div>
-    <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+    <p className="text-2xl sm:text-3xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{value}</p>
   </Card>
 );
 
@@ -96,8 +96,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
     }, [lorryReceipts, invoices]);
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-6 lg:space-y-8">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
+        <h1 className="text-2xl lg:text-3xl font-bold mb-2">Welcome to AILC Dashboard</h1>
+        <p className="text-indigo-100 text-sm lg:text-base">Manage your transport operations efficiently</p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <KpiCard title="Total Lorry Receipts" value={kpis.totalLrs} icon="📄" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS' })} />
         <KpiCard title="Total Invoices" value={kpis.totalInvoices} icon="🧾" onClick={() => onViewChange({ name: 'INVOICES' })} />
         <KpiCard title="Total LRs Today" value={kpis.totalLrsToday} icon="🚚" onClick={() => onViewChange({ name: 'LORRY_RECEIPTS', filters: { startDate: todayStr, endDate: todayStr } })} />
@@ -110,11 +117,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
       
 
       <Card>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">Recent Lorry Receipts</h3>
-          <Button onClick={() => onViewChange({ name: 'LORRY_RECEIPTS' })} variant="link">View All</Button>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Recent Lorry Receipts</h3>
+          <Button onClick={() => onViewChange({ name: 'LORRY_RECEIPTS' })} variant="secondary" className="w-full sm:w-auto">
+            View All
+          </Button>
         </div>
-        <div className="overflow-x-auto">
+        
+        {/* Mobile Card View */}
+        <div className="block lg:hidden space-y-3">
+          {recentLrs.map(lr => (
+            <div key={lr._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">📄</span>
+                  <span className="font-semibold text-gray-900">LR #{lr.lrNumber}</span>
+                </div>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[lr.status]}`}>
+                  {lr.status}
+                </span>
+              </div>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p><span className="font-medium">Date:</span> {formatDate(lr.date)}</p>
+                <p><span className="font-medium">From:</span> {lr.consignor?.name}</p>
+                <p><span className="font-medium">To:</span> {lr.consignee?.name}</p>
+                <p><span className="font-medium">Amount:</span> ₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</p>
+              </div>
+              <div className="flex space-x-2 mt-3">
+                <button 
+                  onClick={() => onViewChange({ name: 'VIEW_LR', id: lr._id })} 
+                  className="flex-1 bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors"
+                >
+                  View
+                </button>
+                <button 
+                  onClick={() => onDeleteLr(lr._id)} 
+                  className="flex-1 bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>
@@ -152,11 +200,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
       </Card>
 
       <Card>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">Recent Invoices</h3>
-          <Button onClick={() => onViewChange({ name: 'INVOICES' })} variant="link">View All</Button>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Recent Invoices</h3>
+          <Button onClick={() => onViewChange({ name: 'INVOICES' })} variant="secondary" className="w-full sm:w-auto">
+            View All
+          </Button>
         </div>
-         <div className="overflow-x-auto mt-4">
+        
+        {/* Mobile Card View */}
+        <div className="block lg:hidden space-y-3">
+          {recentInvoices.map(inv => (
+            <div key={inv._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">🧾</span>
+                  <span className="font-semibold text-gray-900">Invoice #{inv.invoiceNumber}</span>
+                </div>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${invoiceStatusColors[inv.status]}`}>
+                  {inv.status}
+                </span>
+              </div>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p><span className="font-medium">Date:</span> {formatDate(inv.date)}</p>
+                <p><span className="font-medium">Client:</span> {inv.customer?.name}</p>
+                <p><span className="font-medium">Balance Due:</span> <span className="text-red-600 font-semibold">₹{(inv.balanceDue || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span></p>
+              </div>
+              <div className="flex space-x-2 mt-3">
+                <button 
+                  onClick={() => onViewChange({ name: 'VIEW_INVOICE', id: inv._id })} 
+                  className="flex-1 bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors"
+                >
+                  View
+                </button>
+                <button 
+                  onClick={() => onDeleteInvoice(inv._id)} 
+                  className="flex-1 bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>

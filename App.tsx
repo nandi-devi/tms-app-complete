@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Header } from './components/Header';
+import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { LorryReceiptForm } from './components/LorryReceiptForm';
 import { InvoiceForm } from './components/InvoiceForm';
@@ -29,6 +29,7 @@ import { getPayments, createPayment } from './services/paymentService';
 import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
 import { resetApplicationData, backupData, restoreData } from './services/dataService';
 import { ToastContainer, type Toast } from './components/ui/Toast';
+import { PerformanceMonitor } from './components/ui/PerformanceMonitor';
 
 export type View =
   | { name: 'DASHBOARD' }
@@ -536,25 +537,31 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans">
-      <Header view={currentView} onViewChange={navigateTo} onLogout={handleLogout} />
-      <main className="p-4 sm:p-6 md:p-8">
-        <div className="mx-auto w-full max-w-7xl">
-          {renderContent()}
-        </div>
-      </main>
-
-      {/* Bottom mobile nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-white/90 backdrop-blur border-t border-slate-200">
-        <div className="grid grid-cols-4 gap-1 p-2 text-xs">
-          <button className={`px-3 py-2 rounded-md ${currentView.name === 'DASHBOARD' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'}`} onClick={() => navigateTo({ name: 'DASHBOARD' })}>Home</button>
-          <button className={`px-3 py-2 rounded-md ${['LORRY_RECEIPTS','CREATE_LR','EDIT_LR','VIEW_LR'].includes(currentView.name) ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'}`} onClick={() => navigateTo({ name: 'LORRY_RECEIPTS' })}>LRs</button>
-          <button className={`px-3 py-2 rounded-md ${['INVOICES','CREATE_INVOICE','EDIT_INVOICE','VIEW_INVOICE'].includes(currentView.name) ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'}`} onClick={() => navigateTo({ name: 'INVOICES' })}>Invoices</button>
-          <button className={`px-3 py-2 rounded-md ${currentView.name === 'PENDING_PAYMENTS' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'}`} onClick={() => navigateTo({ name: 'PENDING_PAYMENTS' })}>Payments</button>
-        </div>
-      </nav>
-      <div className="h-16 md:h-0" />
+    <div className="bg-gray-50 min-h-screen font-sans">
+      <Navigation 
+        currentView={currentView} 
+        onViewChange={navigateTo} 
+        onLogout={handleLogout}
+        isAuthenticated={isAuthenticated}
+      />
+      
+      {/* Main content area with responsive layout */}
+      <div className="lg:pl-64">
+        {/* Mobile header spacer */}
+        <div className="h-16 lg:h-0 safe-area-inset-top" />
+        
+        <main className="p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
+          <div className="mx-auto w-full max-w-7xl">
+            {renderContent()}
+          </div>
+        </main>
+        
+        {/* Mobile bottom nav spacer */}
+        <div className="h-20 lg:h-0 safe-area-inset-bottom" />
+      </div>
+      
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      <PerformanceMonitor />
     </div>
   );
 };

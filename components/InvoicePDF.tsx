@@ -32,7 +32,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
     const subTotal = invoice.totalAmount || 0;
 
     return (
-        <div id="invoice-pdf" className="bg-white p-8 text-sm font-sans" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'sans-serif' }}>
+        <div id="invoice-pdf" className="bg-white p-8 text-sm font-sans" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'sans-serif', lineHeight: '1.4' }}>
             <div className="w-full">
                 {/* Header */}
                 <div className="text-center mb-8">
@@ -42,13 +42,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                         </div>
                     </div>
                     <h1 className="text-4xl font-bold tracking-wider text-gray-800">{companyInfo.name}</h1>
-                    <p className="text-gray-600">{companyInfo.address}</p>
-                    <p className="text-gray-600">PH: {companyInfo.phone1} / {companyInfo.phone2}</p>
-                    <div className="flex justify-center space-x-4 text-gray-600">
+                    <p className="text-gray-600 text-sm">{companyInfo.address}</p>
+                    <p className="text-gray-600 text-sm font-semibold">PH: {companyInfo.phone1} / {companyInfo.phone2}</p>
+                    <div className="flex justify-center space-x-4 text-gray-600 text-sm">
                         <span>E-Mail : {companyInfo.email}</span>
                         <span>Web :- {companyInfo.website}</span>
                     </div>
-                    <p className="font-bold mt-2">GSTIN:{companyInfo.gstin}</p>
+                    <p className="font-bold mt-2 text-sm">GSTIN: {companyInfo.gstin}</p>
                 </div>
 
                 {/* Customer and Invoice Details */}
@@ -72,18 +72,18 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 <table className="w-full text-left text-xs mb-4 border-collapse border border-gray-400">
                     <thead className="bg-gray-100">
                         <tr className="border-b-2 border-black">
-                            <th className="p-1 border border-gray-300">Lr No.</th>
-                            <th className="p-1 border border-gray-300">Lr Date</th>
-                            <th className="p-1 border border-gray-300">Destination</th>
-                            <th className="p-1 border border-gray-300">Rep Date</th>
-                            <th className="p-1 border border-gray-300">Del Date</th>
-                            <th className="p-1 border border-gray-300">Inv No.</th>
-                            <th className="p-1 border border-gray-300">Consignee</th>
-                            <th className="p-1 border border-gray-300 text-right">Packs</th>
-                            <th className="p-1 border border-gray-300 text-right">Weight</th>
-                            <th className="p-1 border border-gray-300 text-right">Freight</th>
-                            <th className="p-1 border border-gray-300 text-right">B Ch.</th>
-                            <th className="p-1 border border-gray-300 text-right">Total</th>
+                            <th className="p-2 border border-gray-300 font-semibold">Lr No.</th>
+                            <th className="p-2 border border-gray-300 font-semibold">Lr Date</th>
+                            <th className="p-2 border border-gray-300 font-semibold">Destination</th>
+                            <th className="p-2 border border-gray-300 font-semibold">Rep Date</th>
+                            <th className="p-2 border border-gray-300 font-semibold">Del Date</th>
+                            <th className="p-2 border border-gray-300 font-semibold">Inv No.</th>
+                            <th className="p-2 border border-gray-300 font-semibold">Consignee</th>
+                            <th className="p-2 border border-gray-300 text-right font-semibold">Packs</th>
+                            <th className="p-2 border border-gray-300 text-right font-semibold">Weight</th>
+                            <th className="p-2 border border-gray-300 text-right font-semibold">Freight</th>
+                            <th className="p-2 border border-gray-300 text-right font-semibold">B Ch.</th>
+                            <th className="p-2 border border-gray-300 text-right font-semibold">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,31 +93,31 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             const weight = (lr.packages || []).reduce((sum, p) => sum + (p.chargedWeight || 0), 0);
                             const otherCharges = (lr.charges?.aoc || 0) + (lr.charges?.hamali || 0) + (lr.charges?.bCh || 0) + (lr.charges?.trCh || 0) + (lr.charges?.detentionCh || 0);
                             return (
-                                <tr key={lr._id} className="border-b border-gray-300">
-                                    <td className="p-1 border border-gray-300">{lr.lrNumber || ''}</td>
-                                    <td className="p-1 border border-gray-300">{formatDate(lr.date)}</td>
-                                    <td className="p-1 border border-gray-300">{lr.to || ''}</td>
-                                    <td className="p-1 border border-gray-300">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
-                                    <td className="p-1 border border-gray-300">{lr.deliveryDate ? formatDate(lr.deliveryDate) : '-'}</td>
-                                    <td className="p-1 border border-gray-300">{lr.invoiceNo || ''}</td>
-                                    <td className="p-1 border border-gray-300">{consignee?.tradeName || consignee?.name || ''}</td>
-                                    <td className="p-1 border border-gray-300 text-right">{packs}</td>
-                                    <td className="p-1 border border-gray-300 text-right">{weight.toLocaleString('en-IN')}</td>
-                                    <td className="p-1 border border-gray-300 text-right">{(lr.charges?.freight || 0).toLocaleString('en-IN')}</td>
-                                    <td className="p-1 border border-gray-300 text-right">{otherCharges > 0 ? otherCharges.toLocaleString('en-IN') : '-'}</td>
-                                    <td className="p-1 border border-gray-300 text-right font-semibold">{(lr.totalAmount || 0).toLocaleString('en-IN')}</td>
+                                <tr key={lr._id} className="border-b border-gray-300 hover:bg-gray-50">
+                                    <td className="p-2 border border-gray-300">{lr.lrNumber || ''}</td>
+                                    <td className="p-2 border border-gray-300">{formatDate(lr.date)}</td>
+                                    <td className="p-2 border border-gray-300">{lr.to || ''}</td>
+                                    <td className="p-2 border border-gray-300">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
+                                    <td className="p-2 border border-gray-300">{lr.deliveryDate ? formatDate(lr.deliveryDate) : '-'}</td>
+                                    <td className="p-2 border border-gray-300">{lr.invoiceNo || ''}</td>
+                                    <td className="p-2 border border-gray-300">{consignee?.tradeName || consignee?.name || ''}</td>
+                                    <td className="p-2 border border-gray-300 text-right">{packs}</td>
+                                    <td className="p-2 border border-gray-300 text-right">{weight.toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-right">{(lr.charges?.freight || 0).toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-right">{otherCharges > 0 ? otherCharges.toLocaleString('en-IN') : '-'}</td>
+                                    <td className="p-2 border border-gray-300 text-right font-semibold">{(lr.totalAmount || 0).toLocaleString('en-IN')}</td>
                                 </tr>
                             )
                         })}
                     </tbody>
-                     <tfoot className="font-bold bg-gray-100 text-sm">
+                     <tfoot className="font-bold bg-gray-200 text-sm">
                         <tr className="border-t-2 border-black">
-                            <td colSpan={7} className="p-1 border border-gray-300 text-right">Totals:</td>
-                            <td className="p-1 border border-gray-300 text-right">{totalPacks.toLocaleString('en-IN')}</td>
-                            <td className="p-1 border border-gray-300 text-right">{totalWeight.toLocaleString('en-IN')}</td>
-                            <td className="p-1 border border-gray-300 text-right">{totalFreight.toLocaleString('en-IN')}</td>
-                            <td className="p-1 border border-gray-300 text-right">{totalOtherCharges > 0 ? totalOtherCharges.toLocaleString('en-IN') : '-'}</td>
-                            <td className="p-1 border border-gray-300 text-right">{subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td colSpan={7} className="p-2 border border-gray-300 text-right">Totals:</td>
+                            <td className="p-2 border border-gray-300 text-right">{totalPacks.toLocaleString('en-IN')}</td>
+                            <td className="p-2 border border-gray-300 text-right">{totalWeight.toLocaleString('en-IN')}</td>
+                            <td className="p-2 border border-gray-300 text-right">{totalFreight.toLocaleString('en-IN')}</td>
+                            <td className="p-2 border border-gray-300 text-right">{totalOtherCharges > 0 ? totalOtherCharges.toLocaleString('en-IN') : '-'}</td>
+                            <td className="p-2 border border-gray-300 text-right">{subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                         </tr>
                     </tfoot>
                 </table>

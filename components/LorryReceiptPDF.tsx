@@ -38,24 +38,24 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
     ];
     
     return (
-        <div className="bg-white p-4 text-xs font-mono break-inside-avoid shadow-lg" style={{ width: '210mm', minHeight:'297mm', fontFamily: 'monospace' }}>
+        <div className="bg-white p-4 text-xs font-mono break-inside-avoid shadow-lg" style={{ width: '210mm', minHeight:'297mm', fontFamily: 'monospace', lineHeight: '1.2' }}>
             <div className="border-2 border-black p-2">
                 {/* Header */}
                 <div className="text-center border-b-2 border-black pb-2 mb-2">
-                    <p className="text-sm">!! Jai Bajarang Bali !!</p>
-                    <p className="text-sm">!! Jai Dada Nath !!</p>
+                    <p className="text-sm font-semibold">!! Jai Bajarang Bali !!</p>
+                    <p className="text-sm font-semibold">!! Jai Dada Nath !!</p>
                     <div className="flex justify-between items-start">
                         <div className="w-20 h-20 bg-red-600 text-white font-bold text-6xl flex items-center justify-center transform -skew-x-12 ml-4">
                            A<sup className="text-lg absolute top-0 right-0 mr-1 mt-1">®</sup>
                         </div>
                         <div className="flex-grow">
                             <h1 className="text-4xl font-bold tracking-wider">{companyInfo.name}</h1>
-                            <p>{companyInfo.address}</p>
-                            <p>E-mail: {companyInfo.email} / Web.: {companyInfo.website}</p>
+                            <p className="text-sm">{companyInfo.address}</p>
+                            <p className="text-sm">E-mail: {companyInfo.email} / Web.: {companyInfo.website}</p>
                         </div>
-                        <div className="text-right">
-                            <p>Mob.: {companyInfo.phone1}</p>
-                            <p>{companyInfo.phone2}</p>
+                        <div className="text-right text-sm whitespace-nowrap">
+                            <p className="font-semibold">Mob.: {companyInfo.phone1}</p>
+                            <p className="font-semibold">{companyInfo.phone2}</p>
                         </div>
                     </div>
                 </div>
@@ -150,60 +150,60 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                 {/* Table */}
                 <div className="grid grid-cols-12 border-2 border-black border-t-0">
                     <div className={hideCharges ? "col-span-12" : "col-span-8 border-r-2 border-black"}>
-                        <div className="grid grid-cols-8 text-center font-bold border-b-2 border-black">
-                            <div className="col-span-1 border-r-2 border-black p-1">No. of Pkgs.</div>
-                            <div className="col-span-1 border-r-2 border-black p-1">Method of Packing</div>
-                            <div className="col-span-4 border-r-2 border-black p-1">DESCRIPTION (Said to Contain)</div>
-                            <div className="col-span-2 p-1">WEIGHT</div>
+                        <div className="grid grid-cols-8 text-center font-bold border-b-2 border-black bg-gray-50">
+                            <div className="col-span-1 border-r-2 border-black p-2 text-xs">No. of Pkgs.</div>
+                            <div className="col-span-1 border-r-2 border-black p-2 text-xs">Method of Packing</div>
+                            <div className="col-span-4 border-r-2 border-black p-2 text-xs">DESCRIPTION (Said to Contain)</div>
+                            <div className="col-span-2 p-2 text-xs">WEIGHT</div>
                         </div>
-                        <div className="grid grid-cols-8 text-center font-bold border-b-2 border-black">
+                        <div className="grid grid-cols-8 text-center font-bold border-b border-black bg-gray-50">
                             <div className="col-span-1 border-r-2 border-black p-1"></div>
                             <div className="col-span-1 border-r-2 border-black p-1"></div>
                             <div className="col-span-4 border-r-2 border-black p-1"></div>
-                            <div className="col-span-1 border-r-2 border-black p-1">Actual</div>
-                            <div className="col-span-1 p-1">Charged</div>
+                            <div className="col-span-1 border-r-2 border-black p-1 text-xs">Actual</div>
+                            <div className="col-span-1 p-1 text-xs">Charged</div>
                         </div>
                          <div className="grid grid-cols-8 text-center min-h-[10rem]">
                             {(lorryReceipt.packages || []).map((pkg, i) => (
                                 <React.Fragment key={i}>
-                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.count || 0}</div>
-                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.packingMethod || ''}</div>
-                                    <div className="col-span-4 border-r-2 border-black p-1 text-left">{pkg.description || ''}</div>
-                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.actualWeight || 0}</div>
-                                    <div className="col-span-1 p-1">{pkg.chargedWeight || 0}</div>
+                                    <div className="col-span-1 border-r-2 border-black p-2 text-xs">{pkg.count || 0}</div>
+                                    <div className="col-span-1 border-r-2 border-black p-2 text-xs">{pkg.packingMethod || ''}</div>
+                                    <div className="col-span-4 border-r-2 border-black p-2 text-left text-xs">{pkg.description || ''}</div>
+                                    <div className="col-span-1 border-r-2 border-black p-2 text-xs">{pkg.actualWeight || 0}</div>
+                                    <div className="col-span-1 p-2 text-xs">{pkg.chargedWeight || 0}</div>
                                 </React.Fragment>
                             ))}
                         </div>
                     </div>
                     {!hideCharges && (
                         <div className="col-span-4">
-                            <div className="grid grid-cols-4 text-center font-bold border-b-2 border-black">
-                                <div className="col-span-2 border-r-2 border-black p-1"></div>
-                                <div className="col-span-2 p-1">AMOUNT TO PAY / PAID</div>
+                            <div className="grid grid-cols-4 text-center font-bold border-b-2 border-black bg-gray-50">
+                                <div className="col-span-2 border-r-2 border-black p-2"></div>
+                                <div className="col-span-2 p-2 text-xs">AMOUNT TO PAY / PAID</div>
                             </div>
-                            <div className="grid grid-cols-4 text-center font-bold border-b-2 border-black">
-                                <div className="col-span-2 border-r-2 border-black p-1">Particulars</div>
-                                <div className="col-span-1 border-r-2 border-black p-1">Rs.</div>
-                                <div className="col-span-1 p-1">P.</div>
+                            <div className="grid grid-cols-4 text-center font-bold border-b border-black bg-gray-50">
+                                <div className="col-span-2 border-r-2 border-black p-2 text-xs">Particulars</div>
+                                <div className="col-span-1 border-r-2 border-black p-2 text-xs">Rs.</div>
+                                <div className="col-span-1 p-2 text-xs">P.</div>
                             </div>
                             <div className="min-h-[10rem]">
                                 {charges.map(charge => (
-                                    <div key={charge.label} className="grid grid-cols-4 border-b-2 border-black h-6 items-center">
-                                        <div className="col-span-2 border-r-2 border-black pl-1 h-full">{charge.label}</div>
-                                        <div className="col-span-1 border-r-2 border-black pr-1 text-right h-full">{charge.value > 0 ? charge.value.toFixed(2) : ''}</div>
+                                    <div key={charge.label} className="grid grid-cols-4 border-b border-black h-8 items-center hover:bg-gray-50">
+                                        <div className="col-span-2 border-r-2 border-black pl-2 h-full flex items-center text-xs">{charge.label}</div>
+                                        <div className="col-span-1 border-r-2 border-black pr-2 text-right h-full flex items-center text-xs">{charge.value > 0 ? charge.value.toFixed(2) : ''}</div>
                                         <div className="col-span-1 h-full"></div>
                                     </div>
                                  ))}
-                                 <div className="grid grid-cols-4 h-6 items-center">
+                                 <div className="grid grid-cols-4 h-8 items-center">
                                     <div className="col-span-2 border-r-2 border-black h-full"></div>
                                     <div className="col-span-1 border-r-2 border-black h-full"></div>
                                     <div className="col-span-1 h-full"></div>
                                  </div>
                             </div>
-                            <div className="grid grid-cols-4 font-bold border-t-2 border-black">
-                                <div className="col-span-2 border-r-2 border-black p-1">TOTAL</div>
-                                <div className="col-span-1 border-r-2 border-black p-1 text-right">{(lorryReceipt.totalAmount || 0).toFixed(2)}</div>
-                                <div className="col-span-1 p-1"></div>
+                            <div className="grid grid-cols-4 font-bold border-t-2 border-black bg-gray-100">
+                                <div className="col-span-2 border-r-2 border-black p-2 text-xs">TOTAL</div>
+                                <div className="col-span-1 border-r-2 border-black p-2 text-right text-xs">{(lorryReceipt.totalAmount || 0).toFixed(2)}</div>
+                                <div className="col-span-1 p-2"></div>
                             </div>
                         </div>
                     )}
