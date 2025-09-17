@@ -31,6 +31,7 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
     onClose,
     title
 }) => {
+    console.log('UniversalPaymentForm received customerId:', customerId);
     const totalPaid = grandTotal - balanceDue;
     const isForInvoice = !!invoiceId;
     const isForTHN = !!truckHiringNoteId;
@@ -46,6 +47,8 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
         referenceNo: '',
         notes: '',
     });
+    
+    console.log('Initial payment state:', JSON.stringify(payment, null, 2));
     
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [isSaving, setIsSaving] = useState(false);

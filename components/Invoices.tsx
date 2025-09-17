@@ -115,6 +115,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
   const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
 
   const handleOpenPaymentForm = (invoice: Invoice) => {
+    console.log('Opening payment form for invoice:', JSON.stringify(invoice, null, 2));
+    console.log('CustomerId:', invoice.customerId);
     setSelectedInvoiceForPayment(invoice);
     setIsPaymentFormOpen(true);
   };
