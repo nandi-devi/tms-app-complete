@@ -72,25 +72,56 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
     console.log('Validated data:', JSON.stringify(invoiceData, null, 2));
     
     // Use custom Invoice number if provided, otherwise generate one
-    const invoiceNumber = invoiceData.invoiceNumber || await getNextSequenceValue('invoiceId');
-    console.log('Using Invoice number:', invoiceNumber);
+    let invoiceNumber;
+    if (invoiceData.invoiceNumber) {
+      invoiceNumber = invoiceData.invoiceNumber;
+      console.log('Using custom Invoice number:', invoiceNumber);
+    } else {
+      try {
+        invoiceNumber = await getNextSequenceValue('invoiceId');
+        console.log('Generated Invoice number:', invoiceNumber);
+      } catch (seqError) {
+        console.error('Sequence generation error:', seqError);
+        // Fallback to timestamp-based number
+        invoiceNumber = Date.now();
+        console.log('Using fallback Invoice number:', invoiceNumber);
+      }
+    }
     
-    const invoice = new Invoice({
+    // Ensure all required fields are present
+    const invoiceToCreate = {
       ...invoiceData,
       invoiceNumber,
       status: InvoiceStatus.UNPAID,
-    });
+      // Ensure these fields have default values if not provided
+      isRcm: invoiceData.isRcm || false,
+      isManualGst: invoiceData.isManualGst || false,
+      remarks: invoiceData.remarks || '',
+    };
+    
+    console.log('Invoice to create:', JSON.stringify(invoiceToCreate, null, 2));
+    
+    const invoice = new Invoice(invoiceToCreate);
 
     const createdInvoice = await invoice.save();
     console.log('Saved Invoice:', createdInvoice._id);
+    
+    // Populate the created invoice before sending response
+    const populatedInvoice = await Invoice.findById(createdInvoice._id)
+      .populate('customer')
+      .populate('lorryReceipts');
+    console.log('Populated Invoice:', populatedInvoice?._id);
 
     // Update status of associated lorry receipts
-    await LorryReceipt.updateMany(
-      { _id: { $in: invoiceData.lorryReceipts } },
-      { $set: { status: LorryReceiptStatus.INVOICED } }
-    );
+    if (invoiceData.lorryReceipts && invoiceData.lorryReceipts.length > 0) {
+      await LorryReceipt.updateMany(
+        { _id: { $in: invoiceData.lorryReceipts } },
+        { $set: { status: LorryReceiptStatus.INVOICED } }
+      );
+      console.log('Updated LR statuses for invoice');
+    }
 
-    res.status(201).json(createdInvoice);
+    res.status(201).json(populatedInvoice || createdInvoice);
   } catch (error) {
     console.error('Error creating Invoice:', error);
     

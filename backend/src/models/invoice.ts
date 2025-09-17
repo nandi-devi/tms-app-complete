@@ -8,7 +8,7 @@ export interface IInvoice extends Document {
   customer: Types.ObjectId;
   lorryReceipts: Types.ObjectId[];
   totalAmount: number;
-  remarks: string;
+  remarks?: string;
   gstType: GstType;
   cgstRate: number;
   sgstRate: number;

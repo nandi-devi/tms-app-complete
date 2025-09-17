@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GstType, GstPayableBy, InvoiceStatus, LorryReceiptStatus } from '../types';
 
 export const paginationQuerySchema = z.object({
   page: z.string().optional(),
@@ -27,7 +28,7 @@ export const createInvoiceSchema = z.object({
   lorryReceipts: z.array(z.string().min(1)).min(1),
   date: z.string().min(1),
   totalAmount: z.number().nonnegative(),
-  gstType: z.string(),
+  gstType: z.nativeEnum(GstType),
   cgstRate: z.number().nonnegative(),
   sgstRate: z.number().nonnegative(),
   igstRate: z.number().nonnegative(),
@@ -68,7 +69,7 @@ export const createLrSchema = z.object({
   totalAmount: z.number().nonnegative(),
   eWayBillNo: z.string().optional(),
   valueGoods: z.number().optional(),
-  gstPayableBy: z.enum(['Consignor', 'Consignee', 'Transporter']),
+  gstPayableBy: z.nativeEnum(GstPayableBy),
   reportingDate: z.string().optional(),
   deliveryDate: z.string().optional(),
   insurance: z.object({
