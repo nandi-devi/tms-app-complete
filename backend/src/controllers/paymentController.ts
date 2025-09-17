@@ -91,12 +91,10 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     console.log('Payment saved successfully:', newPayment._id);
 
   if (invoiceId) {
-    const invoice = await Invoice.findById(invoiceId);
-    if (invoice) {
-      invoice.payments.push(newPayment._id as any);
-      await invoice.save();
-      await updateInvoiceStatus(invoiceId);
-    }
+    await Invoice.findByIdAndUpdate(invoiceId, {
+      $push: { payments: newPayment._id }
+    }, { runValidators: false });
+    await updateInvoiceStatus(invoiceId);
   } else if (truckHiringNoteId) {
     await TruckHiringNote.findByIdAndUpdate(truckHiringNoteId, {
       $push: { payments: newPayment._id }
