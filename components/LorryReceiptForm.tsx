@@ -230,6 +230,11 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
+    console.log('Validating form with data:', lr);
+    console.log('Vehicle number:', vehicleNumber);
+    console.log('ConsignorId:', lr.consignorId);
+    console.log('ConsigneeId:', lr.consigneeId);
+    
     if (!lr.date) newErrors.date = 'Date is required.';
     if (!vehicleNumber.trim()) newErrors.vehicleId = 'Vehicle is required.';
     if (!lr.from) newErrors.from = 'Origin is required.';
@@ -244,13 +249,20 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         if (!Number.isInteger(n) || n <= 0) newErrors.lrNumber = 'Enter a valid positive LR number.';
         else if (lorryReceipts.some(x => x.lrNumber === n && x._id !== (existingLr?._id))) newErrors.lrNumber = 'LR number already exists.';
     }
+    
+    console.log('Validation errors:', newErrors);
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const isValid = Object.keys(newErrors).length === 0;
+    console.log('Form is valid:', isValid);
+    return isValid;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
+    console.log('Form submitted, validating...');
+    const isValid = validate();
+    console.log('Validation result:', isValid);
+    if (isValid) {
       const trimmedVehicleNumber = vehicleNumber.trim();
       let vehicle = vehicles.find(v => v.number.toLowerCase() === trimmedVehicleNumber.toLowerCase());
       let finalVehicleId: string;
@@ -289,6 +301,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
           setErrors(newErrors);
         }
       }
+    } else {
+      console.log('Form validation failed, not submitting');
     }
   };
   
