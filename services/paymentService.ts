@@ -11,12 +11,21 @@ export const getPayments = async (): Promise<Payment[]> => {
 };
 
 export const createPayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice'>): Promise<Payment> => {
+    // Transform frontend data format to backend format
+    const backendData = {
+        ...payment,
+        customer: payment.customerId,
+    };
+    
+    // Remove the frontend-specific fields
+    delete (backendData as any).customerId;
+    
     const response = await fetch(`${API_BASE_URL}/payments`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payment),
+        body: JSON.stringify(backendData),
     });
     if (!response.ok) {
         throw new Error('Failed to create payment');
@@ -25,12 +34,20 @@ export const createPayment = async (payment: Omit<Payment, '_id' | 'customer' | 
 };
 
 export const updatePayment = async (id: string, payment: Partial<Payment>): Promise<Payment> => {
+    // Transform frontend data format to backend format
+    const backendData = { ...payment };
+    
+    if (payment.customerId) {
+        backendData.customer = payment.customerId;
+        delete (backendData as any).customerId;
+    }
+    
     const response = await fetch(`${API_BASE_URL}/payments/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payment),
+        body: JSON.stringify(backendData),
     });
     if (!response.ok) {
         throw new Error('Failed to update payment');

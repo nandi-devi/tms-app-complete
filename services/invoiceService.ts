@@ -11,12 +11,21 @@ export const getInvoices = async (): Promise<Invoice[]> => {
 };
 
 export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promise<Invoice> => {
+    // Transform frontend data format to backend format
+    const backendData = {
+        ...invoice,
+        customer: invoice.customerId,
+    };
+    
+    // Remove the frontend-specific fields
+    delete (backendData as any).customerId;
+    
     const response = await fetch(`${API_BASE_URL}/invoices`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(invoice),
+        body: JSON.stringify(backendData),
     });
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
@@ -33,12 +42,20 @@ export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promi
 };
 
 export const updateInvoice = async (id: string, invoice: Partial<Invoice>): Promise<Invoice> => {
+    // Transform frontend data format to backend format
+    const backendData = { ...invoice };
+    
+    if (invoice.customerId) {
+        backendData.customer = invoice.customerId;
+        delete (backendData as any).customerId;
+    }
+    
     const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(invoice),
+        body: JSON.stringify(backendData),
     });
     if (!response.ok) {
         throw new Error('Failed to update invoice');
