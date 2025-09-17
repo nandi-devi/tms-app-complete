@@ -29,12 +29,12 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
     const { consignor, consignee, vehicle } = lorryReceipt;
 
     const charges = [
-        { label: 'Freight', value: lorryReceipt.charges.freight },
-        { label: 'AOC', value: lorryReceipt.charges.aoc },
-        { label: 'Hamali', value: lorryReceipt.charges.hamali },
-        { label: 'B. Ch.', value: lorryReceipt.charges.bCh },
-        { label: 'Tr. Ch.', value: lorryReceipt.charges.trCh },
-        { label: 'Detention Ch.', value: lorryReceipt.charges.detentionCh },
+        { label: 'Freight', value: lorryReceipt.charges?.freight || 0 },
+        { label: 'AOC', value: lorryReceipt.charges?.aoc || 0 },
+        { label: 'Hamali', value: lorryReceipt.charges?.hamali || 0 },
+        { label: 'B. Ch.', value: lorryReceipt.charges?.bCh || 0 },
+        { label: 'Tr. Ch.', value: lorryReceipt.charges?.trCh || 0 },
+        { label: 'Detention Ch.', value: lorryReceipt.charges?.detentionCh || 0 },
     ];
     
     return (
@@ -164,13 +164,13 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                             <div className="col-span-1 p-1">Charged</div>
                         </div>
                          <div className="grid grid-cols-8 text-center min-h-[10rem]">
-                            {lorryReceipt.packages.map((pkg, i) => (
+                            {(lorryReceipt.packages || []).map((pkg, i) => (
                                 <React.Fragment key={i}>
-                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.count}</div>
-                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.packingMethod}</div>
-                                    <div className="col-span-4 border-r-2 border-black p-1 text-left">{pkg.description}</div>
-                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.actualWeight}</div>
-                                    <div className="col-span-1 p-1">{pkg.chargedWeight}</div>
+                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.count || 0}</div>
+                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.packingMethod || ''}</div>
+                                    <div className="col-span-4 border-r-2 border-black p-1 text-left">{pkg.description || ''}</div>
+                                    <div className="col-span-1 border-r-2 border-black p-1">{pkg.actualWeight || 0}</div>
+                                    <div className="col-span-1 p-1">{pkg.chargedWeight || 0}</div>
                                 </React.Fragment>
                             ))}
                         </div>
@@ -202,7 +202,7 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                             </div>
                             <div className="grid grid-cols-4 font-bold border-t-2 border-black">
                                 <div className="col-span-2 border-r-2 border-black p-1">TOTAL</div>
-                                <div className="col-span-1 border-r-2 border-black p-1 text-right">{lorryReceipt.totalAmount.toFixed(2)}</div>
+                                <div className="col-span-1 border-r-2 border-black p-1 text-right">{(lorryReceipt.totalAmount || 0).toFixed(2)}</div>
                                 <div className="col-span-1 p-1"></div>
                             </div>
                         </div>
@@ -214,10 +214,10 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                     <div className="col-span-3 pr-1 space-y-1">
                         <div className="border border-black p-1"><span className="font-bold">E-Way Bill No.</span> {lorryReceipt.eWayBillNo}</div>
                         <div className="border border-black p-1">
-                            <span className="font-bold">Value of Goods Rs.</span> {lorryReceipt.valueGoods.toLocaleString('en-IN')}
-                            {lorryReceipt.valueGoods > 0 &&
+                            <span className="font-bold">Value of Goods Rs.</span> {(lorryReceipt.valueGoods || 0).toLocaleString('en-IN')}
+                            {(lorryReceipt.valueGoods || 0) > 0 &&
                                 <span className="italic block text-[10px]">
-                                    ({numberToWords(lorryReceipt.valueGoods)} Rupees Only)
+                                    ({numberToWords(lorryReceipt.valueGoods || 0)} Rupees Only)
                                 </span>
                             }
                         </div>

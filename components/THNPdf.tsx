@@ -39,21 +39,21 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
                         </tr>
                         <tr>
                             <td className="font-bold border p-2">Truck Number</td>
-                            <td className="border p-2">{thn.truckNumber}</td>
+                            <td className="border p-2">{thn.truckNumber || ''}</td>
                             <td className="font-bold border p-2">Expected Delivery</td>
                             <td className="border p-2">{formatDate(thn.expectedDeliveryDate)}</td>
                         </tr>
                         <tr>
                             <td className="font-bold border p-2">Origin</td>
-                            <td className="border p-2">{thn.origin}</td>
+                            <td className="border p-2">{thn.origin || ''}</td>
                             <td className="font-bold border p-2">Destination</td>
-                            <td className="border p-2">{thn.destination}</td>
+                            <td className="border p-2">{thn.destination || ''}</td>
                         </tr>
                          <tr>
                             <td className="font-bold border p-2">Type of Goods</td>
-                            <td className="border p-2">{thn.goodsType}</td>
+                            <td className="border p-2">{thn.goodsType || ''}</td>
                             <td className="font-bold border p-2">Weight</td>
-                            <td className="border p-2">{thn.weight} kg</td>
+                            <td className="border p-2">{thn.weight || 0} kg</td>
                         </tr>
                     </tbody>
                 </table>
@@ -69,7 +69,7 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
                     <tbody>
                         <tr>
                             <td className="border p-2">Freight</td>
-                            <td className="border p-2 text-right">{thn.freight.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td className="border p-2 text-right">{(thn.freight || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                         <tr>
                             <td className="border p-2">Loading Charges</td>
@@ -109,11 +109,11 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
                         </tr>
                         <tr className="font-bold bg-gray-100">
                             <td className="border p-2">Balance Payable</td>
-                            <td className="border p-2 text-right">{thn.balancePayable.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td className="border p-2 text-right">{(thn.balancePayable || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                     </tbody>
                 </table>
-                <p className="text-sm font-semibold mb-4">Amount in Words: {numberToWords(thn.balancePayable)} Only /-</p>
+                <p className="text-sm font-semibold mb-4">Amount in Words: {numberToWords(thn.balancePayable || 0)} Only /-</p>
                 
                 {/* Payment Terms and Reminders */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

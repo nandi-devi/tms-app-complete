@@ -23,13 +23,13 @@ interface InvoiceViewProps {
 export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, customers }) => {
     const client = invoice.customer;
 
-    const totalPacks = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.count, 0), 0);
-    const totalWeight = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.packages.reduce((pkgSum, p) => pkgSum + p.chargedWeight, 0), 0);
-    const totalFreight = invoice.lorryReceipts.reduce((sum, lr) => sum + lr.charges.freight, 0);
-    const totalOtherCharges = invoice.lorryReceipts.reduce((sum, lr) => {
-        return sum + lr.charges.aoc + lr.charges.hamali + lr.charges.bCh + lr.charges.trCh + lr.charges.detentionCh;
+    const totalPacks = (invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.packages || []).reduce((pkgSum, p) => pkgSum + (p.count || 0), 0), 0);
+    const totalWeight = (invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.packages || []).reduce((pkgSum, p) => pkgSum + (p.chargedWeight || 0), 0), 0);
+    const totalFreight = (invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.freight || 0), 0);
+    const totalOtherCharges = (invoice.lorryReceipts || []).reduce((sum, lr) => {
+        return sum + (lr.charges?.aoc || 0) + (lr.charges?.hamali || 0) + (lr.charges?.bCh || 0) + (lr.charges?.trCh || 0) + (lr.charges?.detentionCh || 0);
     }, 0);
-    const subTotal = invoice.totalAmount;
+    const subTotal = invoice.totalAmount || 0;
 
     return (
         <div id="invoice-pdf" className="bg-white p-8 text-sm font-sans" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'sans-serif' }}>
@@ -87,25 +87,25 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                         </tr>
                     </thead>
                     <tbody>
-                        {invoice.lorryReceipts.map(lr => {
+                        {(invoice.lorryReceipts || []).map(lr => {
                             const consignee = lr.consignee;
-                            const packs = lr.packages.reduce((sum, p) => sum + p.count, 0);
-                            const weight = lr.packages.reduce((sum, p) => sum + p.chargedWeight, 0);
-                            const otherCharges = lr.charges.aoc + lr.charges.hamali + lr.charges.bCh + lr.charges.trCh + lr.charges.detentionCh;
+                            const packs = (lr.packages || []).reduce((sum, p) => sum + (p.count || 0), 0);
+                            const weight = (lr.packages || []).reduce((sum, p) => sum + (p.chargedWeight || 0), 0);
+                            const otherCharges = (lr.charges?.aoc || 0) + (lr.charges?.hamali || 0) + (lr.charges?.bCh || 0) + (lr.charges?.trCh || 0) + (lr.charges?.detentionCh || 0);
                             return (
                                 <tr key={lr._id} className="border-b border-gray-300">
-                                    <td className="p-1 border border-gray-300">{lr.lrNumber}</td>
+                                    <td className="p-1 border border-gray-300">{lr.lrNumber || ''}</td>
                                     <td className="p-1 border border-gray-300">{formatDate(lr.date)}</td>
-                                    <td className="p-1 border border-gray-300">{lr.to}</td>
+                                    <td className="p-1 border border-gray-300">{lr.to || ''}</td>
                                     <td className="p-1 border border-gray-300">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
                                     <td className="p-1 border border-gray-300">{lr.deliveryDate ? formatDate(lr.deliveryDate) : '-'}</td>
-                                    <td className="p-1 border border-gray-300">{lr.invoiceNo}</td>
-                                    <td className="p-1 border border-gray-300">{consignee?.tradeName || consignee?.name}</td>
+                                    <td className="p-1 border border-gray-300">{lr.invoiceNo || ''}</td>
+                                    <td className="p-1 border border-gray-300">{consignee?.tradeName || consignee?.name || ''}</td>
                                     <td className="p-1 border border-gray-300 text-right">{packs}</td>
                                     <td className="p-1 border border-gray-300 text-right">{weight.toLocaleString('en-IN')}</td>
-                                    <td className="p-1 border border-gray-300 text-right">{lr.charges.freight.toLocaleString('en-IN')}</td>
+                                    <td className="p-1 border border-gray-300 text-right">{(lr.charges?.freight || 0).toLocaleString('en-IN')}</td>
                                     <td className="p-1 border border-gray-300 text-right">{otherCharges > 0 ? otherCharges.toLocaleString('en-IN') : '-'}</td>
-                                    <td className="p-1 border border-gray-300 text-right font-semibold">{lr.totalAmount.toLocaleString('en-IN')}</td>
+                                    <td className="p-1 border border-gray-300 text-right font-semibold">{(lr.totalAmount || 0).toLocaleString('en-IN')}</td>
                                 </tr>
                             )
                         })}
@@ -127,33 +127,33 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     <div className="w-2/5 space-y-1 text-sm">
                         <div className="flex justify-between">
                             <span>Sub Total:</span>
-                            <span>{invoice.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span>{(invoice.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                         {!invoice.isRcm && (
                             <>
                                 {invoice.gstType === GstType.CGST_SGST && (
                                     <>
                                         <div className="flex justify-between">
-                                            <span>Add CGST @ {invoice.cgstRate}%{invoice.isManualGst && <em className="text-xs ml-1">(Manual)</em>}:</span>
-                                            <span>{invoice.cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            <span>Add CGST @ {invoice.cgstRate || 0}%{invoice.isManualGst && <em className="text-xs ml-1">(Manual)</em>}:</span>
+                                            <span>{(invoice.cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span>Add SGST @ {invoice.sgstRate}%{invoice.isManualGst && <em className="text-xs ml-1">(Manual)</em>}:</span>
-                                            <span>{invoice.sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            <span>Add SGST @ {invoice.sgstRate || 0}%{invoice.isManualGst && <em className="text-xs ml-1">(Manual)</em>}:</span>
+                                            <span>{(invoice.sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                     </>
                                 )}
                                 {invoice.gstType === GstType.IGST && (
                                     <div className="flex justify-between">
-                                        <span>Add IGST @ {invoice.igstRate}%{invoice.isManualGst && <em className="text-xs ml-1">(Manual)</em>}:</span>
-                                        <span>{invoice.igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span>Add IGST @ {invoice.igstRate || 0}%{invoice.isManualGst && <em className="text-xs ml-1">(Manual)</em>}:</span>
+                                        <span>{(invoice.igstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 )}
                             </>
                         )}
                         <div className="flex justify-between font-bold border-t-2 border-b-2 border-black py-1 text-base">
                             <span>Grand Total:</span>
-                            <span>{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span>{(invoice.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>
@@ -167,8 +167,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
 
                 {/* Amount in words and Remarks */}
                 <div className="mb-8 text-sm">
-                    <p><span className="font-bold">Rs : </span>{numberToWords(Math.round(invoice.grandTotal))} Only /-</p>
-                    <p><span className="font-bold">Remark :</span> {invoice.remarks}</p>
+                    <p><span className="font-bold">Rs : </span>{numberToWords(Math.round(invoice.grandTotal || 0))} Only /-</p>
+                    <p><span className="font-bold">Remark :</span> {invoice.remarks || ''}</p>
                 </div>
 
                 {/* Footer */}
