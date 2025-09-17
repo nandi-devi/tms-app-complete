@@ -10,6 +10,9 @@ import { Button } from './ui/Button';
 import { InvoiceView } from './InvoicePDF';
 import { UniversalPaymentForm } from './UniversalPaymentForm';
 import { UniversalPaymentHistoryModal } from './UniversalPaymentHistoryModal';
+import { FilterSection } from './ui/FilterSection';
+import { Pagination } from './ui/Pagination';
+import { StatusBadge, getStatusVariant } from './ui/StatusBadge';
 
 interface InvoicesProps {
   invoices: Invoice[];
@@ -113,6 +116,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const handleOpenPaymentForm = (invoice: Invoice) => {
     console.log('Opening payment form for invoice:', JSON.stringify(invoice, null, 2));
@@ -155,6 +162,28 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
       .sort((a, b) => b.invoiceNumber - a.invoiceNumber);
   }, [invoices, searchTerm, startDate, endDate, selectedCustomerId, status]);
 
+  // Paginated invoices
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredInvoices, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, startDate, endDate, selectedCustomerId, status]);
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStartDate('');
+    setEndDate('');
+    setSelectedCustomerId('');
+    setStatus([]);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-8">
       {isPaymentFormOpen && selectedInvoiceForPayment && (
@@ -184,14 +213,15 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
         />
       )}
       <Card>
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Invoices</h2>
             <div className="space-x-2">
               <Button onClick={() => onViewChange({ name: 'CREATE_INVOICE' })}>Create New Invoice</Button>
               <Button onClick={onBack} variant="secondary">Back to Dashboard</Button>
             </div>
         </div>
-        <div className="sticky top-[72px] z-10 -mx-6 px-6 py-3 bg-white/95 backdrop-blur border-b">
+        
+        <FilterSection onClearFilters={handleClearFilters}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Input
               type="text"
@@ -199,9 +229,22 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               wrapperClassName="md:col-span-2 lg:col-span-2"
+              placeholder="Enter invoice number, client name..."
             />
-            <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            <Input 
+              label="Start Date" 
+              type="date" 
+              value={startDate} 
+              onChange={e => setStartDate(e.target.value)}
+              placeholder="Select start date"
+            />
+            <Input 
+              label="End Date" 
+              type="date" 
+              value={endDate} 
+              onChange={e => setEndDate(e.target.value)}
+              placeholder="Select end date"
+            />
             <Select
               label="Client"
               value={selectedCustomerId}
@@ -219,39 +262,37 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
                 {Object.values(InvoiceStatus).map(s => <option key={s} value={s}>{s}</option>)}
             </Select>
           </div>
-        </div>
+        </FilterSection>
       </Card>
 
       <Card>
-         <div className="overflow-x-auto mt-2">
+         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice No.</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Paid Amount</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance Due</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice No.</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Paid Amount</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance Due</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredInvoices.map(inv => (
+              {paginatedInvoices.map(inv => (
                 <tr key={inv._id} onClick={() => setPreviewItem({ type: 'INVOICE', data: inv })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inv.invoiceNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{(inv.grandTotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right">₹{(inv.paidAmount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold text-right">₹{(inv.balanceDue || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${invoiceStatusColors[inv.status]}`}>
-                      {inv.status}
-                    </span>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{inv.invoiceNumber}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatDate(inv.date)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">₹{(inv.grandTotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-green-600 text-right">₹{(inv.paidAmount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-red-600 font-semibold text-right">₹{(inv.balanceDue || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <StatusBadge status={inv.status} variant={getStatusVariant(inv.status)} size="sm" />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     {inv.status !== InvoiceStatus.PAID && (
                       <button onClick={(e) => { e.stopPropagation(); handleOpenPaymentForm(inv); }} className="text-blue-600 hover:text-blue-900 transition-colors">Add Payment</button>
                     )}
@@ -264,6 +305,18 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
               ))}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredInvoices.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </div>
       </Card>
     </div>

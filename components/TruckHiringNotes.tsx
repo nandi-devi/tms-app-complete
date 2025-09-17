@@ -8,6 +8,9 @@ import { UniversalPaymentForm } from './UniversalPaymentForm';
 import { UniversalPaymentHistoryModal } from './UniversalPaymentHistoryModal';
 import { formatDate } from '../services/utils';
 import type { View } from '../App';
+import { FilterSection } from './ui/FilterSection';
+import { Pagination } from './ui/Pagination';
+import { StatusBadge, getStatusVariant } from './ui/StatusBadge';
 
 interface TruckHiringNotesProps {
     notes: TruckHiringNote[];
@@ -47,6 +50,10 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
     const [showOnlyOutstanding, setShowOnlyOutstanding] = useState(initialFilters?.showOnlyOutstanding || false);
     const [truckType, setTruckType] = useState(initialFilters?.truckType || '');
     const [status, setStatus] = useState(initialFilters?.status || '');
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(25);
 
     const filteredNotes = useMemo(() => {
         return notes
@@ -75,6 +82,29 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
             })
             .sort((a, b) => b.thnNumber - a.thnNumber);
     }, [notes, searchTerm, startDate, endDate, showOnlyOutstanding, truckType, status]);
+
+    // Paginated notes
+    const paginatedNotes = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredNotes.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredNotes, currentPage, itemsPerPage]);
+
+    const totalPages = Math.ceil(filteredNotes.length / itemsPerPage);
+
+    // Reset to first page when filters change
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, startDate, endDate, showOnlyOutstanding, truckType, status]);
+
+    const handleClearFilters = () => {
+        setSearchTerm('');
+        setStartDate('');
+        setEndDate('');
+        setShowOnlyOutstanding(false);
+        setTruckType('');
+        setStatus('');
+        setCurrentPage(1);
+    };
 
     const handleSave = async (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => {
         if (editingNote) {
@@ -171,67 +201,82 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                 />
             )}
 
-            <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-gray-800">Truck Hiring Notes</h2>
-                <div>
-                    <Button onClick={handleAddNew} className="mr-4">Add New THN</Button>
-                    <Button variant="secondary" onClick={onBack}>Back</Button>
+            <Card>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800">Truck Hiring Notes</h2>
+                    <div className="space-x-2">
+                        <Button onClick={handleAddNew}>Add New THN</Button>
+                        <Button variant="secondary" onClick={onBack}>Back</Button>
+                    </div>
                 </div>
-            </div>
 
-            <Card title="Filters">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Input
-                        type="text"
-                        label="Search by THN No, Owner, Truck No, etc..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        wrapperClassName="md:col-span-3"
-                    />
-                    <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                    <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-                    <div className="flex items-center pt-6">
-                        <input
-                            id="outstanding-checkbox"
-                            type="checkbox"
-                            checked={showOnlyOutstanding}
-                            onChange={(e) => setShowOnlyOutstanding(e.target.checked)}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                <FilterSection onClearFilters={handleClearFilters}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Input
+                            type="text"
+                            label="Search by THN No, Owner, Truck No, etc..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            wrapperClassName="md:col-span-3"
+                            placeholder="Enter THN number, owner name, truck number..."
                         />
-                        <label htmlFor="outstanding-checkbox" className="ml-2 block text-sm text-gray-900">
-                            Show Only Outstanding
-                        </label>
+                        <Input 
+                            label="Start Date" 
+                            type="date" 
+                            value={startDate} 
+                            onChange={e => setStartDate(e.target.value)}
+                            placeholder="Select start date"
+                        />
+                        <Input 
+                            label="End Date" 
+                            type="date" 
+                            value={endDate} 
+                            onChange={e => setEndDate(e.target.value)}
+                            placeholder="Select end date"
+                        />
+                        <div className="flex items-center pt-6">
+                            <input
+                                id="outstanding-checkbox"
+                                type="checkbox"
+                                checked={showOnlyOutstanding}
+                                onChange={(e) => setShowOnlyOutstanding(e.target.checked)}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor="outstanding-checkbox" className="ml-2 block text-sm text-gray-900">
+                                Show Only Outstanding
+                            </label>
+                        </div>
                     </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Truck Type</label>
-                        <select
-                            value={truckType}
-                            onChange={(e) => setTruckType(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-                        >
-                            <option value="">All Types</option>
-                            {uniqueTruckTypes.map(type => (
-                                <option key={type} value={type}>{type}</option>
-                            ))}
-                        </select>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Truck Type</label>
+                            <select
+                                value={truckType}
+                                onChange={(e) => setTruckType(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                            >
+                                <option value="">All Types</option>
+                                {uniqueTruckTypes.map(type => (
+                                    <option key={type} value={type}>{type}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                            >
+                                <option value="">All Status</option>
+                                <option value="Unpaid">Unpaid</option>
+                                <option value="Partially Paid">Partially Paid</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-                        >
-                            <option value="">All Status</option>
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Partially Paid">Partially Paid</option>
-                            <option value="Paid">Paid</option>
-                        </select>
-                    </div>
-                </div>
+                </FilterSection>
             </Card>
 
             <Card>
@@ -239,40 +284,40 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-slate-100">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">THN No.</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck Details</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Freight</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">THN No.</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck Details</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Freight</th>
+                                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
+                                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                                <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredNotes.map(note => (
-                                <tr key={note._id} className="hover:bg-slate-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {paginatedNotes.map(note => (
+                                <tr key={note._id} className="hover:bg-slate-50 transition-colors duration-200">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                                         #{note.thnNumber}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         {formatDate(note.date)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         <div>
                                             <div className="font-medium">{note.truckNumber}</div>
                                             <div className="text-xs text-gray-400">{note.truckType}</div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         <div>
                                             <div>{note.loadingLocation} → {note.unloadingLocation}</div>
                                             <div className="text-xs text-gray-400">{note.goodsType}</div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         <div>
                                             <div className="font-medium">{note.truckOwnerName}</div>
                                             {note.truckOwnerContact && (
@@ -280,24 +325,22 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                                         ₹{(note.freightRate || 0).toLocaleString('en-IN')}
                                         {note.additionalCharges > 0 && (
                                             <div className="text-xs text-gray-400">+₹{note.additionalCharges.toLocaleString('en-IN')}</div>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
                                         ₹{(note.paidAmount || 0).toLocaleString('en-IN')}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-red-600 text-right">
                                         ₹{(note.balanceAmount || 0).toLocaleString('en-IN')}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(note.status)}`}>
-                                            {note.status}
-                                        </span>
+                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                        <StatusBadge status={note.status} variant={getStatusVariant(note.status)} size="sm" />
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                         <button 
                                             onClick={() => handleAddPayment(note)} 
                                             className="text-green-600 hover:text-green-900 transition-colors"
@@ -336,6 +379,18 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                             )}
                         </tbody>
                     </table>
+                </div>
+                
+                {/* Pagination */}
+                <div className="mt-6">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={filteredNotes.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={setItemsPerPage}
+                    />
                 </div>
             </Card>
         </div>

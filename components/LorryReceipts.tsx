@@ -11,6 +11,9 @@ import { Textarea } from './ui/Textarea';
 import { LorryReceiptView } from './LorryReceiptPDF';
 import { uploadPod } from '../services/lorryReceiptService';
 import { API_BASE_URL } from '../constants';
+import { FilterSection } from './ui/FilterSection';
+import { Pagination } from './ui/Pagination';
+import { StatusBadge, getStatusVariant } from './ui/StatusBadge';
 
 interface LorryReceiptsProps {
   lorryReceipts: LorryReceipt[];
@@ -117,6 +120,10 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
   const [podFiles, setPodFiles] = useState<File[]>([]);
   const [isSubmittingPod, setIsSubmittingPod] = useState(false);
   const [viewPodFor, setViewPodFor] = useState<LorryReceipt | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const filteredLrs = useMemo(() => {
     return lorryReceipts
@@ -153,6 +160,28 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
       })
       .sort((a, b) => b.lrNumber - a.lrNumber); // Sort by new sequential ID
   }, [lorryReceipts, searchTerm, startDate, endDate, selectedCustomerId, selectedStatus, initialFilters]);
+
+  // Paginated LRs
+  const paginatedLrs = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredLrs.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredLrs, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredLrs.length / itemsPerPage);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, startDate, endDate, selectedCustomerId, selectedStatus]);
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStartDate('');
+    setEndDate('');
+    setSelectedCustomerId('');
+    setSelectedStatus([]);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-8">
@@ -241,44 +270,58 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
         />
       )}
       <Card>
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Lorry Receipts</h2>
             <div className="space-x-2">
               <Button onClick={() => onViewChange({ name: 'CREATE_LR' })}>Create New Lorry Receipt</Button>
               <Button onClick={onBack} variant="secondary">Back to Dashboard</Button>
             </div>
         </div>
-        <div className="sticky top-[72px] z-10 -mx-6 px-6 py-3 bg-white/95 backdrop-blur border-b">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Input
-            type="text"
-            label="Search by LR No, Client, From, To..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            wrapperClassName="lg:col-span-3"
-          />
-          <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-           <Select
-              label="Client"
-              value={selectedCustomerId}
-              onChange={e => setSelectedCustomerId(e.target.value)}
-            >
-              <option value="">All Clients</option>
-              {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-            </Select>
-           <Select
-              label="LR Status"
-              value={selectedStatus.length > 0 ? selectedStatus[0] : ''}
-              onChange={e => setSelectedStatus(e.target.value ? [e.target.value as LorryReceiptStatus] : [])}
-            >
-              <option value="">All Statuses</option>
-              {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
-            </Select>
-        </div>
-        </div>
+        
+        <FilterSection onClearFilters={handleClearFilters}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Input
+              type="text"
+              label="Search by LR No, Client, From, To..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              wrapperClassName="lg:col-span-3"
+              placeholder="Enter LR number, client name, from/to location..."
+            />
+            <Input 
+              label="Start Date" 
+              type="date" 
+              value={startDate} 
+              onChange={e => setStartDate(e.target.value)}
+              placeholder="Select start date"
+            />
+            <Input 
+              label="End Date" 
+              type="date" 
+              value={endDate} 
+              onChange={e => setEndDate(e.target.value)}
+              placeholder="Select end date"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+             <Select
+                label="Client"
+                value={selectedCustomerId}
+                onChange={e => setSelectedCustomerId(e.target.value)}
+              >
+                <option value="">All Clients</option>
+                {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+              </Select>
+             <Select
+                label="LR Status"
+                value={selectedStatus.length > 0 ? selectedStatus[0] : ''}
+                onChange={e => setSelectedStatus(e.target.value ? [e.target.value as LorryReceiptStatus] : [])}
+              >
+                <option value="">All Statuses</option>
+                {Object.values(LorryReceiptStatus).map(s => <option key={s} value={s}>{s}</option>)}
+              </Select>
+          </div>
+        </FilterSection>
       </Card>
 
       <Card>
@@ -286,26 +329,26 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LR No.</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consignor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consignee</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From / To</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LR No.</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consignor</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consignee</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From / To</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLrs.map(lr => (
+              {paginatedLrs.map(lr => (
                 <tr key={lr._id} onClick={() => setPreviewItem({ type: 'LR', data: lr })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lr.lrNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(lr.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignor?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.from} to {lr.to}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{lr.lrNumber}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatDate(lr.date)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{lr.consignor?.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{lr.from} to {lr.to}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <select
                       value={lr.status}
                       onClick={e => e.stopPropagation()}
@@ -317,7 +360,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
                       ))}
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     {[LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) && (
                         <button onClick={(e) => { e.stopPropagation(); onViewChange({ name: 'CREATE_INVOICE_FROM_LR', lrId: lr._id }); }} className="text-blue-600 hover:text-blue-900 transition-colors">Create Invoice</button>
                     )}
@@ -335,6 +378,18 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
               ))}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredLrs.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </div>
       </Card>
     </div>

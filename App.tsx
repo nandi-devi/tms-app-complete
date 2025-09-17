@@ -598,13 +598,13 @@ const App: React.FC = () => {
         isAuthenticated={isAuthenticated}
       />
       
-      {/* Main content area with responsive layout */}
-      <div className="lg:pl-64">
+      {/* Main content area with responsive layout - Optimized for expanded space */}
+      <div className="lg:pl-16">
         {/* Mobile header spacer */}
         <div className="h-16 lg:h-0 safe-area-inset-top" />
         
         <main className="p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
-          <div className="mx-auto w-full max-w-7xl">
+          <div className="mx-auto w-full max-w-none">
             {renderContent()}
           </div>
         </main>

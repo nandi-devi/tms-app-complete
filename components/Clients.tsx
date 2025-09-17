@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Customer } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -7,6 +7,7 @@ import { Select } from './ui/Select';
 import { Textarea } from './ui/Textarea';
 import { fetchGstDetails } from '../services/utils';
 import { indianStates } from '../constants';
+import { Pagination } from './ui/Pagination';
 
 interface ClientsProps {
   customers: Customer[];
@@ -142,6 +143,18 @@ const ClientFormModal: React.FC<{
 
 export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, onBack }) => {
     const [editingClient, setEditingClient] = useState<Partial<Customer> | null>(null);
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(25);
+    
+    // Paginated customers
+    const paginatedCustomers = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return customers.slice(startIndex, startIndex + itemsPerPage);
+    }, [customers, currentPage, itemsPerPage]);
+    
+    const totalPages = Math.ceil(customers.length / itemsPerPage);
 
     const handleAddNew = () => {
         setEditingClient({ name: '', tradeName: '', address: '', state: '', gstin: '', contactPerson: '', contactPhone: '', contactEmail: '' });
@@ -158,50 +171,47 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, o
     return (
         <div className="space-y-6">
             {editingClient && <ClientFormModal client={editingClient} onSave={onSave} onClose={handleCloseModal} />}
-            <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-gray-800">Manage Clients</h2>
-                <div>
-                  <Button onClick={handleAddNew} className="mr-4">Add New Client</Button>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Manage Clients</h2>
+                <div className="space-x-2">
+                  <Button onClick={handleAddNew}>Add New Client</Button>
                   <Button variant="secondary" onClick={onBack}>Back</Button>
                 </div>
             </div>
             <Card>
-                <div className="sticky top-[72px] z-10 -mx-6 px-6 py-3 bg-white/95 backdrop-blur border-b">
-                  <div className="flex items-center justify-between">
+                <div className="mb-4">
                     <p className="text-sm text-gray-600">Total Clients: <span className="font-semibold text-gray-800">{customers.length}</span></p>
-                    <Button onClick={handleAddNew} size="sm">Add Client</Button>
-                  </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-slate-100">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address & State</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GSTIN</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address & State</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GSTIN</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
+                                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {customers.map(client => (
-                                <tr key={client._id} className="hover:bg-slate-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm align-top">
+                            {paginatedCustomers.map(client => (
+                                <tr key={client._id} className="hover:bg-slate-50 transition-colors duration-200">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm align-top">
                                         <div className="font-medium text-gray-900">{client.name}</div>
                                         {client.tradeName && <div className="text-gray-500">{client.tradeName}</div>}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500 align-top">
+                                    <td className="px-4 py-3 text-sm text-gray-500 align-top">
                                         <p className="whitespace-pre-line">{client.address}</p>
                                         <p className="font-semibold text-gray-700 mt-1">{client.state}</p>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">{client.gstin}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 align-top">{client.gstin || '-'}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 align-top">
                                         {client.contactPerson && <div className="font-semibold">{client.contactPerson}</div>}
                                         {client.contactPhone && <div className="text-xs">{client.contactPhone}</div>}
                                         {client.contactEmail && <div className="text-xs">{client.contactEmail}</div>}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4 align-top">
-                                        <button onClick={() => handleEdit(client)} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
+                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-2 align-top">
+                                        <button onClick={() => handleEdit(client)} className="text-indigo-600 hover:text-indigo-900 transition-colors">Edit</button>
                                         <button onClick={() => onDelete(client._id)} className="text-red-600 hover:text-red-900 transition-colors">Delete</button>
                                     </td>
                                 </tr>
@@ -213,6 +223,18 @@ export const Clients: React.FC<ClientsProps> = ({ customers, onSave, onDelete, o
                             )}
                         </tbody>
                     </table>
+                </div>
+                
+                {/* Pagination */}
+                <div className="mt-6">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={customers.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={setItemsPerPage}
+                    />
                 </div>
             </Card>
         </div>

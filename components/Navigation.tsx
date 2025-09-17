@@ -132,17 +132,17 @@ export const Navigation: React.FC<NavigationProps> = ({
         `}
         title={item.label}
       >
-        <span className={`text-lg ${isMobile ? 'mr-3' : 'mb-1'}`}>
+        <span className={`text-lg ${isMobile ? 'mr-3' : 'mb-1'} relative`}>
           {item.icon}
+          {item.badge && item.badge > 0 && (
+            <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+              {item.badge}
+            </span>
+          )}
         </span>
-        <span className={`${isMobile ? 'text-sm' : 'text-xs'} font-medium`}>
+        <span className={`${isMobile ? 'text-sm' : 'text-xs'} font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
           {item.label}
         </span>
-        {item.badge && item.badge > 0 && (
-          <span className="ml-2 px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">
-            {item.badge}
-          </span>
-        )}
       </button>
     );
   };
@@ -153,15 +153,15 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-30 bg-white border-r border-gray-200">
+      {/* Desktop Sidebar - Optimized for space efficiency */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-16 lg:fixed lg:inset-y-0 lg:z-30 bg-white border-r border-gray-200 group hover:w-64 transition-all duration-300 ease-in-out">
         {/* Logo */}
-        <div className="flex items-center px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center px-3 py-4 border-b border-gray-200 group-hover:px-6 transition-all duration-300">
           <div className="flex items-center cursor-pointer group" onClick={() => onViewChange({ name: 'DASHBOARD' })}>
             <div className="bg-indigo-600 text-white font-bold text-xl w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-lg">
               A
             </div>
-            <div className="ml-3">
+            <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
               <h1 className="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">
                 AILC
               </h1>
@@ -171,20 +171,23 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-2 py-6 space-y-1 overflow-y-auto group-hover:px-4 transition-all duration-300">
           {navigationItems.map((item) => (
             <NavItemComponent key={item.id} item={item} />
           ))}
         </nav>
 
         {/* Logout Button */}
-        <div className="px-4 py-4 border-t border-gray-200">
+        <div className="px-2 py-4 border-t border-gray-200 group-hover:px-4 transition-all duration-300">
           <button
             onClick={onLogout}
             className="w-full flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
+            title="Logout"
           >
-            <span className="text-lg mr-3">🚪</span>
-            <span className="text-sm font-medium">Logout</span>
+            <span className="text-lg group-hover:mr-3 transition-all duration-300">🚪</span>
+            <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap ml-0 group-hover:ml-2">
+              Logout
+            </span>
           </button>
         </div>
       </aside>
