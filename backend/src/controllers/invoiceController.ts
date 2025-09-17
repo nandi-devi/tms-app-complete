@@ -100,7 +100,7 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
       console.log('Using custom Invoice number:', invoiceNumber);
     } else {
       try {
-        invoiceNumber = await getNextSequenceValue('invoiceId');
+        invoiceNumber = await getNextSequenceValue('invoice');
         console.log('Generated Invoice number:', invoiceNumber);
       } catch (seqError) {
         console.error('Sequence generation error:', seqError);

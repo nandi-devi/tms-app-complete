@@ -148,8 +148,8 @@ class NumberingService {
     const nextNumber = config.currentNumber;
     const formattedNumber = `${config.prefix}${nextNumber.toString().padStart(6, '0')}`;
 
-    // Update the current number
-    await this.updateCurrentNumber(type, nextNumber + 1);
+    // Don't update the current number here - let the backend handle it
+    // The backend will increment the number when the record is actually saved
 
     return formattedNumber;
   }
