@@ -30,6 +30,7 @@ import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote, dele
 import { resetApplicationData, backupData, restoreData } from './services/dataService';
 import { ToastContainer, type Toast } from './components/ui/Toast';
 import { PerformanceMonitor } from './components/ui/PerformanceMonitor';
+import { InputFieldTest } from './components/InputFieldTest';
 
 export type View =
   | { name: 'DASHBOARD' }
@@ -48,6 +49,7 @@ export type View =
   | { name: 'PENDING_PAYMENTS' }
   | { name: 'TRUCK_HIRING_NOTES', filters?: any }
   | { name: 'VIEW_THN', id: string }
+  | { name: 'INPUT_TEST' }
   | { name: 'VIEW_CLIENT_LEDGER_PDF', customerId: string }
   | { name: 'VIEW_COMPANY_LEDGER_PDF' };
 
@@ -507,6 +509,9 @@ const App: React.FC = () => {
       case 'VIEW_THN':
         const thnToView = truckHiringNotes.find(thn => thn._id === currentView.id);
         return thnToView ? <THNPdf thn={thnToView} onBack={goBack} /> : <div>THN not found</div>;
+
+      case 'INPUT_TEST':
+        return <InputFieldTest />;
 
       case 'LORRY_RECEIPTS':
         return <LorryReceipts

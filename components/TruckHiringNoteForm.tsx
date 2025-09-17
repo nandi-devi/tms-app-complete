@@ -265,7 +265,7 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                             value={note.loadingLocation || ''}
                                             onChange={handleChange}
                                             list="loading-cities"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400"
                                             placeholder="Enter loading location"
                                             required
                                         />
@@ -282,7 +282,7 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                             value={note.unloadingLocation || ''}
                                             onChange={handleChange}
                                             list="unloading-cities"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400"
                                             placeholder="Enter unloading location"
                                             required
                                         />

@@ -73,6 +73,13 @@ const navigationItems: NavItem[] = [
     icon: '⚙️',
     target: { name: 'SETTINGS' },
     isActive: (view) => view.name === 'SETTINGS'
+  },
+  {
+    id: 'input-test',
+    label: 'Input Test',
+    icon: '🧪',
+    target: { name: 'INPUT_TEST' },
+    isActive: (view) => view.name === 'INPUT_TEST'
   }
 ];
 

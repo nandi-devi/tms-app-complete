@@ -212,7 +212,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
               <input type="checkbox" id="inv-custom-num" checked={useCustomNumber} onChange={e => setUseCustomNumber(e.target.checked)} />
               <label htmlFor="inv-custom-num" className="text-sm text-gray-700">Enter custom invoice number</label>
               {useCustomNumber && (
-                <input type="number" className="border rounded px-2 py-1 w-40" value={customNumber} onChange={e => setCustomNumber(e.target.value)} placeholder="e.g. 5001" />
+                <input type="number" className="border border-gray-300 rounded px-2 py-1 w-40 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value={customNumber} onChange={e => setCustomNumber(e.target.value)} placeholder="e.g. 5001" />
               )}
             </div>
             {errors.invoiceNumber && <p className="text-xs text-red-600 mt-1">{errors.invoiceNumber}</p>}

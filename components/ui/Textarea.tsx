@@ -17,7 +17,7 @@ export const Textarea: React.FC<TextareaProps> = ({ label, id, error, wrapperCla
     <div className={`relative ${wrapperClassName}`}>
       <textarea
         id={textareaId}
-        className={`peer block w-full rounded-lg shadow-sm appearance-none py-3 px-3 bg-transparent border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 text-base resize-none ${error ? 'animate-shake' : ''} ${className || ''}`}
+        className={`peer block w-full rounded-lg shadow-sm appearance-none py-3 px-3 bg-white border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 text-base text-gray-900 placeholder-gray-400 resize-none ${error ? 'animate-shake' : ''} ${className || ''}`}
         placeholder=" "
         {...props}
       />

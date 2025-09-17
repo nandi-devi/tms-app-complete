@@ -158,7 +158,7 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                         <select
                             value={truckType}
                             onChange={(e) => setTruckType(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                         >
                             <option value="">All Types</option>
                             {uniqueTruckTypes.map(type => (
@@ -171,7 +171,7 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                         <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                         >
                             <option value="">All Status</option>
                             <option value="UNPAID">Unpaid</option>
