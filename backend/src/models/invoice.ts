@@ -77,5 +77,10 @@ InvoiceSchema.virtual('balanceDue').get(function(this: IInvoice) {
   return this.grandTotal - paidAmount;
 });
 
+// Virtual for customerId to maintain frontend compatibility
+InvoiceSchema.virtual('customerId').get(function(this: IInvoice) {
+  return this.customer._id || this.customer;
+});
+
 
 export default model<IInvoice>('Invoice', InvoiceSchema);
