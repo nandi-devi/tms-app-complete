@@ -287,6 +287,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
+    // Debug logging (can be removed in production)
     console.log('Validating form with data:', lr);
     console.log('Vehicle number:', vehicleNumber);
     console.log('ConsignorId:', lr.consignorId);
@@ -310,16 +311,24 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       }
     }
     
-    // Package validation
+    // Package validation - Only validate if packages array exists
     if (!lr.packages || lr.packages.length === 0) {
       newErrors.packages = 'At least one package is required.';
     } else {
+      // Only validate packages that have been started (have meaningful data)
       lr.packages.forEach((pkg, index) => {
-        if (!pkg.count || pkg.count <= 0) newErrors[`packages.${index}.count`] = 'Package count must be greater than 0.';
-        if (!pkg.packingMethod || pkg.packingMethod.trim() === '') newErrors[`packages.${index}.packingMethod`] = 'Packing method is required.';
-        if (!pkg.description || pkg.description.trim() === '') newErrors[`packages.${index}.description`] = 'Description is required.';
-        if (!pkg.actualWeight || pkg.actualWeight <= 0) newErrors[`packages.${index}.actualWeight`] = 'Actual weight must be greater than 0.';
-        if (!pkg.chargedWeight || pkg.chargedWeight <= 0) newErrors[`packages.${index}.chargedWeight`] = 'Charged weight must be greater than 0.';
+        const isPackageStarted = pkg.packingMethod.trim() !== '' || 
+                                pkg.description.trim() !== '' || 
+                                pkg.actualWeight > 0 || 
+                                pkg.chargedWeight > 0;
+        
+        if (isPackageStarted) {
+          if (!pkg.count || pkg.count <= 0) newErrors[`packages.${index}.count`] = 'Package count must be greater than 0.';
+          if (!pkg.packingMethod || pkg.packingMethod.trim() === '') newErrors[`packages.${index}.packingMethod`] = 'Packing method is required.';
+          if (!pkg.description || pkg.description.trim() === '') newErrors[`packages.${index}.description`] = 'Description is required.';
+          if (!pkg.actualWeight || pkg.actualWeight <= 0) newErrors[`packages.${index}.actualWeight`] = 'Actual weight must be greater than 0.';
+          if (!pkg.chargedWeight || pkg.chargedWeight <= 0) newErrors[`packages.${index}.chargedWeight`] = 'Charged weight must be greater than 0.';
+        }
       });
     }
     
@@ -362,6 +371,9 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     }
     
     console.log('Validation errors:', newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      console.log('Specific validation errors:', JSON.stringify(newErrors, null, 2));
+    }
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
     console.log('Form is valid:', isValid);
