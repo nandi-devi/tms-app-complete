@@ -303,10 +303,15 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     
     // Date validation
     if (lr.date) {
-      const selectedDate = new Date(lr.date);
+      const selectedDate = new Date(lr.date + 'T00:00:00'); // Ensure consistent timezone handling
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (selectedDate > today) {
+      
+      // Compare only the date part, not time
+      const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      
+      if (selectedDateOnly > todayOnly) {
         newErrors.date = 'Date cannot be in the future.';
       }
     }
