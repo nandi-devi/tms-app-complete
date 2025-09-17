@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Invoice, LorryReceipt, Customer, CompanyInfo } from '../types';
-import { GstType } from '../types';
+import { GstType, InvoiceStatus } from '../types';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
@@ -68,7 +68,7 @@ export const InvoiceFormImproved: React.FC<InvoiceFormProps> = ({
             grandTotal: 0,
             isRcm: false,
             isManualGst: false,
-            status: 'Unpaid' as any,
+            status: InvoiceStatus.UNPAID,
         }
     );
 

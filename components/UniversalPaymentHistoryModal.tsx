@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Payment, Invoice, TruckHiringNote } from '../types';
+import { InvoiceStatus, THNStatus } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { formatDate } from '../services/utils';

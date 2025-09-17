@@ -5,6 +5,7 @@ import Invoice from '../models/invoice';
 import TruckHiringNote from '../models/truckHiringNote';
 import { updateInvoiceStatus } from '../utils/invoiceUtils';
 import { getNextSequenceValue } from '../utils/sequence';
+import { THNStatus } from '../types';
 // THN status update function
 const updateThnStatus = async (thnId: string) => {
   try {
@@ -19,11 +20,11 @@ const updateThnStatus = async (thnId: string) => {
     const totalAmount = thn.freightRate + (thn.additionalCharges || 0);
     const balanceAmount = totalAmount - paidAmount;
     
-    let status = 'Unpaid';
+    let status = THNStatus.UNPAID;
     if (balanceAmount <= 0) {
-      status = 'Paid';
+      status = THNStatus.PAID;
     } else if (paidAmount > 0) {
-      status = 'Partially Paid';
+      status = THNStatus.PARTIALLY_PAID;
     }
     
       await TruckHiringNote.findByIdAndUpdate(thnId, { 

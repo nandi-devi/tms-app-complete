@@ -252,7 +252,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    {inv.status !== 'Paid' && (
+                    {inv.status !== InvoiceStatus.PAID && (
                       <button onClick={(e) => { e.stopPropagation(); handleOpenPaymentForm(inv); }} className="text-blue-600 hover:text-blue-900 transition-colors">Add Payment</button>
                     )}
                     <button onClick={(e) => { e.stopPropagation(); handleOpenHistoryModal(inv); }} className="text-gray-600 hover:text-gray-900 transition-colors">History</button>

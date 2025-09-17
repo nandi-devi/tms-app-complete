@@ -125,9 +125,9 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'PAID': return 'text-green-600 bg-green-100';
-            case 'UNPAID': return 'text-red-600 bg-red-100';
-            case 'PARTIAL': return 'text-yellow-600 bg-yellow-100';
+            case 'Paid': return 'text-green-600 bg-green-100';
+            case 'Unpaid': return 'text-red-600 bg-red-100';
+            case 'Partially Paid': return 'text-yellow-600 bg-yellow-100';
             default: return 'text-gray-600 bg-gray-100';
         }
     };
@@ -226,9 +226,9 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                         >
                             <option value="">All Status</option>
-                            <option value="UNPAID">Unpaid</option>
-                            <option value="PARTIAL">Partial</option>
-                            <option value="PAID">Paid</option>
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Partially Paid">Partially Paid</option>
+                            <option value="Paid">Paid</option>
                         </select>
                     </div>
                 </div>
