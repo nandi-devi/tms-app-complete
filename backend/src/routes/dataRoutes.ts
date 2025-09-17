@@ -22,31 +22,38 @@ router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'Data routes are working', timestamp: new Date().toISOString() });
 });
 
-// Numbering config endpoints - updated for production
-router.get('/numbering', expressAsyncHandler(async (req: Request, res: Response) => {
-  const items = await NumberingConfig.find({});
-  res.json(items);
-}));
+// Numbering config endpoints - simplified version
+router.get('/numbering', async (req: Request, res: Response) => {
+  try {
+    const items = await NumberingConfig.find({});
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching numbering configs' });
+  }
+});
 
-router.post('/numbering', expressAsyncHandler(async (req: Request, res: Response) => {
-  const { key, start, end, allowOutsideRange } = req.body;
-  if (!key || typeof start !== 'number' || typeof end !== 'number' || start > end) {
-    res.status(400).json({ message: 'Invalid numbering configuration payload' });
-    return;
+router.post('/numbering', async (req: Request, res: Response) => {
+  try {
+    const { key, start, end, allowOutsideRange } = req.body;
+    if (!key || typeof start !== 'number' || typeof end !== 'number' || start > end) {
+      res.status(400).json({ message: 'Invalid numbering configuration payload' });
+      return;
+    }
+    const existing = await NumberingConfig.findById(key);
+    if (existing) {
+      existing.start = start;
+      existing.end = end;
+      existing.next = Math.max(start, Math.min(existing.next, end + 1));
+      existing.allowOutsideRange = !!allowOutsideRange;
+      await existing.save();
+      res.json(existing);
+      return;
+    }
+    const created = await NumberingConfig.create({ _id: key, start, end, next: start, allowOutsideRange: !!allowOutsideRange });
+    res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving numbering config' });
   }
-  const existing = await NumberingConfig.findById(key);
-  if (existing) {
-    existing.start = start;
-    existing.end = end;
-    // If current next is outside new range, reset to start
-    existing.next = Math.max(start, Math.min(existing.next, end + 1));
-    existing.allowOutsideRange = !!allowOutsideRange;
-    await existing.save();
-    res.json(existing);
-    return;
-  }
-  const created = await NumberingConfig.create({ _id: key, start, end, next: start, allowOutsideRange: !!allowOutsideRange });
-  res.status(201).json(created);
-}));
+});
 
 export default router;
