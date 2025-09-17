@@ -212,12 +212,31 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     } else if (name.startsWith('insurance.')) {
         const field = name.split('.')[1];
         if (field === 'hasInsured') {
-             setLr(prev => ({ ...prev, insurance: { ...prev.insurance, hasInsured: (e.target as HTMLInputElement).checked }}));
+            const isInsured = value === 'true';
+            setLr(prev => ({ 
+                ...prev, 
+                insurance: { 
+                    ...prev.insurance, 
+                    hasInsured: isInsured,
+                    // Clear insurance details if not insured
+                    ...(isInsured ? {} : { company: '', policyNo: '', date: '', amount: 0, risk: '' })
+                },
+                // Smart default: if not insured, set risk bearer to Owner
+                ...(isInsured ? {} : { riskBearer: RiskBearer.OWNER })
+            }));
         } else {
              setLr(prev => ({ ...prev, insurance: { ...prev.insurance, [field]: type === 'number' ? (parseFloat(value) || 0) : value }}));
         }
-    }
-    else {
+    } else if (name === 'gstPayableBy') {
+        // Smart default: if GST payable by Consignor, suggest Owner as risk bearer
+        setLr(prev => ({ 
+            ...prev, 
+            [name]: value,
+            ...(value === GstPayableBy.CONSIGNOR ? { riskBearer: RiskBearer.OWNER } : {})
+        }));
+    } else if (name === 'riskBearer') {
+        setLr(prev => ({ ...prev, [name]: value }));
+    } else {
         // Handle number fields properly
         const numberFields = ['valueGoods', 'totalAmount'];
         if (numberFields.includes(name)) {
@@ -242,15 +261,69 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     console.log('ConsignorId:', lr.consignorId);
     console.log('ConsigneeId:', lr.consigneeId);
     
+    // Basic required fields
     if (!lr.date) newErrors.date = 'Date is required.';
     if (!vehicleNumber.trim()) newErrors.vehicleId = 'Vehicle is required.';
     if (!lr.from) newErrors.from = 'Origin is required.';
     if (!lr.to) newErrors.to = 'Destination is required.';
     if (!lr.consignorId || lr.consignorId.trim() === '') newErrors.consignorId = 'Consignor is required.';
     if (!lr.consigneeId || lr.consigneeId.trim() === '') newErrors.consigneeId = 'Consignee is required.';
-    if (!lr.packages || lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
-        newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
+    
+    // Date validation
+    if (lr.date) {
+      const selectedDate = new Date(lr.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate > today) {
+        newErrors.date = 'Date cannot be in the future.';
+      }
     }
+    
+    // Package validation
+    if (!lr.packages || lr.packages.length === 0) {
+      newErrors.packages = 'At least one package is required.';
+    } else {
+      lr.packages.forEach((pkg, index) => {
+        if (!pkg.count || pkg.count <= 0) newErrors[`packages.${index}.count`] = 'Package count must be greater than 0.';
+        if (!pkg.packingMethod || pkg.packingMethod.trim() === '') newErrors[`packages.${index}.packingMethod`] = 'Packing method is required.';
+        if (!pkg.description || pkg.description.trim() === '') newErrors[`packages.${index}.description`] = 'Description is required.';
+        if (!pkg.actualWeight || pkg.actualWeight <= 0) newErrors[`packages.${index}.actualWeight`] = 'Actual weight must be greater than 0.';
+        if (!pkg.chargedWeight || pkg.chargedWeight <= 0) newErrors[`packages.${index}.chargedWeight`] = 'Charged weight must be greater than 0.';
+      });
+    }
+    
+    // Charges validation
+    if (!lr.charges || !lr.charges.freight || lr.charges.freight <= 0) {
+      newErrors.freight = 'Freight charges must be greater than 0.';
+    }
+    if (!lr.totalAmount || lr.totalAmount <= 0) {
+      newErrors.totalAmount = 'Total amount must be greater than 0.';
+    }
+    
+    // Insurance validation
+    if (lr.insurance?.hasInsured) {
+      if (!lr.insurance.company || lr.insurance.company.trim() === '') {
+        newErrors.insuranceCompany = 'Insurance company is required when consignment is insured.';
+      }
+      if (!lr.insurance.policyNo || lr.insurance.policyNo.trim() === '') {
+        newErrors.insurancePolicyNo = 'Policy number is required when consignment is insured.';
+      }
+      if (!lr.insurance.date) {
+        newErrors.insuranceDate = 'Policy date is required when consignment is insured.';
+      }
+    }
+    
+    // Risk bearer validation
+    if (!lr.riskBearer) {
+      newErrors.riskBearer = 'Risk bearer must be selected.';
+    }
+    
+    // GST payable by validation
+    if (!lr.gstPayableBy) {
+      newErrors.gstPayableBy = 'GST payable by must be selected.';
+    }
+    
+    // LR Number validation
     if (useCustomNumber) {
         const n = parseInt(customNumber, 10);
         if (!Number.isInteger(n) || n <= 0) newErrors.lrNumber = 'Enter a valid positive LR number.';
@@ -423,64 +496,335 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         </Card>
       </div>
 
-      <Card title="Insurance">
-        <div className="flex items-center mb-2">
-            <input type="checkbox" id="hasInsured" name="insurance.hasInsured" checked={lr.insurance?.hasInsured || false} onChange={handleChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-            <label htmlFor="hasInsured" className="ml-3 block text-sm text-gray-900">The client has stated that they have insured the consignment.</label>
-        </div>
-        {lr.insurance?.hasInsured && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
-                <Input label="Company" name="insurance.company" value={lr.insurance.company || ''} onChange={handleChange} />
-                <Input label="Policy No." name="insurance.policyNo" value={lr.insurance.policyNo || ''} onChange={handleChange} />
-                <Input label="Date" type="date" name="insurance.date" value={lr.insurance.date || ''} onChange={handleChange} />
-                <Input label="Amount" type="number" name="insurance.amount" value={lr.insurance.amount || ''} onChange={handleChange} onFocus={e => e.target.select()} />
-                <Input label="Risk" name="insurance.risk" value={lr.insurance.risk || ''} onChange={handleChange} />
+      <Card title="Insurance & Risk Information">
+        <div className="space-y-6">
+          {/* Insurance Section */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="text-sm font-semibold text-blue-900 mb-3">Insurance Status</h4>
+            <p className="text-sm text-gray-700 mb-4">The Customer has stated that:</p>
+            
+            <div className="space-y-3">
+              <label className="flex items-center cursor-pointer group">
+                <input 
+                  type="radio" 
+                  name="insurance.hasInsured" 
+                  value="false"
+                  checked={!lr.insurance?.hasInsured}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <span className="ml-3 text-sm text-gray-900 group-hover:text-blue-700">
+                  He has <span className="font-semibold">not insured</span> the Consignment
+                </span>
+              </label>
+              
+              <div className="flex items-center">
+                <span className="text-sm text-gray-500 mr-4">OR</span>
+              </div>
+              
+              <label className="flex items-center cursor-pointer group">
+                <input 
+                  type="radio" 
+                  name="insurance.hasInsured" 
+                  value="true"
+                  checked={lr.insurance?.hasInsured || false}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <span className="ml-3 text-sm text-gray-900 group-hover:text-blue-700">
+                  He has <span className="font-semibold">insured</span> the Consignment
+                </span>
+              </label>
             </div>
-        )}
+          </div>
+
+          {/* Insurance Details - Only show when insured */}
+          {lr.insurance?.hasInsured && (
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h4 className="text-sm font-semibold text-green-900 mb-4">Insurance Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <Input 
+                    label="Insurance Company" 
+                    name="insurance.company" 
+                    value={lr.insurance.company || ''} 
+                    onChange={handleChange}
+                    placeholder="Enter company name"
+                  />
+                  {errors.insuranceCompany && <p className="mt-1 text-xs text-red-600">{errors.insuranceCompany}</p>}
+                </div>
+                <div>
+                  <Input 
+                    label="Policy Number" 
+                    name="insurance.policyNo" 
+                    value={lr.insurance.policyNo || ''} 
+                    onChange={handleChange}
+                    placeholder="Enter policy number"
+                  />
+                  {errors.insurancePolicyNo && <p className="mt-1 text-xs text-red-600">{errors.insurancePolicyNo}</p>}
+                </div>
+                <div>
+                  <Input 
+                    label="Policy Date" 
+                    type="date" 
+                    name="insurance.date" 
+                    value={lr.insurance.date || ''} 
+                    onChange={handleChange}
+                  />
+                  {errors.insuranceDate && <p className="mt-1 text-xs text-red-600">{errors.insuranceDate}</p>}
+                </div>
+                <Input 
+                  label="Coverage Amount" 
+                  type="number" 
+                  name="insurance.amount" 
+                  value={lr.insurance.amount || ''} 
+                  onChange={handleChange} 
+                  onFocus={e => e.target.select()}
+                  placeholder="Enter amount"
+                />
+                <Input 
+                  label="Risk Coverage" 
+                  name="insurance.risk" 
+                  value={lr.insurance.risk || ''} 
+                  onChange={handleChange}
+                  placeholder="Enter risk details"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Risk Bearer Section */}
+          <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+            <h4 className="text-sm font-semibold text-amber-900 mb-3">Risk Bearer Information</h4>
+            <p className="text-sm text-gray-700 mb-4">GST PAYABLE BY:</p>
+            
+            <div className="space-y-3">
+              {Object.values(GstPayableBy).map((option) => (
+                <label key={option} className="flex items-center cursor-pointer group">
+                  <input 
+                    type="radio" 
+                    name="gstPayableBy" 
+                    value={option}
+                    checked={lr.gstPayableBy === option}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300"
+                  />
+                  <span className="ml-3 text-sm text-gray-900 group-hover:text-amber-700 font-medium">
+                    {option}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {errors.gstPayableBy && <p className="mt-2 text-xs text-red-600">{errors.gstPayableBy}</p>}
+          </div>
+
+          {/* Risk Bearer Selection */}
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <h4 className="text-sm font-semibold text-purple-900 mb-3">Risk Bearer</h4>
+            <p className="text-sm text-gray-700 mb-4">Who bears the risk for this consignment:</p>
+            
+            <div className="space-y-3">
+              {Object.values(RiskBearer).map((option) => (
+                <label key={option} className="flex items-center cursor-pointer group">
+                  <input 
+                    type="radio" 
+                    name="riskBearer" 
+                    value={option}
+                    checked={lr.riskBearer === option}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                  />
+                  <span className="ml-3 text-sm text-gray-900 group-hover:text-purple-700 font-medium">
+                    {option}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {errors.riskBearer && <p className="mt-2 text-xs text-red-600">{errors.riskBearer}</p>}
+          </div>
+        </div>
       </Card>
 
-      <Card title="Packages">
-        {(lr.packages || []).map((pkg, index) => (
-          <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4 border-b pb-4 last:border-b-0 last:pb-0">
-              <Input label="No. of Pkgs" type="number" name="count" value={pkg.count} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
-              <Input label="Method of Packing" name="packingMethod" value={pkg.packingMethod} onChange={e => handlePackageChange(index, e)} />
-              <Input label="Description" name="description" value={pkg.description} onChange={e => handlePackageChange(index, e)} wrapperClassName="md:col-span-3" />
-              <Input label="Actual Weight" type="number" name="actualWeight" value={pkg.actualWeight} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
-              <Input label="Charged Weight" type="number" name="chargedWeight" value={pkg.chargedWeight} onChange={e => handlePackageChange(index, e)} onFocus={e => e.target.select()} />
-          </div>
-        ))}
-        {errors.packages && <p className="mt-1 text-xs text-red-600">{errors.packages}</p>}
+      <Card title="Package Details">
+        <div className="space-y-4">
+          {(lr.packages || []).map((pkg, index) => (
+            <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="text-sm font-semibold text-gray-700">Package {index + 1}</h4>
+                {(lr.packages || []).length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removePackage(index)}
+                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <Input 
+                  label="No. of Pkgs" 
+                  type="number" 
+                  name="count" 
+                  value={pkg.count} 
+                  onChange={e => handlePackageChange(index, e)} 
+                  onFocus={e => e.target.select()}
+                  placeholder="Enter count"
+                />
+                <Input 
+                  label="Method of Packing" 
+                  name="packingMethod" 
+                  value={pkg.packingMethod} 
+                  onChange={e => handlePackageChange(index, e)}
+                  placeholder="e.g., Bags, Boxes"
+                />
+                <Input 
+                  label="Description" 
+                  name="description" 
+                  value={pkg.description} 
+                  onChange={e => handlePackageChange(index, e)} 
+                  wrapperClassName="md:col-span-3"
+                  placeholder="Describe the contents"
+                />
+                <Input 
+                  label="Actual Weight (kg)" 
+                  type="number" 
+                  name="actualWeight" 
+                  value={pkg.actualWeight} 
+                  onChange={e => handlePackageChange(index, e)} 
+                  onFocus={e => e.target.select()}
+                  placeholder="0"
+                />
+                <Input 
+                  label="Charged Weight (kg)" 
+                  type="number" 
+                  name="chargedWeight" 
+                  value={pkg.chargedWeight} 
+                  onChange={e => handlePackageChange(index, e)} 
+                  onFocus={e => e.target.select()}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          ))}
+          
+          <button
+            type="button"
+            onClick={addPackage}
+            className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+          >
+            + Add Another Package
+          </button>
+          
+          {errors.packages && <p className="mt-1 text-xs text-red-600">{errors.packages}</p>}
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card title="Other Details">
             <div className="space-y-4">
-                 <Input label="E-Way Bill No." name="eWayBillNo" value={lr.eWayBillNo || ''} onChange={handleChange} />
-                 <Input label="Value of Goods" type="number" name="valueGoods" value={lr.valueGoods || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                 <Input label="Invoice No." name="invoiceNo" value={lr.invoiceNo || ''} onChange={handleChange} />
-                 <Input label="Seal No." name="sealNo" value={lr.sealNo || ''} onChange={handleChange} />
+                 <Input label="E-Way Bill No." name="eWayBillNo" value={lr.eWayBillNo || ''} onChange={handleChange} placeholder="Enter E-Way Bill number" />
+                 <Input label="Value of Goods" type="number" name="valueGoods" value={lr.valueGoods || 0} onChange={handleChange} onFocus={e => e.target.select()} placeholder="Enter value in ₹" />
+                 <Input label="Invoice No." name="invoiceNo" value={lr.invoiceNo || ''} onChange={handleChange} placeholder="Enter invoice number" />
+                 <Input label="Seal No." name="sealNo" value={lr.sealNo || ''} onChange={handleChange} placeholder="Enter seal number" />
                  <div className="grid grid-cols-2 gap-4">
                     <Input label="Reporting Date" type="date" name="reportingDate" value={lr.reportingDate || ''} onChange={handleChange} />
                     <Input label="Delivery Date" type="date" name="deliveryDate" value={lr.deliveryDate || ''} onChange={handleChange} />
                  </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <Select label="GST Payable By" name="gstPayableBy" value={lr.gstPayableBy || GstPayableBy.CONSIGNOR} onChange={handleChange}>
-                       {Object.values(GstPayableBy).map(val => <option key={val} value={val}>{val}</option>)}
-                    </Select>
-                    <Select label="Risk Bearer" name="riskBearer" value={lr.riskBearer || RiskBearer.CARRIER} onChange={handleChange}>
-                       {Object.values(RiskBearer).map(val => <option key={val} value={val}>{val}</option>)}
-                    </Select>
-                 </div>
             </div>
         </Card>
-        <Card title="Charges">
+        <Card title="Charges & Pricing">
             <div className="space-y-4">
-                <Input label="Freight" type="number" name="charges.freight" value={lr.charges?.freight || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="AOC" type="number" name="charges.aoc" value={lr.charges?.aoc || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Additional Operating Charges" /></div>
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Hamali" type="number" name="charges.hamali" value={lr.charges?.hamali || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Loading/Unloading Charges" /></div>
-                <Input label="B. Ch." type="number" name="charges.bCh" value={lr.charges?.bCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                <Input label="Tr. Ch." type="number" name="charges.trCh" value={lr.charges?.trCh || 0} onChange={handleChange} onFocus={e => e.target.select()} />
-                <div className="flex items-center"><Input wrapperClassName="flex-grow" label="Detention Ch." type="number" name="charges.detentionCh" value={lr.charges?.detentionCh || 0} onChange={handleChange} onFocus={e => e.target.select()} /><Tooltip text="Detention Charges" /></div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-3">Transportation Charges</h4>
+                    <div className="space-y-3">
+                        <Input 
+                            label="Freight Charges" 
+                            type="number" 
+                            name="charges.freight" 
+                            value={lr.charges?.freight || 0} 
+                            onChange={handleChange} 
+                            onFocus={e => e.target.select()}
+                            placeholder="Enter freight amount"
+                        />
+                        <div className="flex items-center">
+                            <Input 
+                                wrapperClassName="flex-grow" 
+                                label="AOC (Additional Operating Charges)" 
+                                type="number" 
+                                name="charges.aoc" 
+                                value={lr.charges?.aoc || 0} 
+                                onChange={handleChange} 
+                                onFocus={e => e.target.select()}
+                                placeholder="Enter AOC amount"
+                            />
+                            <Tooltip text="Additional Operating Charges" />
+                        </div>
+                        <div className="flex items-center">
+                            <Input 
+                                wrapperClassName="flex-grow" 
+                                label="Hamali (Loading/Unloading)" 
+                                type="number" 
+                                name="charges.hamali" 
+                                value={lr.charges?.hamali || 0} 
+                                onChange={handleChange} 
+                                onFocus={e => e.target.select()}
+                                placeholder="Enter hamali amount"
+                            />
+                            <Tooltip text="Loading/Unloading Charges" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <h4 className="text-sm font-semibold text-green-900 mb-3">Additional Charges</h4>
+                    <div className="space-y-3">
+                        <Input 
+                            label="B. Ch. (Border Charges)" 
+                            type="number" 
+                            name="charges.bCh" 
+                            value={lr.charges?.bCh || 0} 
+                            onChange={handleChange} 
+                            onFocus={e => e.target.select()}
+                            placeholder="Enter border charges"
+                        />
+                        <Input 
+                            label="Tr. Ch. (Transit Charges)" 
+                            type="number" 
+                            name="charges.trCh" 
+                            value={lr.charges?.trCh || 0} 
+                            onChange={handleChange} 
+                            onFocus={e => e.target.select()}
+                            placeholder="Enter transit charges"
+                        />
+                        <div className="flex items-center">
+                            <Input 
+                                wrapperClassName="flex-grow" 
+                                label="Detention Charges" 
+                                type="number" 
+                                name="charges.detentionCh" 
+                                value={lr.charges?.detentionCh || 0} 
+                                onChange={handleChange} 
+                                onFocus={e => e.target.select()}
+                                placeholder="Enter detention charges"
+                            />
+                            <Tooltip text="Charges for delays beyond agreed time" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Total Display */}
+                <div className="bg-gray-100 p-4 rounded-lg border-2 border-gray-300">
+                    <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-gray-900">Total Amount:</span>
+                        <span className="text-2xl font-bold text-blue-600">₹{calculateTotal().toFixed(2)}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                        Amount in words: <span className="font-medium">{numberToWords(calculateTotal())} Rupees Only</span>
+                    </p>
+                    {errors.freight && <p className="mt-2 text-xs text-red-600">{errors.freight}</p>}
+                    {errors.totalAmount && <p className="mt-2 text-xs text-red-600">{errors.totalAmount}</p>}
+                </div>
             </div>
         </Card>
       </div>

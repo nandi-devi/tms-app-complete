@@ -78,8 +78,8 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                         <p className="text-[10px] leading-tight">The consignments covered by this Lorry Receipt shall be stored at the destination under the control of the Transport Operator and shall be delivered to or to the order of the Consignee Bank whose name is mentioned in the Lorry Receipt. It will under no circumstances be delivered to anyone without the written authority from the Consignee Bank or its order, endorsed on the Consignee copy or on a separate letter of Authority.</p>
                     </div>
                     <div className="border border-black p-1 text-center flex flex-col justify-center">
-                        <p className="font-bold">AT {lorryReceipt.riskBearer?.toUpperCase() || 'CARRIER'}'S RISK</p>
-                        <p className="text-xs text-gray-600">(Risk Bearer Information)</p>
+                        <p className="font-bold text-lg">AT {lorryReceipt.riskBearer?.toUpperCase() || 'CARRIER'}'S RISK</p>
+                        <p className="text-xs text-gray-600 mt-1">(Risk Bearer Information)</p>
                     </div>
                     <div className="border border-black p-1">
                         <h3 className="font-bold text-center underline">CAUTION</h3>
