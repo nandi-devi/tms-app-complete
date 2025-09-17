@@ -148,27 +148,27 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                 </div>
 
                 {/* Table */}
-                <div className="grid grid-cols-12 border-2 border-black border-t-0">
+                <div className="grid grid-cols-12 border-2 border-black">
                     <div className={hideCharges ? "col-span-12" : "col-span-8 border-r-2 border-black"}>
                         {/* Table Header */}
-                        <div className="grid grid-cols-8 text-center font-bold border-b-2 border-black bg-gray-50">
-                            <div className="col-span-1 border-r border-black p-2 text-xs">No. of Pkgs.</div>
-                            <div className="col-span-1 border-r border-black p-2 text-xs">Method of Packing</div>
-                            <div className="col-span-4 border-r border-black p-2 text-xs">DESCRIPTION (Said to Contain)</div>
-                            <div className="col-span-2 p-2 text-xs">WEIGHT</div>
+                        <div className="grid grid-cols-8 text-center font-bold border-b-2 border-black bg-gray-50 h-[3.5rem]">
+                            <div className="col-span-1 border-r border-black p-2 text-xs flex items-center justify-center">No. of Pkgs.</div>
+                            <div className="col-span-1 border-r border-black p-2 text-xs flex items-center justify-center">Method of Packing</div>
+                            <div className="col-span-4 border-r border-black p-2 text-xs flex items-center justify-center">DESCRIPTION (Said to Contain)</div>
+                            <div className="col-span-2 p-2 text-xs flex items-center justify-center">WEIGHT</div>
                         </div>
                         {/* Sub Header */}
-                        <div className="grid grid-cols-8 text-center font-bold border-b border-black bg-gray-50">
-                            <div className="col-span-1 border-r border-black p-1"></div>
-                            <div className="col-span-1 border-r border-black p-1"></div>
-                            <div className="col-span-4 border-r border-black p-1"></div>
-                            <div className="col-span-1 border-r border-black p-1 text-xs">Actual</div>
-                            <div className="col-span-1 p-1 text-xs">Charged</div>
+                        <div className="grid grid-cols-8 text-center font-bold border-b border-black bg-gray-50 h-[2.5rem]">
+                            <div className="col-span-1 border-r border-black p-1 flex items-center justify-center"></div>
+                            <div className="col-span-1 border-r border-black p-1 flex items-center justify-center"></div>
+                            <div className="col-span-4 border-r border-black p-1 flex items-center justify-center"></div>
+                            <div className="col-span-1 border-r border-black p-1 text-xs flex items-center justify-center">Actual</div>
+                            <div className="col-span-1 p-1 text-xs flex items-center justify-center">Charged</div>
                         </div>
                         {/* Table Body */}
                         <div className="min-h-[10rem]">
                             {(lorryReceipt.packages || []).map((pkg, i) => (
-                                <div key={i} className="grid grid-cols-8 border-b border-black hover:bg-gray-50 min-h-[2.5rem]">
+                                <div key={i} className="grid grid-cols-8 border-b border-black hover:bg-gray-50 h-[2.5rem]">
                                     <div className="col-span-1 border-r border-black p-2 text-xs text-center flex items-center justify-center">{pkg.count || 0}</div>
                                     <div className="col-span-1 border-r border-black p-2 text-xs text-center flex items-center justify-center">{pkg.packingMethod || ''}</div>
                                     <div className="col-span-4 border-r border-black p-2 text-xs text-left flex items-center">{pkg.description || ''}</div>
@@ -179,7 +179,7 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                             {/* Add empty rows if needed for better visual spacing */}
                             {(!lorryReceipt.packages || lorryReceipt.packages.length === 0) && (
                                 Array.from({ length: 3 }).map((_, i) => (
-                                    <div key={`empty-${i}`} className="grid grid-cols-8 border-b border-black h-10">
+                                    <div key={`empty-${i}`} className="grid grid-cols-8 border-b border-black h-[2.5rem]">
                                         <div className="col-span-1 border-r border-black p-2 text-xs"></div>
                                         <div className="col-span-1 border-r border-black p-2 text-xs"></div>
                                         <div className="col-span-4 border-r border-black p-2 text-xs"></div>
@@ -192,21 +192,21 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                     </div>
                     {!hideCharges && (
                         <div className="col-span-4">
-                            {/* Charges Header */}
-                            <div className="grid grid-cols-4 text-center font-bold border-b-2 border-black bg-gray-50">
-                                <div className="col-span-2 border-r border-black p-2"></div>
-                                <div className="col-span-2 p-2 text-xs">AMOUNT TO PAY / PAID</div>
+                            {/* Charges Header - Aligned with package table */}
+                            <div className="grid grid-cols-4 text-center font-bold border-b-2 border-black bg-gray-50 h-[3.5rem]">
+                                <div className="col-span-2 border-r border-black p-2 flex items-center justify-center"></div>
+                                <div className="col-span-2 p-2 text-xs flex items-center justify-center">AMOUNT TO PAY / PAID</div>
                             </div>
-                            {/* Charges Sub Header */}
-                            <div className="grid grid-cols-4 text-center font-bold border-b border-black bg-gray-50">
-                                <div className="col-span-2 border-r border-black p-2 text-xs">Particulars</div>
-                                <div className="col-span-1 border-r border-black p-2 text-xs">Rs.</div>
-                                <div className="col-span-1 p-2 text-xs">P.</div>
+                            {/* Charges Sub Header - Aligned with package table */}
+                            <div className="grid grid-cols-4 text-center font-bold border-b border-black bg-gray-50 h-[2.5rem]">
+                                <div className="col-span-2 border-r border-black p-2 text-xs flex items-center justify-center">Particulars</div>
+                                <div className="col-span-1 border-r border-black p-2 text-xs flex items-center justify-center">Rs.</div>
+                                <div className="col-span-1 p-2 text-xs flex items-center justify-center">P.</div>
                             </div>
                             {/* Charges Body */}
                             <div className="min-h-[10rem]">
                                 {charges.map(charge => (
-                                    <div key={charge.label} className="grid grid-cols-4 border-b border-black h-10 items-center hover:bg-gray-50">
+                                    <div key={charge.label} className="grid grid-cols-4 border-b border-black h-[2.5rem] items-center hover:bg-gray-50">
                                         <div className="col-span-2 border-r border-black pl-2 h-full flex items-center text-xs">{charge.label}</div>
                                         <div className="col-span-1 border-r border-black pr-2 text-right h-full flex items-center text-xs">{charge.value > 0 ? charge.value.toFixed(2) : ''}</div>
                                         <div className="col-span-1 h-full"></div>
@@ -214,7 +214,7 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                                  ))}
                                  {/* Add empty rows for better visual spacing */}
                                  {Array.from({ length: 2 }).map((_, i) => (
-                                     <div key={`empty-charge-${i}`} className="grid grid-cols-4 border-b border-black h-10 items-center">
+                                     <div key={`empty-charge-${i}`} className="grid grid-cols-4 border-b border-black h-[2.5rem] items-center">
                                         <div className="col-span-2 border-r border-black h-full"></div>
                                         <div className="col-span-1 border-r border-black h-full"></div>
                                         <div className="col-span-1 h-full"></div>
