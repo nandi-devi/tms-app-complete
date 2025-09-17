@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { TruckHiringNote } from '../types';
+import type { TruckHiringNote, CompanyInfo } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -9,11 +9,12 @@ import { getCurrentDate } from '../services/utils';
 
 interface TruckHiringNoteFormProps {
     existingNote?: TruckHiringNote;
+    companyInfo: CompanyInfo;
     onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
     onCancel: () => void;
 }
 
-export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existingNote, onSave, onCancel }) => {
+export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existingNote, companyInfo, onSave, onCancel }) => {
     const getInitialState = (): Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>> => ({
         date: getCurrentDate(),
         truckNumber: '',
@@ -24,7 +25,7 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
         loadingDateTime: '',
         expectedDeliveryDate: '',
         goodsType: '',
-        agencyName: '',
+        agencyName: companyInfo.name, // Auto-populate with company name
         truckOwnerName: '',
         truckOwnerContact: '',
         freightRate: 0,
@@ -340,15 +341,18 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Party & Freight Details</h3>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Input 
-                                        label="Your Agency Name" 
-                                        name="agencyName" 
-                                        value={note.agencyName || ''} 
-                                        onChange={handleChange} 
-                                        required 
-                                        error={errors.agencyName}
-                                        placeholder="Enter your agency name"
-                                    />
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Your Agency Name
+                                            <span className="text-green-600 text-xs ml-2">(Pre-filled from company settings)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={note.agencyName || ''}
+                                            readOnly
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed"
+                                        />
+                                    </div>
                                     <Input 
                                         label="Truck Owner/Operator Name" 
                                         name="truckOwnerName" 

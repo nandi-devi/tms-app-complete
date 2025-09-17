@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { TruckHiringNote, Payment } from '../types';
+import type { TruckHiringNote, Payment, CompanyInfo } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -12,6 +12,7 @@ import type { View } from '../App';
 interface TruckHiringNotesProps {
     notes: TruckHiringNote[];
     payments: Payment[];
+    companyInfo: CompanyInfo;
     onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
     onUpdate: (id: string, note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
     onDelete: (id: string) => Promise<void>;
@@ -31,7 +32,7 @@ interface THNTableFilters {
 }
 
 export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ 
-    notes, payments, onSave, onUpdate, onDelete, onSavePayment, onViewChange, onBack, initialFilters 
+    notes, payments, companyInfo, onSave, onUpdate, onDelete, onSavePayment, onViewChange, onBack, initialFilters 
 }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<TruckHiringNote | undefined>(undefined);
@@ -138,6 +139,7 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
             {isFormOpen && (
                 <TruckHiringNoteForm
                     existingNote={editingNote}
+                    companyInfo={companyInfo}
                     onSave={handleSave}
                     onCancel={() => setIsFormOpen(false)}
                 />

@@ -522,6 +522,7 @@ const App: React.FC = () => {
         return <TruckHiringNotes 
           notes={truckHiringNotes} 
           payments={payments}
+          companyInfo={companyInfo}
           onSave={saveTruckHiringNote} 
           onUpdate={updateTruckHiringNoteHandler}
           onDelete={deleteTruckHiringNoteHandler}
