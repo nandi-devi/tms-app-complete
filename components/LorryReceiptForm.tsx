@@ -234,8 +234,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     if (!vehicleNumber.trim()) newErrors.vehicleId = 'Vehicle is required.';
     if (!lr.from) newErrors.from = 'Origin is required.';
     if (!lr.to) newErrors.to = 'Destination is required.';
-    if (!lr.consignorId) newErrors.consignorId = 'Consignor is required.';
-    if (!lr.consigneeId) newErrors.consigneeId = 'Consignee is required.';
+    if (!lr.consignorId || lr.consignorId.trim() === '') newErrors.consignorId = 'Consignor is required.';
+    if (!lr.consigneeId || lr.consigneeId.trim() === '') newErrors.consigneeId = 'Consignee is required.';
     if (!lr.packages || lr.packages.some(p => !p.count || !p.description || !p.packingMethod)) {
         newErrors.packages = 'Package count, description, and packing method are required for all package lines.';
     }
@@ -267,6 +267,11 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         vehicleId: finalVehicleId,
         ...(useCustomNumber ? { lrNumber: parseInt(customNumber, 10) } : {}),
       };
+
+      console.log('Form data being sent:', lrDataToSave);
+      console.log('ConsignorId:', lrDataToSave.consignorId);
+      console.log('ConsigneeId:', lrDataToSave.consigneeId);
+      console.log('VehicleId:', lrDataToSave.vehicleId);
 
       try {
         await onSave(lrDataToSave);

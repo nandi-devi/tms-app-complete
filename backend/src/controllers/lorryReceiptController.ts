@@ -53,29 +53,85 @@ export const getLorryReceiptById = asyncHandler(async (req: Request, res: Respon
 });
 
 export const createLorryReceipt = asyncHandler(async (req: Request, res: Response) => {
-  // Transform frontend data format to backend format before validation
-  const transformedData = {
-    ...req.body,
-    consignor: req.body.consignorId || req.body.consignor,
-    consignee: req.body.consigneeId || req.body.consignee,
-    vehicle: req.body.vehicleId || req.body.vehicle,
-  };
-  
-  // Remove frontend-specific fields
-  delete transformedData.consignorId;
-  delete transformedData.consigneeId;
-  delete transformedData.vehicleId;
-  
-  const lrData = createLrSchema.parse(transformedData);
-  const lrNumber = await getNextSequenceValue('lorryReceiptId');
-  
-  const lorryReceipt = new LorryReceipt({
-    ...lrData,
-    lrNumber,
-  });
+  try {
+    console.log('Received LR data:', JSON.stringify(req.body, null, 2));
+    
+    // Transform frontend data format to backend format before validation
+    const transformedData = {
+      ...req.body,
+      consignor: req.body.consignorId || req.body.consignor,
+      consignee: req.body.consigneeId || req.body.consignee,
+      vehicle: req.body.vehicleId || req.body.vehicle,
+    };
+    
+    // Remove frontend-specific fields
+    delete transformedData.consignorId;
+    delete transformedData.consigneeId;
+    delete transformedData.vehicleId;
+    
+    console.log('Transformed data:', JSON.stringify(transformedData, null, 2));
+    
+    const lrData = createLrSchema.parse(transformedData);
+    console.log('Validated data:', JSON.stringify(lrData, null, 2));
+    
+    const lrNumber = await getNextSequenceValue('lorryReceiptId');
+    console.log('Generated LR number:', lrNumber);
+    
+    const lorryReceipt = new LorryReceipt({
+      ...lrData,
+      lrNumber,
+    });
 
-  const createdLorryReceipt = await lorryReceipt.save();
-  res.status(201).json(createdLorryReceipt);
+    const createdLorryReceipt = await lorryReceipt.save();
+    console.log('Saved LR:', createdLorryReceipt._id);
+    res.status(201).json(createdLorryReceipt);
+  } catch (error) {
+    console.error('Error creating LR:', error);
+    
+    // Handle validation errors specifically
+    if (error instanceof Error && error.name === 'ValidationError') {
+      const validationErrors: { [key: string]: string[] } = {};
+      if ((error as any).errors) {
+        Object.keys((error as any).errors).forEach(key => {
+          validationErrors[key] = [(error as any).errors[key].message];
+        });
+      }
+      
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: {
+          fieldErrors: validationErrors
+        }
+      });
+      return;
+    }
+    
+    // Handle Zod validation errors
+    if (error instanceof Error && error.name === 'ZodError') {
+      const zodErrors: { [key: string]: string[] } = {};
+      if ((error as any).issues) {
+        (error as any).issues.forEach((issue: any) => {
+          const field = issue.path.join('.');
+          if (!zodErrors[field]) zodErrors[field] = [];
+          zodErrors[field].push(issue.message);
+        });
+      }
+      
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: {
+          fieldErrors: zodErrors
+        }
+      });
+      return;
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to create lorry receipt', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      details: error
+    });
+  }
 });
 
 export const updateLorryReceipt = asyncHandler(async (req: Request, res: Response) => {
