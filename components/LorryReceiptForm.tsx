@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GstPayableBy, RiskBearer } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
-import { getCurrentDate, fetchGstDetails } from '../services/utils';
+import { getCurrentDate, fetchGstDetails, numberToWords } from '../services/utils';
 import { Card } from './ui/Card';
 import { Select } from './ui/Select';
 import { Textarea } from './ui/Textarea';
