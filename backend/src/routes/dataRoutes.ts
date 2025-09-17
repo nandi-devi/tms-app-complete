@@ -17,7 +17,7 @@ router.get('/backup', backupData);
 // @route   POST /api/data/restore
 router.post('/restore', restoreData);
 
-// Numbering config endpoints
+// Numbering config endpoints - updated for production
 router.get('/numbering', expressAsyncHandler(async (req: Request, res: Response) => {
   const items = await NumberingConfig.find({});
   res.json(items);

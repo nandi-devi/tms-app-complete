@@ -1,7 +1,7 @@
 
 import type { Customer, Vehicle, CompanyInfo } from './types';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://tms-app-complete.onrender.com/api';
 
 export const indianStates = [
   "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
