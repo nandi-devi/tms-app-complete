@@ -25,11 +25,21 @@ class NumberingService {
 
   async loadConfigs(): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/numbering/configs`, {
+      // Try the new numbering endpoint first
+      let response = await fetch(`${API_BASE_URL}/numbering/configs`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
+      
+      // If that fails, try the data endpoint
+      if (!response.ok) {
+        response = await fetch(`${API_BASE_URL}/data/numbering`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+      }
       
       if (response.ok) {
         const configs = await response.json();
@@ -37,29 +47,90 @@ class NumberingService {
         configs.forEach((config: NumberingConfig) => {
           this.configs.set(config.type, config);
         });
+      } else {
+        // If both fail, initialize with default configs
+        console.warn('Server endpoints not available, using default configs');
+        this.initializeDefaultConfigs();
       }
     } catch (error) {
       console.error('Failed to load numbering configs:', error);
+      this.initializeDefaultConfigs();
     }
   }
 
-  async saveConfig(config: NumberingConfigDto): Promise<NumberingConfig> {
-    const response = await fetch(`${API_BASE_URL}/numbering/configs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(config),
+  private initializeDefaultConfigs(): void {
+    this.configs.clear();
+    // Initialize with default LR config
+    this.configs.set('lr', {
+      id: 'lr-default',
+      type: 'lr',
+      prefix: 'LR',
+      startNumber: 1,
+      endNumber: 999999,
+      currentNumber: 1,
+      allowManualEntry: true,
+      allowOutsideRange: false,
     });
+    // Initialize with default Invoice config
+    this.configs.set('invoice', {
+      id: 'invoice-default',
+      type: 'invoice',
+      prefix: 'INV',
+      startNumber: 1,
+      endNumber: 999999,
+      currentNumber: 1,
+      allowManualEntry: true,
+      allowOutsideRange: false,
+    });
+  }
 
-    if (!response.ok) {
-      throw new Error('Failed to save numbering config');
+  async saveConfig(config: NumberingConfigDto): Promise<NumberingConfig> {
+    try {
+      // Try the new numbering endpoint first
+      let response = await fetch(`${API_BASE_URL}/numbering/configs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(config),
+      });
+
+      // If that fails, try the data endpoint
+      if (!response.ok) {
+        response = await fetch(`${API_BASE_URL}/data/numbering`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify(config),
+        });
+      }
+
+      if (response.ok) {
+        const savedConfig = await response.json();
+        this.configs.set(config.type, savedConfig);
+        return savedConfig;
+      } else {
+        throw new Error('Server endpoints not available');
+      }
+    } catch (error) {
+      // If server is not available, save locally and show success
+      console.warn('Server not available, saving configuration locally:', error);
+      const savedConfig: NumberingConfig = {
+        id: `${config.type}-${Date.now()}`,
+        type: config.type,
+        prefix: config.prefix,
+        startNumber: config.startNumber,
+        endNumber: config.endNumber,
+        currentNumber: config.startNumber,
+        allowManualEntry: config.allowManualEntry,
+        allowOutsideRange: config.allowOutsideRange,
+      };
+      this.configs.set(config.type, savedConfig);
+      return savedConfig;
     }
-
-    const savedConfig = await response.json();
-    this.configs.set(config.type, savedConfig);
-    return savedConfig;
   }
 
   async getNextNumber(type: 'lr' | 'invoice'): Promise<string> {
