@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import TruckHiringNote from '../models/truckHiringNote';
 import { getNextSequenceValue } from '../utils/sequence';
+import { createTruckHiringNoteSchema, updateTruckHiringNoteSchema } from '../utils/validation';
 
 export const getTruckHiringNotes = asyncHandler(async (req: Request, res: Response) => {
   const notes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
@@ -19,65 +20,16 @@ export const getTruckHiringNoteById = asyncHandler(async (req: Request, res: Res
 });
 
 export const createTruckHiringNote = asyncHandler(async (req: Request, res: Response) => {
-  const {
-    date,
-    truckNumber,
-    truckType,
-    vehicleCapacity,
-    loadingLocation,
-    unloadingLocation,
-    loadingDateTime,
-    expectedDeliveryDate,
-    goodsType,
-    agencyName,
-    truckOwnerName,
-    truckOwnerContact,
-    freightRate,
-    freightRateType,
-    advanceAmount,
-    paymentMode,
-    paymentTerms,
-    additionalCharges,
-    remarks,
-    linkedLR,
-    linkedInvoice
-  } = req.body;
-
-  // Validate required fields
-  if (!date || !truckNumber || !truckType || !vehicleCapacity || !loadingLocation || 
-      !unloadingLocation || !loadingDateTime || !expectedDeliveryDate || !goodsType || 
-      !agencyName || !truckOwnerName || !freightRate || !freightRateType || !paymentMode || !paymentTerms) {
-    res.status(400);
-    throw new Error('Missing required fields');
-  }
-
+  const noteData = createTruckHiringNoteSchema.parse(req.body);
   const nextThnNumber = await getNextSequenceValue('truckHiringNoteId');
-  const balanceAmount = freightRate - (advanceAmount || 0);
+  const balanceAmount = noteData.freightRate - (noteData.advanceAmount || 0);
 
   const note = new TruckHiringNote({
     thnNumber: nextThnNumber,
-    date,
-    truckNumber,
-    truckType,
-    vehicleCapacity,
-    loadingLocation,
-    unloadingLocation,
-    loadingDateTime,
-    expectedDeliveryDate,
-    goodsType,
-    agencyName,
-    truckOwnerName,
-    truckOwnerContact,
-    freightRate,
-    freightRateType,
-    advanceAmount: advanceAmount || 0,
+    ...noteData,
+    advanceAmount: noteData.advanceAmount || 0,
     balanceAmount,
-    paymentMode,
-    paymentTerms,
-    additionalCharges: additionalCharges || 0,
-    remarks,
-    linkedLR,
-    linkedInvoice,
+    additionalCharges: noteData.additionalCharges || 0,
     status: 'UNPAID',
     paidAmount: 0,
     payments: []
@@ -88,14 +40,8 @@ export const createTruckHiringNote = asyncHandler(async (req: Request, res: Resp
 });
 
 export const updateTruckHiringNote = asyncHandler(async (req: Request, res: Response) => {
-  const {
-    freightRate,
-    advanceAmount,
-    additionalCharges,
-    ...otherFields
-  } = req.body;
-
-  const updateData: any = { ...otherFields };
+  const updateData = updateTruckHiringNoteSchema.parse(req.body);
+  const { freightRate, advanceAmount, additionalCharges } = updateData;
 
   // Recalculate balance if financial fields are updated
   if (freightRate !== undefined || advanceAmount !== undefined || additionalCharges !== undefined) {
@@ -105,10 +51,10 @@ export const updateTruckHiringNote = asyncHandler(async (req: Request, res: Resp
       const newAdvanceAmount = advanceAmount !== undefined ? advanceAmount : existingNote.advanceAmount;
       const newAdditionalCharges = additionalCharges !== undefined ? additionalCharges : existingNote.additionalCharges;
       
-      updateData.freightRate = newFreightRate;
-      updateData.advanceAmount = newAdvanceAmount;
-      updateData.additionalCharges = newAdditionalCharges;
-      updateData.balanceAmount = newFreightRate + newAdditionalCharges - newAdvanceAmount;
+      (updateData as any).freightRate = newFreightRate;
+      (updateData as any).advanceAmount = newAdvanceAmount;
+      (updateData as any).additionalCharges = newAdditionalCharges;
+      (updateData as any).balanceAmount = newFreightRate + newAdditionalCharges - newAdvanceAmount;
     }
   }
 

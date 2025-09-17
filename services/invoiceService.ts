@@ -15,6 +15,7 @@ export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promi
     const backendData = {
         ...invoice,
         customer: invoice.customerId,
+        lorryReceipts: invoice.lorryReceipts?.map(lr => lr._id) || [],
     };
     
     // Remove the frontend-specific fields

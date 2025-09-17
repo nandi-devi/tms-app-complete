@@ -22,8 +22,8 @@ export const lrListQuerySchema = paginationQuerySchema.extend({
 });
 
 export const createInvoiceSchema = z.object({
-  customerId: z.string().min(1),
-  lorryReceipts: z.array(z.object({ _id: z.string().min(1) })).min(1),
+  customer: z.string().min(1),
+  lorryReceipts: z.array(z.string().min(1)).min(1),
   date: z.string().min(1),
   totalAmount: z.number().nonnegative(),
   gstType: z.string(),
@@ -43,9 +43,9 @@ export const updateInvoiceSchema = createInvoiceSchema.partial();
 
 export const createLrSchema = z.object({
   date: z.string().min(1),
-  consignorId: z.string().min(1),
-  consigneeId: z.string().min(1),
-  vehicleId: z.string().min(1),
+  consignor: z.string().min(1),
+  consignee: z.string().min(1),
+  vehicle: z.string().min(1),
   from: z.string().min(1),
   to: z.string().min(1),
   packages: z.array(z.object({
@@ -86,15 +86,26 @@ export const updatePaymentSchema = createPaymentSchema.partial();
 
 export const createTruckHiringNoteSchema = z.object({
   date: z.string().min(1),
-  truckOwnerName: z.string().min(1),
-  truckOwnerAddress: z.string().optional(),
-  truckOwnerPhone: z.string().optional(),
   truckNumber: z.string().min(1),
-  from: z.string().min(1),
-  to: z.string().min(1),
-  freight: z.number().nonnegative(),
-  advancePaid: z.number().nonnegative(),
+  truckType: z.string().min(1),
+  vehicleCapacity: z.string().min(1),
+  loadingLocation: z.string().min(1),
+  unloadingLocation: z.string().min(1),
+  loadingDateTime: z.string().min(1),
+  expectedDeliveryDate: z.string().min(1),
+  goodsType: z.string().min(1),
+  agencyName: z.string().min(1),
+  truckOwnerName: z.string().min(1),
+  truckOwnerContact: z.string().optional(),
+  freightRate: z.number().nonnegative(),
+  freightRateType: z.string().min(1),
+  advanceAmount: z.number().nonnegative().optional(),
+  paymentMode: z.string().min(1),
+  paymentTerms: z.string().min(1),
+  additionalCharges: z.number().nonnegative().optional(),
   remarks: z.string().optional(),
+  linkedLR: z.string().optional(),
+  linkedInvoice: z.string().optional(),
 });
 
 export const updateTruckHiringNoteSchema = createTruckHiringNoteSchema.partial();

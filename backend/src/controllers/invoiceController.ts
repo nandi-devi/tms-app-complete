@@ -66,7 +66,7 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
 
   // Update status of associated lorry receipts
   await LorryReceipt.updateMany(
-    { _id: { $in: invoiceData.lorryReceipts.map(lr => lr._id) } },
+    { _id: { $in: invoiceData.lorryReceipts } },
     { $set: { status: LorryReceiptStatus.INVOICED } }
   );
 
