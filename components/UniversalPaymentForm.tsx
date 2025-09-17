@@ -195,32 +195,30 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
                                         Payment Amount (₹)
                                         <span className="text-red-500 ml-1">*</span>
                                     </label>
-                                    <div className="flex space-x-2">
-                                        <Input 
-                                            name="amount" 
-                                            type="number" 
-                                            value={payment.amount} 
-                                            onChange={handleChange} 
-                                            required 
-                                            min="0.01"
-                                            max={balanceDue}
-                                            step="0.01"
-                                            error={errors.amount}
-                                            className="flex-1"
-                                        />
-                                        <div className="flex space-x-1">
-                                            {quickAmounts.map((quick, index) => (
-                                                <Button
-                                                    key={index}
-                                                    type="button"
-                                                    variant="secondary"
-                                                    onClick={() => setQuickAmount(quick.value)}
-                                                    className="text-xs px-2 py-1"
-                                                >
-                                                    {quick.label}
-                                                </Button>
-                                            ))}
-                                        </div>
+                                    <Input 
+                                        name="amount" 
+                                        type="number" 
+                                        value={payment.amount} 
+                                        onChange={handleChange} 
+                                        required 
+                                        min="0.01"
+                                        max={balanceDue}
+                                        step="0.01"
+                                        error={errors.amount}
+                                        className="w-full text-lg py-3"
+                                    />
+                                    <div className="flex justify-center space-x-2 mt-3">
+                                        {quickAmounts.map((quick, index) => (
+                                            <Button
+                                                key={index}
+                                                type="button"
+                                                variant="secondary"
+                                                onClick={() => setQuickAmount(quick.value)}
+                                                className="text-sm px-3 py-1.5 min-w-[60px]"
+                                            >
+                                                {quick.label}
+                                            </Button>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
