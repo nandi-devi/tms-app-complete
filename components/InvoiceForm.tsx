@@ -164,14 +164,30 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
+      console.log('=== INVOICE FORM SUBMIT ===');
+      console.log('Invoice lorryReceipts before mapping:', invoice.lorryReceipts);
+      console.log('First LR object:', invoice.lorryReceipts?.[0]);
+      console.log('First LR _id:', invoice.lorryReceipts?.[0]?._id);
+      console.log('First LR id:', invoice.lorryReceipts?.[0]?.id);
+      
       // Create a copy of the invoice object for saving
       // This ensures we don't mutate the state directly
       // And we can format the lorryReceipts to just be their IDs if needed by the backend
       const invoiceToSave = {
         ...invoice,
-        lorryReceipts: (invoice.lorryReceipts || []).map(lr => lr._id),
+        lorryReceipts: (invoice.lorryReceipts || []).map(lr => {
+          // Handle both object with _id and direct string ID
+          if (typeof lr === 'string') {
+            return lr;
+          }
+          return lr?._id || lr?.id;
+        }).filter(id => id), // Filter out null/undefined IDs
         ...(useCustomNumber ? { invoiceNumber: parseInt(customNumber, 10) } : {}),
       };
+      
+      console.log('Invoice to save after mapping:', invoiceToSave);
+      console.log('Mapped lorryReceipts:', invoiceToSave.lorryReceipts);
+      
       try {
         await onSave(invoiceToSave as Partial<Invoice>);
       } catch (err: any) {

@@ -17,12 +17,21 @@ export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promi
     console.log('Original invoice data:', JSON.stringify(invoice, null, 2));
     console.log('Invoice customerId:', invoice.customerId);
     console.log('Invoice lorryReceipts:', invoice.lorryReceipts);
+    console.log('First LR object:', invoice.lorryReceipts?.[0]);
+    console.log('First LR _id:', invoice.lorryReceipts?.[0]?._id);
+    console.log('First LR id:', invoice.lorryReceipts?.[0]?.id);
     
     // Transform frontend data format to backend format
     const backendData = {
         ...invoice,
         customer: invoice.customerId,
-        lorryReceipts: invoice.lorryReceipts?.map(lr => lr._id) || [],
+        lorryReceipts: invoice.lorryReceipts?.map(lr => {
+            // Handle both object with _id and direct string ID
+            if (typeof lr === 'string') {
+                return lr;
+            }
+            return lr?._id || lr?.id;
+        }).filter(id => id) || [], // Filter out null/undefined IDs
     };
     
     // Remove the frontend-specific fields
