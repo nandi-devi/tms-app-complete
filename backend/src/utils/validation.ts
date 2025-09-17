@@ -90,7 +90,7 @@ export const updateLrSchema = createLrSchema.partial();
 export const createPaymentSchema = z.object({
   invoiceId: z.string().optional(),
   truckHiringNoteId: z.string().optional(),
-  customer: z.string().min(1).optional(),
+  customer: z.string().optional(),
   amount: z.number().positive(),
   date: z.string().min(1),
   type: z.nativeEnum(PaymentType),
@@ -99,7 +99,7 @@ export const createPaymentSchema = z.object({
   notes: z.string().optional(),
 }).refine(data => data.invoiceId || data.truckHiringNoteId, {
   message: 'Either invoiceId or truckHiringNoteId is required',
-}).refine(data => data.invoiceId ? data.customer : true, {
+}).refine(data => data.invoiceId ? (data.customer && data.customer.trim().length > 0) : true, {
   message: 'Customer is required for invoice payments',
 });
 

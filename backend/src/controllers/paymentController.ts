@@ -4,6 +4,7 @@ import Payment from '../models/payment';
 import Invoice from '../models/invoice';
 import TruckHiringNote from '../models/truckHiringNote';
 import { updateInvoiceStatus } from '../utils/invoiceUtils';
+import { getNextSequenceValue } from '../utils/sequence';
 // THN status update function
 const updateThnStatus = async (thnId: string) => {
   try {
@@ -18,18 +19,18 @@ const updateThnStatus = async (thnId: string) => {
     const totalAmount = thn.freightRate + (thn.additionalCharges || 0);
     const balanceAmount = totalAmount - paidAmount;
     
-    let status = 'UNPAID';
+    let status = 'Unpaid';
     if (balanceAmount <= 0) {
-      status = 'PAID';
+      status = 'Paid';
     } else if (paidAmount > 0) {
-      status = 'PARTIAL';
+      status = 'Partially Paid';
     }
     
       await TruckHiringNote.findByIdAndUpdate(thnId, { 
         paidAmount, 
         balanceAmount, 
         status 
-      });
+      }, { runValidators: false });
     }
   } catch (error) {
     console.error(`Error updating THN status for ${thnId}:`, error);
@@ -67,8 +68,8 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     const paymentData = createPaymentSchema.parse(req.body);
     console.log('Parsed payment data:', JSON.stringify(paymentData, null, 2));
     
-    // Validate customer ID is a valid ObjectId (only if provided)
-    if (paymentData.customer && !paymentData.customer.match(/^[0-9a-fA-F]{24}$/)) {
+    // Validate customer ID is a valid ObjectId (only if provided and not empty)
+    if (paymentData.customer && paymentData.customer.trim() && !paymentData.customer.match(/^[0-9a-fA-F]{24}$/)) {
       console.error('Invalid customer ID:', paymentData.customer);
       res.status(400).json({
         message: 'Invalid customer ID format',
@@ -79,7 +80,13 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     
     const { invoiceId, truckHiringNoteId } = paymentData;
 
-    const payment = new Payment(paymentData);
+    // Generate payment number
+    const paymentNumber = await getNextSequenceValue('paymentId');
+    
+    const payment = new Payment({
+      ...paymentData,
+      paymentNumber
+    });
     const newPayment = await payment.save();
     console.log('Payment saved successfully:', newPayment._id);
 
@@ -91,12 +98,10 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
       await updateInvoiceStatus(invoiceId);
     }
   } else if (truckHiringNoteId) {
-    const thn = await TruckHiringNote.findById(truckHiringNoteId);
-    if (thn) {
-      thn.payments.push(newPayment._id as any);
-      await thn.save();
-      await updateThnStatus(truckHiringNoteId);
-    }
+    await TruckHiringNote.findByIdAndUpdate(truckHiringNoteId, {
+      $push: { payments: newPayment._id }
+    }, { runValidators: false });
+    await updateThnStatus(truckHiringNoteId);
   }
 
     const populatedPayment = await Payment.findById(newPayment._id)
@@ -109,6 +114,8 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
   } catch (error) {
     console.error('Error creating payment:', error);
     console.error('Error details:', JSON.stringify(error, null, 2));
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown');
     
     // Handle validation errors specifically
     if (error instanceof Error && error.name === 'ZodError') {
