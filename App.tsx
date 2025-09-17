@@ -247,7 +247,16 @@ const App: React.FC = () => {
         savedInvoice = await createInvoice(invoice as Omit<Invoice, '_id' | 'id'>);
       }
 
-      const invoicedLrIds = new Set<string>(savedInvoice.lorryReceipts.map(lr => lr._id));
+      // Handle both populated LR objects and direct ID strings
+      const invoicedLrIds = new Set<string>(
+        savedInvoice.lorryReceipts.map(lr => {
+          if (typeof lr === 'string') {
+            return lr;
+          }
+          return lr._id || lr.id;
+        }).filter(id => id)
+      );
+      
       for (const lrId of invoicedLrIds) {
         await updateLorryReceipt(lrId, { status: LorryReceiptStatus.INVOICED });
       }

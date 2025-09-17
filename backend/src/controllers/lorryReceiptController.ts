@@ -136,29 +136,63 @@ export const createLorryReceipt = asyncHandler(async (req: Request, res: Respons
 });
 
 export const updateLorryReceipt = asyncHandler(async (req: Request, res: Response) => {
-  // Transform frontend data format to backend format before validation
-  const transformedData = {
-    ...req.body,
-    consignor: req.body.consignorId || req.body.consignor,
-    consignee: req.body.consigneeId || req.body.consignee,
-    vehicle: req.body.vehicleId || req.body.vehicle,
-  };
-  
-  // Remove frontend-specific fields
-  delete transformedData.consignorId;
-  delete transformedData.consigneeId;
-  delete transformedData.vehicleId;
-  
-  const lrData = updateLrSchema.parse(transformedData);
-  const lorryReceipt = await LorryReceipt.findById(req.params.id);
+  try {
+    console.log('=== LR UPDATE START ===');
+    console.log('LR ID:', req.params.id);
+    console.log('Update data:', JSON.stringify(req.body, null, 2));
+    
+    // For status-only updates, use a more flexible approach
+    if (Object.keys(req.body).length === 1 && req.body.status) {
+      console.log('Status-only update detected');
+      const lorryReceipt = await LorryReceipt.findById(req.params.id);
+      
+      if (!lorryReceipt) {
+        res.status(404);
+        throw new Error('Lorry Receipt not found');
+      }
+      
+      lorryReceipt.status = req.body.status;
+      const updatedLorryReceipt = await lorryReceipt.save();
+      console.log('Status updated successfully');
+      res.json(updatedLorryReceipt);
+      return;
+    }
+    
+    // For full updates, use the existing validation
+    console.log('Full update detected, using validation');
+    
+    // Transform frontend data format to backend format before validation
+    const transformedData = {
+      ...req.body,
+      consignor: req.body.consignorId || req.body.consignor,
+      consignee: req.body.consigneeId || req.body.consignee,
+      vehicle: req.body.vehicleId || req.body.vehicle,
+    };
+    
+    // Remove frontend-specific fields
+    delete transformedData.consignorId;
+    delete transformedData.consigneeId;
+    delete transformedData.vehicleId;
+    
+    const lrData = updateLrSchema.parse(transformedData);
+    const lorryReceipt = await LorryReceipt.findById(req.params.id);
 
-  if (lorryReceipt) {
-    Object.assign(lorryReceipt, lrData);
-    const updatedLorryReceipt = await lorryReceipt.save();
-    res.json(updatedLorryReceipt);
-  } else {
-    res.status(404);
-    throw new Error('Lorry Receipt not found');
+    if (lorryReceipt) {
+      Object.assign(lorryReceipt, lrData);
+      const updatedLorryReceipt = await lorryReceipt.save();
+      console.log('Full update completed successfully');
+      res.json(updatedLorryReceipt);
+    } else {
+      res.status(404);
+      throw new Error('Lorry Receipt not found');
+    }
+  } catch (error) {
+    console.error('=== LR UPDATE ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    console.error('Full error object:', JSON.stringify(error, null, 2));
+    throw error;
   }
 });
 
