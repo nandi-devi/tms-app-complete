@@ -17,6 +17,11 @@ router.get('/backup', backupData);
 // @route   POST /api/data/restore
 router.post('/restore', restoreData);
 
+// Test endpoint
+router.get('/test', (req: Request, res: Response) => {
+  res.json({ message: 'Data routes are working', timestamp: new Date().toISOString() });
+});
+
 // Numbering config endpoints - updated for production
 router.get('/numbering', expressAsyncHandler(async (req: Request, res: Response) => {
   const items = await NumberingConfig.find({});
