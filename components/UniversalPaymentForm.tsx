@@ -101,10 +101,12 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
 
         setIsSaving(true);
         try {
+            console.log('Sending payment data:', JSON.stringify(payment, null, 2));
             await onSave(payment);
             onClose();
         } catch (error) {
             console.error('Failed to save payment', error);
+            console.error('Payment data that failed:', JSON.stringify(payment, null, 2));
             setErrors({ general: 'Failed to save payment. Please try again.' });
         } finally {
             setIsSaving(false);

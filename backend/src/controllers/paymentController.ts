@@ -97,6 +97,7 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     res.status(201).json(populatedPayment);
   } catch (error) {
     console.error('Error creating payment:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     
     // Handle validation errors specifically
     if (error instanceof Error && error.name === 'ZodError') {
@@ -111,6 +112,8 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
         });
       }
       
+      console.error('Validation errors:', validationErrors);
+      
       res.status(400).json({
         message: 'Validation failed',
         errors: {
@@ -120,7 +123,12 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
       return;
     }
     
-    throw error;
+    // Handle other errors
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return;
   }
 });
 
