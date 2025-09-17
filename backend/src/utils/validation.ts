@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GstType, GstPayableBy, InvoiceStatus, LorryReceiptStatus } from '../types';
+import { GstType, GstPayableBy, InvoiceStatus, LorryReceiptStatus, PaymentType, PaymentMode } from '../types';
 
 export const paginationQuerySchema = z.object({
   page: z.string().optional(),
@@ -92,8 +92,8 @@ export const createPaymentSchema = z.object({
   customer: z.string().min(1),
   amount: z.number().positive(),
   date: z.string().min(1),
-  type: z.string().min(1),
-  mode: z.string().min(1),
+  type: z.nativeEnum(PaymentType),
+  mode: z.nativeEnum(PaymentMode),
   referenceNo: z.string().optional(),
   notes: z.string().optional(),
 }).refine(data => data.invoiceId || data.truckHiringNoteId, {
