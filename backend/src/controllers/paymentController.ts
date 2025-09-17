@@ -97,6 +97,29 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     res.status(201).json(populatedPayment);
   } catch (error) {
     console.error('Error creating payment:', error);
+    
+    // Handle validation errors specifically
+    if (error instanceof Error && error.name === 'ZodError') {
+      const validationErrors: { [key: string]: string[] } = {};
+      if ((error as any).issues) {
+        (error as any).issues.forEach((issue: any) => {
+          const field = issue.path.join('.');
+          if (!validationErrors[field]) {
+            validationErrors[field] = [];
+          }
+          validationErrors[field].push(issue.message);
+        });
+      }
+      
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: {
+          fieldErrors: validationErrors
+        }
+      });
+      return;
+    }
+    
     throw error;
   }
 });

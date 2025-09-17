@@ -15,41 +15,17 @@ export const getInvoices = async (): Promise<Invoice[]> => {
 export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promise<Invoice> => {
     console.log('=== FRONTEND INVOICE SERVICE ===');
     console.log('Original invoice data:', JSON.stringify(invoice, null, 2));
-    console.log('Invoice customerId:', invoice.customerId);
-    console.log('Invoice lorryReceipts:', invoice.lorryReceipts);
-    console.log('First LR object:', invoice.lorryReceipts?.[0]);
-    console.log('First LR _id:', invoice.lorryReceipts?.[0]?._id);
-    console.log('First LR id:', invoice.lorryReceipts?.[0]?.id);
     
-    // Transform frontend data format to backend format
-    const backendData = {
-        ...invoice,
-        customer: invoice.customerId,
-        lorryReceipts: invoice.lorryReceipts?.map(lr => {
-            // Handle both object with _id and direct string ID
-            if (typeof lr === 'string') {
-                return lr;
-            }
-            return lr?._id || lr?.id;
-        }).filter(id => id) || [], // Filter out null/undefined IDs
-    };
-    
-    // Remove the frontend-specific fields
-    delete (backendData as any).customerId;
-    
-    console.log('Transformed backend data:', JSON.stringify(backendData, null, 2));
-    console.log('Backend customer:', backendData.customer);
-    console.log('Backend lorryReceipts:', backendData.lorryReceipts);
-    
+    // Send data as-is, let backend handle transformation
     console.log('Making POST request to:', `${API_BASE_URL}/invoices`);
-    console.log('Request body:', JSON.stringify(backendData, null, 2));
+    console.log('Request body:', JSON.stringify(invoice, null, 2));
     
     const response = await fetch(`${API_BASE_URL}/invoices`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(backendData),
+        body: JSON.stringify(invoice),
     });
     
     console.log('Response status:', response.status);

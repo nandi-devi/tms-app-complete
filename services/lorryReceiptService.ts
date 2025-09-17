@@ -13,25 +13,13 @@ export const getLorryReceipts = async (): Promise<LorryReceipt[]> => {
 };
 
 export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' | '_id'>): Promise<LorryReceipt> => {
-    // Transform frontend data format to backend format
-    const backendData = {
-        ...lorryReceipt,
-        consignor: lorryReceipt.consignorId,
-        consignee: lorryReceipt.consigneeId,
-        vehicle: lorryReceipt.vehicleId,
-    };
-    
-    // Remove the frontend-specific fields
-    delete (backendData as any).consignorId;
-    delete (backendData as any).consigneeId;
-    delete (backendData as any).vehicleId;
-    
+    // Send data as-is, let backend handle transformation
     const response = await fetch(`${API_BASE_URL}/lorryreceipts`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(backendData),
+        body: JSON.stringify(lorryReceipt),
     });
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
@@ -49,28 +37,13 @@ export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' |
 };
 
 export const updateLorryReceipt = async (id: string, lorryReceipt: Partial<LorryReceipt>): Promise<LorryReceipt> => {
-    // Transform frontend data format to backend format
-    const backendData = { ...lorryReceipt };
-    
-    if (lorryReceipt.consignorId) {
-        backendData.consignor = lorryReceipt.consignorId;
-        delete (backendData as any).consignorId;
-    }
-    if (lorryReceipt.consigneeId) {
-        backendData.consignee = lorryReceipt.consigneeId;
-        delete (backendData as any).consigneeId;
-    }
-    if (lorryReceipt.vehicleId) {
-        backendData.vehicle = lorryReceipt.vehicleId;
-        delete (backendData as any).vehicleId;
-    }
-    
+    // Send data as-is, let backend handle transformation
     const response = await fetch(`${API_BASE_URL}/lorryreceipts/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(backendData),
+        body: JSON.stringify(lorryReceipt),
     });
     if (!response.ok) {
         throw new Error('Failed to update lorry receipt');

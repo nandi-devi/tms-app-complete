@@ -30,7 +30,8 @@ export const createTruckHiringNote = asyncHandler(async (req: Request, res: Resp
     const nextThnNumber = await getNextSequenceValue('truckHiringNoteId');
     console.log('Generated THN number:', nextThnNumber);
     
-    const balanceAmount = noteData.freightRate - (noteData.advanceAmount || 0);
+    const totalAmount = noteData.freightRate + (noteData.additionalCharges || 0);
+    const balanceAmount = totalAmount - (noteData.advanceAmount || 0);
 
     const note = new TruckHiringNote({
       thnNumber: nextThnNumber,
