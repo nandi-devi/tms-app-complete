@@ -32,7 +32,7 @@ export const createTruckHiringNote = asyncHandler(async (req: Request, res: Resp
     console.log('Generated THN number:', nextThnNumber);
     
     const totalAmount = noteData.freightRate + (noteData.additionalCharges || 0);
-    const balanceAmount = totalAmount - (noteData.advanceAmount || 0);
+    const balanceAmount = Math.max(0, totalAmount - (noteData.advanceAmount || 0)); // Ensure balance is never negative
 
     const note = new TruckHiringNote({
       thnNumber: nextThnNumber,
@@ -112,7 +112,7 @@ export const updateTruckHiringNote = asyncHandler(async (req: Request, res: Resp
       (updateData as any).freightRate = newFreightRate;
       (updateData as any).advanceAmount = newAdvanceAmount;
       (updateData as any).additionalCharges = newAdditionalCharges;
-      (updateData as any).balanceAmount = newFreightRate + newAdditionalCharges - newAdvanceAmount;
+      (updateData as any).balanceAmount = Math.max(0, newFreightRate + newAdditionalCharges - newAdvanceAmount); // Ensure balance is never negative
     }
   }
 

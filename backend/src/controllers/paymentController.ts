@@ -24,7 +24,7 @@ const updateThnStatus = async (thnId: string) => {
     
     const paidAmount = totalPaid.length > 0 ? totalPaid[0].total : 0;
     const totalAmount = thn.freightRate + (thn.additionalCharges || 0);
-    const balanceAmount = totalAmount - paidAmount;
+    const balanceAmount = Math.max(0, totalAmount - paidAmount); // Ensure balance is never negative
     
     console.log(`Calculated - Paid: ${paidAmount}, Total: ${totalAmount}, Balance: ${balanceAmount}`);
     

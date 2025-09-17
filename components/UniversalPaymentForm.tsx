@@ -40,7 +40,7 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
         invoiceId,
         truckHiringNoteId,
         ...(customerId && { customer: customerId }),
-        amount: balanceDue,
+        amount: Math.abs(balanceDue), // Use absolute value for payment amount
         date: getCurrentDate(),
         type: PaymentType.RECEIPT,
         mode: PaymentMode.CASH,
@@ -58,8 +58,8 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
         amount: { 
             required: true, 
             min: 0.01, 
-            max: balanceDue,
-            message: `Amount must be between ₹0.01 and ₹${balanceDue.toLocaleString('en-IN')}` 
+            max: Math.abs(balanceDue),
+            message: `Amount must be between ₹0.01 and ₹${Math.abs(balanceDue).toLocaleString('en-IN')}` 
         },
         date: commonRules.required,
         type: commonRules.required,
@@ -117,10 +117,10 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
     };
 
     const quickAmounts = [
-        { label: '25%', value: balanceDue * 0.25 },
-        { label: '50%', value: balanceDue * 0.5 },
-        { label: '75%', value: balanceDue * 0.75 },
-        { label: 'Full', value: balanceDue }
+        { label: '25%', value: Math.abs(balanceDue) * 0.25 },
+        { label: '50%', value: Math.abs(balanceDue) * 0.5 },
+        { label: '75%', value: Math.abs(balanceDue) * 0.75 },
+        { label: 'Full', value: Math.abs(balanceDue) }
     ];
 
     const setQuickAmount = (amount: number) => {
@@ -165,7 +165,7 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Balance Due</label>
                                     <div className="mt-1 p-3 border border-gray-300 rounded-md bg-red-50 font-semibold text-red-600">
-                                        ₹{balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                        ₹{Math.abs(balanceDue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </div>
                                 </div>
                             </div>
@@ -202,7 +202,7 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
                                         onChange={handleChange} 
                                         required 
                                         min="0.01"
-                                        max={balanceDue}
+                                        max={Math.abs(balanceDue)}
                                         step="0.01"
                                         error={errors.amount}
                                         className="w-full text-lg py-3"
@@ -292,7 +292,7 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Remaining Balance</label>
                                     <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-semibold text-lg text-red-600">
-                                        ₹{(balanceDue - payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                        ₹{(Math.abs(balanceDue) - payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </div>
                                 </div>
                             </div>
