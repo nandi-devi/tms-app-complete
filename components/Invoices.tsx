@@ -160,7 +160,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
       {isPaymentFormOpen && selectedInvoiceForPayment && (
         <UniversalPaymentForm
           invoiceId={selectedInvoiceForPayment._id}
-          customerId={selectedInvoiceForPayment.customer?._id || selectedInvoiceForPayment.customerId}
+          customerId={selectedInvoiceForPayment.customerId}
           grandTotal={selectedInvoiceForPayment.grandTotal}
           balanceDue={selectedInvoiceForPayment.balanceDue || selectedInvoiceForPayment.grandTotal}
           onSave={onSavePayment}

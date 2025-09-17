@@ -43,6 +43,12 @@ export enum PaymentMode {
     UPI = 'UPI',
 }
 
+export enum RiskBearer {
+    TRANSPORTER = 'Transporter',
+    CARRIER = 'Carrier',
+    OWNER = 'Owner',
+}
+
 export interface Customer {
   _id: string;
   name: string; // Legal Name of Business
@@ -93,6 +99,7 @@ export interface LorryReceipt {
   eWayBillNo: string;
   valueGoods: number;
   gstPayableBy: GstPayableBy;
+  riskBearer: RiskBearer;
   status: LorryReceiptStatus;
   insurance: {
       hasInsured: boolean;

@@ -43,6 +43,12 @@ export enum PaymentMode {
     UPI = 'UPI',
 }
 
+export enum RiskBearer {
+    TRANSPORTER = 'Transporter',
+    CARRIER = 'Carrier',
+    OWNER = 'Owner',
+}
+
 export interface Customer {
   _id: string;
   name: string; // Legal Name of Business

@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
-import { LorryReceiptStatus, GstPayableBy } from '../types';
+import { LorryReceiptStatus, GstPayableBy, RiskBearer } from '../types';
 
 export interface ILorryReceipt extends Document {
   lrNumber: number;
@@ -30,6 +30,7 @@ export interface ILorryReceipt extends Document {
   eWayBillNo: string;
   valueGoods: number;
   gstPayableBy: GstPayableBy;
+  riskBearer: RiskBearer;
   status: LorryReceiptStatus;
   insurance: {
     hasInsured: boolean;
@@ -88,6 +89,7 @@ const LorryReceiptSchema = new Schema({
   eWayBillNo: { type: String },
   valueGoods: { type: Number },
   gstPayableBy: { type: String, enum: Object.values(GstPayableBy), required: true },
+  riskBearer: { type: String, enum: Object.values(RiskBearer), required: true },
   status: { type: String, enum: Object.values(LorryReceiptStatus), default: LorryReceiptStatus.CREATED },
   insurance: {
     hasInsured: { type: Boolean, default: false },

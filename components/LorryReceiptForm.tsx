@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { GstPayableBy } from '../types';
+import { GstPayableBy, RiskBearer } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { getCurrentDate, fetchGstDetails } from '../services/utils';
@@ -163,6 +163,7 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     eWayBillNo: '',
     valueGoods: 0,
     gstPayableBy: GstPayableBy.CONSIGNOR,
+    riskBearer: RiskBearer.CARRIER,
     insurance: { hasInsured: false },
     invoiceNo: '',
     sealNo: '',
@@ -462,9 +463,14 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
                     <Input label="Reporting Date" type="date" name="reportingDate" value={lr.reportingDate || ''} onChange={handleChange} />
                     <Input label="Delivery Date" type="date" name="deliveryDate" value={lr.deliveryDate || ''} onChange={handleChange} />
                  </div>
-                 <Select label="GST Payable By" name="gstPayableBy" value={lr.gstPayableBy || GstPayableBy.CONSIGNOR} onChange={handleChange}>
-                    {Object.values(GstPayableBy).map(val => <option key={val} value={val}>{val}</option>)}
-                 </Select>
+                 <div className="grid grid-cols-2 gap-4">
+                    <Select label="GST Payable By" name="gstPayableBy" value={lr.gstPayableBy || GstPayableBy.CONSIGNOR} onChange={handleChange}>
+                       {Object.values(GstPayableBy).map(val => <option key={val} value={val}>{val}</option>)}
+                    </Select>
+                    <Select label="Risk Bearer" name="riskBearer" value={lr.riskBearer || RiskBearer.CARRIER} onChange={handleChange}>
+                       {Object.values(RiskBearer).map(val => <option key={val} value={val}>{val}</option>)}
+                    </Select>
+                 </div>
             </div>
         </Card>
         <Card title="Charges">
