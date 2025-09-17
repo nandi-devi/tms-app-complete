@@ -5,9 +5,7 @@ import Vehicle from '../models/vehicle';
 
 // Zod schema for vehicle creation
 const createVehicleSchema = z.object({
-  vehicleNumber: z.string().min(1, 'Vehicle number is required'),
-  driverName: z.string().optional(),
-  driverPhone: z.string().optional(),
+  number: z.string().min(1, 'Vehicle number is required'),
 });
 
 // Zod schema for vehicle update
@@ -39,10 +37,22 @@ export const getVehicleById = asyncHandler(async (req: Request, res: Response) =
 // @route   POST /api/vehicles
 // @access  Public
 export const createVehicle = asyncHandler(async (req: Request, res: Response) => {
-  const vehicleData = createVehicleSchema.parse(req.body);
-  const vehicle = new Vehicle(vehicleData);
-  const createdVehicle = await vehicle.save();
-  res.status(201).json(createdVehicle);
+  try {
+    console.log('Received vehicle data:', JSON.stringify(req.body, null, 2));
+    const vehicleData = createVehicleSchema.parse(req.body);
+    console.log('Validated vehicle data:', JSON.stringify(vehicleData, null, 2));
+    const vehicle = new Vehicle(vehicleData);
+    const createdVehicle = await vehicle.save();
+    console.log('Created vehicle:', createdVehicle._id);
+    res.status(201).json(createdVehicle);
+  } catch (error) {
+    console.error('Error creating vehicle:', error);
+    res.status(500).json({ 
+      message: 'Failed to create vehicle', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      details: error
+    });
+  }
 });
 
 // @desc    Update a vehicle
@@ -53,10 +63,7 @@ export const updateVehicle = asyncHandler(async (req: Request, res: Response) =>
   const vehicle = await Vehicle.findById(req.params.id);
 
   if (vehicle) {
-    vehicle.vehicleNumber = vehicleData.vehicleNumber || vehicle.vehicleNumber;
-    vehicle.driverName = vehicleData.driverName || vehicle.driverName;
-    vehicle.driverPhone = vehicleData.driverPhone || vehicle.driverPhone;
-
+    vehicle.number = vehicleData.number || vehicle.number;
     const updatedVehicle = await vehicle.save();
     res.json(updatedVehicle);
   } else {

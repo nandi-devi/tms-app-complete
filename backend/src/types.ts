@@ -62,9 +62,6 @@ export interface Customer {
 export interface Vehicle {
   _id: string;
   number: string;
-  vehicleNumber?: string;
-  driverName?: string;
-  driverPhone?: string;
 }
 
 export interface LorryReceipt {
