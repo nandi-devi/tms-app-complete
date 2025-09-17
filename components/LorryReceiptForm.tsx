@@ -254,6 +254,16 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
     setLr(prev => ({...prev, packages: newPackages}));
   }
 
+  const addPackage = () => {
+    const newPackages = [...(lr.packages || []), { count: 1, packingMethod: '', description: '', actualWeight: 0, chargedWeight: 0 }];
+    setLr(prev => ({...prev, packages: newPackages}));
+  }
+
+  const removePackage = (index: number) => {
+    const newPackages = (lr.packages || []).filter((_, i) => i !== index);
+    setLr(prev => ({...prev, packages: newPackages}));
+  }
+
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     console.log('Validating form with data:', lr);
