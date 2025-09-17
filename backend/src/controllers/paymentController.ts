@@ -4,7 +4,32 @@ import Payment from '../models/payment';
 import Invoice from '../models/invoice';
 import TruckHiringNote from '../models/truckHiringNote';
 import { updateInvoiceStatus } from '../utils/invoiceUtils';
-import { updateThnStatus } from '../utils/thnUtils';
+// THN status update function
+const updateThnStatus = async (thnId: string) => {
+  const thn = await TruckHiringNote.findById(thnId);
+  if (thn) {
+    const totalPaid = await Payment.aggregate([
+      { $match: { truckHiringNoteId: thnId } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    
+    const paidAmount = totalPaid.length > 0 ? totalPaid[0].total : 0;
+    const balanceAmount = thn.freightRate + (thn.additionalCharges || 0) - paidAmount;
+    
+    let status = 'UNPAID';
+    if (balanceAmount <= 0) {
+      status = 'PAID';
+    } else if (paidAmount > 0) {
+      status = 'PARTIAL';
+    }
+    
+    await TruckHiringNote.findByIdAndUpdate(thnId, { 
+      paidAmount, 
+      balanceAmount, 
+      status 
+    });
+  }
+};
 import { createPaymentSchema, updatePaymentSchema } from '../utils/validation';
 
 export const getPayments = asyncHandler(async (req: Request, res: Response) => {

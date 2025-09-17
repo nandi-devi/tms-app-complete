@@ -4,63 +4,72 @@ import { THNStatus } from '../types';
 export interface ITruckHiringNote extends Document {
   thnNumber: number;
   date: string;
-  transporterCompanyName: string;
   truckNumber: string;
-  origin: string;
-  destination: string;
-  goodsType: string;
-  weight: number;
-  freight: number;
-  advancePaid: number;
-  balancePayable: number;
+  truckType: string;
+  vehicleCapacity: number;
+  loadingLocation: string;
+  unloadingLocation: string;
+  loadingDateTime: string;
   expectedDeliveryDate: string;
-  specialInstructions?: string;
+  goodsType: string;
+  agencyName: string;
+  truckOwnerName: string;
+  truckOwnerContact?: string;
+  freightRate: number;
+  freightRateType: 'per_trip' | 'per_ton' | 'per_km';
+  advanceAmount: number;
+  balanceAmount: number;
+  paymentMode: 'Cash' | 'UPI' | 'Bank Transfer' | 'Cheque' | 'Other';
+  paymentTerms: string;
+  additionalCharges?: number;
+  remarks?: string;
+  linkedLR?: string;
+  linkedInvoice?: string;
   status: THNStatus;
   paidAmount: number;
   payments: Schema.Types.ObjectId[];
-  // New financial fields
-  paymentTerms: 'COD' | 'Credit' | 'Advance';
-  reminders: string;
-  gstRate: number;
-  cgstAmount: number;
-  sgstAmount: number;
-  igstAmount: number;
-  loadingCharges: number;
-  unloadingCharges: number;
-  detentionCharges: number;
-  totalGstAmount: number;
-  grandTotal: number;
 }
 
 const TruckHiringNoteSchema = new Schema({
-  thnNumber: { type: Number, unique: true },
+  thnNumber: { type: Number, unique: true, required: true },
   date: { type: String, required: true },
-  transporterCompanyName: { type: String, required: true },
   truckNumber: { type: String, required: true },
-  origin: { type: String, required: true },
-  destination: { type: String, required: true },
-  goodsType: { type: String, required: true },
-  weight: { type: Number, required: true },
-  freight: { type: Number, required: true },
-  advancePaid: { type: Number, default: 0 },
-  balancePayable: { type: Number, required: true },
+  truckType: { type: String, required: true },
+  vehicleCapacity: { type: Number, required: true },
+  loadingLocation: { type: String, required: true },
+  unloadingLocation: { type: String, required: true },
+  loadingDateTime: { type: String, required: true },
   expectedDeliveryDate: { type: String, required: true },
-  specialInstructions: { type: String },
-  status: { type: String, enum: Object.values(THNStatus), default: THNStatus.UNPAID },
+  goodsType: { type: String, required: true },
+  agencyName: { type: String, required: true },
+  truckOwnerName: { type: String, required: true },
+  truckOwnerContact: { type: String },
+  freightRate: { type: Number, required: true },
+  freightRateType: { 
+    type: String, 
+    enum: ['per_trip', 'per_ton', 'per_km'], 
+    default: 'per_trip',
+    required: true 
+  },
+  advanceAmount: { type: Number, default: 0 },
+  balanceAmount: { type: Number, required: true },
+  paymentMode: { 
+    type: String, 
+    enum: ['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'Other'], 
+    required: true 
+  },
+  paymentTerms: { type: String, required: true },
+  additionalCharges: { type: Number, default: 0 },
+  remarks: { type: String },
+  linkedLR: { type: String },
+  linkedInvoice: { type: String },
+  status: { 
+    type: String, 
+    enum: Object.values(THNStatus), 
+    default: THNStatus.UNPAID 
+  },
   paidAmount: { type: Number, default: 0 },
-  payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }],
-  // New financial fields
-  paymentTerms: { type: String, enum: ['COD', 'Credit', 'Advance'], default: 'COD' },
-  reminders: { type: String, default: '' },
-  gstRate: { type: Number, default: 18 },
-  cgstAmount: { type: Number, default: 0 },
-  sgstAmount: { type: Number, default: 0 },
-  igstAmount: { type: Number, default: 0 },
-  loadingCharges: { type: Number, default: 0 },
-  unloadingCharges: { type: Number, default: 0 },
-  detentionCharges: { type: Number, default: 0 },
-  totalGstAmount: { type: Number, default: 0 },
-  grandTotal: { type: Number, default: 0 },
+  payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }]
 }, {
   timestamps: true,
 });

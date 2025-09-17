@@ -9,7 +9,15 @@ export const getTruckHiringNotes = async (): Promise<TruckHiringNote[]> => {
     return response.json();
 };
 
-export const createTruckHiringNote = async (note: Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>): Promise<TruckHiringNote> => {
+export const getTruckHiringNoteById = async (id: string): Promise<TruckHiringNote> => {
+    const response = await fetch(`${API_BASE_URL}/truckhiringnotes/${id}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch Truck Hiring Note');
+    }
+    return response.json();
+};
+
+export const createTruckHiringNote = async (note: Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>): Promise<TruckHiringNote> => {
     const response = await fetch(`${API_BASE_URL}/truckhiringnotes`, {
         method: 'POST',
         headers: {
@@ -23,7 +31,7 @@ export const createTruckHiringNote = async (note: Omit<TruckHiringNote, '_id' | 
     return response.json();
 };
 
-export const updateTruckHiringNote = async (id: string, note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>): Promise<TruckHiringNote> => {
+export const updateTruckHiringNote = async (id: string, note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>): Promise<TruckHiringNote> => {
     const response = await fetch(`${API_BASE_URL}/truckhiringnotes/${id}`, {
         method: 'PUT',
         headers: {
@@ -35,4 +43,13 @@ export const updateTruckHiringNote = async (id: string, note: Partial<Omit<Truck
         throw new Error('Failed to update Truck Hiring Note');
     }
     return response.json();
+};
+
+export const deleteTruckHiringNote = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/truckhiringnotes/${id}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to delete Truck Hiring Note');
+    }
 };

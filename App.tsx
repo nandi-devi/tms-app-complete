@@ -26,7 +26,7 @@ import { useVehicles } from './hooks/useVehicles';
 import { getLorryReceipts, createLorryReceipt, updateLorryReceipt, deleteLorryReceipt } from './services/lorryReceiptService';
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice as deleteInvoiceService } from './services/invoiceService';
 import { getPayments, createPayment } from './services/paymentService';
-import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote } from './services/truckHiringNoteService';
+import { getTruckHiringNotes, createTruckHiringNote, updateTruckHiringNote, deleteTruckHiringNote } from './services/truckHiringNoteService';
 import { resetApplicationData, backupData, restoreData } from './services/dataService';
 import { ToastContainer, type Toast } from './components/ui/Toast';
 import { PerformanceMonitor } from './components/ui/PerformanceMonitor';
@@ -254,16 +254,33 @@ const App: React.FC = () => {
     }
   };
 
-  const saveTruckHiringNote = async (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => {
+  const saveTruckHiringNote = async (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => {
     try {
-      if (note._id) {
-        await updateTruckHiringNote(note._id, note);
-      } else {
-        await createTruckHiringNote(note as any);
-      }
+      await createTruckHiringNote(note as any);
       await fetchAllData();
+      pushToast('success', 'Truck Hiring Note created successfully');
     } catch (error) {
-      console.error('Failed to save Truck Hiring Note:', error);
+      handleAndToastApiError(error, 'Failed to create Truck Hiring Note');
+    }
+  };
+
+  const updateTruckHiringNoteHandler = async (id: string, note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => {
+    try {
+      await updateTruckHiringNote(id, note);
+      await fetchAllData();
+      pushToast('success', 'Truck Hiring Note updated successfully');
+    } catch (error) {
+      handleAndToastApiError(error, 'Failed to update Truck Hiring Note');
+    }
+  };
+
+  const deleteTruckHiringNoteHandler = async (id: string) => {
+    try {
+      await deleteTruckHiringNote(id);
+      await fetchAllData();
+      pushToast('success', 'Truck Hiring Note deleted successfully');
+    } catch (error) {
+      handleAndToastApiError(error, 'Failed to delete Truck Hiring Note');
     }
   };
 
@@ -454,7 +471,7 @@ const App: React.FC = () => {
 
       case 'VIEW_COMPANY_LEDGER_PDF':
         const invoiceTxComp = invoices.map(inv => ({ type: 'income', date: inv.date, particulars: `Invoice No: ${inv.invoiceNumber} to ${inv.customer?.name}`, amount: inv.grandTotal }));
-        const thnTxComp = truckHiringNotes.map(thn => ({ type: 'expense', date: thn.date, particulars: `THN No: ${thn.thnNumber} to ${thn.truckOwnerName}`, amount: thn.freight }));
+        const thnTxComp = truckHiringNotes.map(thn => ({ type: 'expense', date: thn.date, particulars: `THN No: ${thn.thnNumber} to ${thn.truckOwnerName}`, amount: thn.freightRate }));
         const companyTransactions = [...invoiceTxComp, ...thnTxComp].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return <LedgerPDF
@@ -477,11 +494,19 @@ const App: React.FC = () => {
         return <Clients customers={customers} onSave={saveCustomer} onDelete={handleDeleteCustomer} onBack={goBack} />;
 
       case 'TRUCK_HIRING_NOTES':
-        return <TruckHiringNotes notes={truckHiringNotes} onSave={saveTruckHiringNote} onSavePayment={savePayment} onViewChange={navigateTo} onBack={goBack} initialFilters={currentView.filters} />;
+        return <TruckHiringNotes 
+          notes={truckHiringNotes} 
+          onSave={saveTruckHiringNote} 
+          onUpdate={updateTruckHiringNoteHandler}
+          onDelete={deleteTruckHiringNoteHandler}
+          onViewChange={navigateTo} 
+          onBack={goBack} 
+          initialFilters={currentView.filters} 
+        />;
 
       case 'VIEW_THN':
         const thnToView = truckHiringNotes.find(thn => thn._id === currentView.id);
-        return thnToView ? <THNPdf truckHiringNote={thnToView} companyInfo={companyInfo} onBack={goBack} /> : <div>THN not found</div>;
+        return thnToView ? <THNPdf thn={thnToView} onBack={goBack} /> : <div>THN not found</div>;
 
       case 'LORRY_RECEIPTS':
         return <LorryReceipts

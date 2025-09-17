@@ -1,19 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import type { TruckHiringNote, Payment } from '../types';
+import type { TruckHiringNote } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { Select } from './ui/Select';
 import { TruckHiringNoteForm } from './TruckHiringNoteForm';
-import { THNPaymentForm } from './THNPaymentForm';
-import { THNPaymentHistoryModal } from './THNPaymentHistoryModal';
 import { formatDate } from '../services/utils';
 import type { View } from '../App';
 
 interface TruckHiringNotesProps {
     notes: TruckHiringNote[];
-    onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => Promise<any>;
-    onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => Promise<void>;
+    onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
+    onUpdate: (id: string, note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
+    onDelete: (id: string) => Promise<void>;
     onViewChange: (view: View) => void;
     onBack: () => void;
     initialFilters?: Partial<Record<keyof THNTableFilters, any>>;
@@ -24,20 +22,22 @@ interface THNTableFilters {
     startDate: string;
     endDate: string;
     showOnlyOutstanding: boolean;
+    truckType: string;
+    status: string;
 }
 
-export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSave, onSavePayment, onViewChange, onBack, initialFilters }) => {
+export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ 
+    notes, onSave, onUpdate, onDelete, onViewChange, onBack, initialFilters 
+}) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<TruckHiringNote | undefined>(undefined);
-    const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
-    const [selectedNoteForPayment, setSelectedNoteForPayment] = useState<TruckHiringNote | null>(null);
-    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-    const [selectedNoteForHistory, setSelectedNoteForHistory] = useState<TruckHiringNote | null>(null);
 
     const [searchTerm, setSearchTerm] = useState(initialFilters?.searchTerm || '');
     const [startDate, setStartDate] = useState(initialFilters?.startDate || '');
     const [endDate, setEndDate] = useState(initialFilters?.endDate || '');
     const [showOnlyOutstanding, setShowOnlyOutstanding] = useState(initialFilters?.showOnlyOutstanding || false);
+    const [truckType, setTruckType] = useState(initialFilters?.truckType || '');
+    const [status, setStatus] = useState(initialFilters?.status || '');
 
     const filteredNotes = useMemo(() => {
         return notes
@@ -47,8 +47,9 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                     note.thnNumber.toString().includes(searchTerm) ||
                     note.truckOwnerName.toLowerCase().includes(searchLower) ||
                     note.truckNumber.toLowerCase().includes(searchLower) ||
-                    note.origin.toLowerCase().includes(searchLower) ||
-                    note.destination.toLowerCase().includes(searchLower);
+                    note.loadingLocation.toLowerCase().includes(searchLower) ||
+                    note.unloadingLocation.toLowerCase().includes(searchLower) ||
+                    note.goodsType.toLowerCase().includes(searchLower);
 
                 const noteDate = new Date(note.date);
                 const start = startDate ? new Date(startDate) : null;
@@ -56,15 +57,22 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
 
                 const matchesStartDate = !start || noteDate >= start;
                 const matchesEndDate = !end || noteDate <= end;
-                const matchesOutstanding = !showOnlyOutstanding || note.balancePayable > 0;
+                const matchesOutstanding = !showOnlyOutstanding || note.balanceAmount > 0;
+                const matchesTruckType = !truckType || note.truckType === truckType;
+                const matchesStatus = !status || note.status === status;
 
-                return matchesSearch && matchesStartDate && matchesEndDate && matchesOutstanding;
+                return matchesSearch && matchesStartDate && matchesEndDate && 
+                       matchesOutstanding && matchesTruckType && matchesStatus;
             })
             .sort((a, b) => b.thnNumber - a.thnNumber);
-    }, [notes, searchTerm, startDate, endDate, showOnlyOutstanding]);
+    }, [notes, searchTerm, startDate, endDate, showOnlyOutstanding, truckType, status]);
 
-    const handleSave = async (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => {
-        await onSave(note);
+    const handleSave = async (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => {
+        if (editingNote) {
+            await onUpdate(editingNote._id, note);
+        } else {
+            await onSave(note);
+        }
         setIsFormOpen(false);
         setEditingNote(undefined);
     };
@@ -79,15 +87,27 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
         setIsFormOpen(true);
     };
 
-    const handleOpenPaymentForm = (note: TruckHiringNote) => {
-        setSelectedNoteForPayment(note);
-        setIsPaymentFormOpen(true);
+    const handleDelete = async (note: TruckHiringNote) => {
+        if (window.confirm(`Are you sure you want to delete THN #${note.thnNumber}?`)) {
+            try {
+                await onDelete(note._id);
+            } catch (error) {
+                console.error('Failed to delete THN:', error);
+                alert('Failed to delete THN. Please try again.');
+            }
+        }
     };
 
-    const handleOpenHistoryModal = (note: TruckHiringNote) => {
-        setSelectedNoteForHistory(note);
-        setIsHistoryModalOpen(true);
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'PAID': return 'text-green-600 bg-green-100';
+            case 'UNPAID': return 'text-red-600 bg-red-100';
+            case 'PARTIAL': return 'text-yellow-600 bg-yellow-100';
+            default: return 'text-gray-600 bg-gray-100';
+        }
     };
+
+    const uniqueTruckTypes = Array.from(new Set(notes.map(note => note.truckType))).sort();
 
     return (
         <div className="space-y-6">
@@ -98,19 +118,7 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                     onCancel={() => setIsFormOpen(false)}
                 />
             )}
-            {isPaymentFormOpen && selectedNoteForPayment && (
-                <THNPaymentForm
-                    truckHiringNote={selectedNoteForPayment}
-                    onSave={onSavePayment}
-                    onClose={() => setIsPaymentFormOpen(false)}
-                />
-            )}
-            {isHistoryModalOpen && selectedNoteForHistory && (
-                <THNPaymentHistoryModal
-                    truckHiringNote={selectedNoteForHistory}
-                    onClose={() => setIsHistoryModalOpen(false)}
-                />
-            )}
+
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold text-gray-800">Truck Hiring Notes</h2>
                 <div>
@@ -143,6 +151,35 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                         </label>
                     </div>
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Truck Type</label>
+                        <select
+                            value={truckType}
+                            onChange={(e) => setTruckType(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All Types</option>
+                            {uniqueTruckTypes.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All Status</option>
+                            <option value="UNPAID">Unpaid</option>
+                            <option value="PARTIAL">Partial</option>
+                            <option value="PAID">Paid</option>
+                        </select>
+                    </div>
+                </div>
             </Card>
 
             <Card>
@@ -152,37 +189,79 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ notes, onSav
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">THN No.</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck Owner</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck No.</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From / To</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck Details</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Freight</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredNotes.map(note => (
                                 <tr key={note._id} className="hover:bg-slate-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{note.thnNumber}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(note.date)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.truckOwnerName}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.truckNumber}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{note.origin} to {note.destination}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{(note.freight || 0).toLocaleString('en-IN')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">₹{(note.balancePayable || 0).toLocaleString('en-IN')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        {note.status !== 'Paid' && (
-                                            <button onClick={() => handleOpenPaymentForm(note)} className="text-blue-600 hover:text-blue-900 transition-colors">Add Payment</button>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        #{note.thnNumber}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {formatDate(note.date)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div>
+                                            <div className="font-medium">{note.truckNumber}</div>
+                                            <div className="text-xs text-gray-400">{note.truckType}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div>
+                                            <div>{note.loadingLocation} → {note.unloadingLocation}</div>
+                                            <div className="text-xs text-gray-400">{note.goodsType}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div>
+                                            <div className="font-medium">{note.truckOwnerName}</div>
+                                            {note.truckOwnerContact && (
+                                                <div className="text-xs text-gray-400">{note.truckOwnerContact}</div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                                        ₹{(note.freightRate || 0).toLocaleString('en-IN')}
+                                        {note.additionalCharges > 0 && (
+                                            <div className="text-xs text-gray-400">+₹{note.additionalCharges.toLocaleString('en-IN')}</div>
                                         )}
-                                        <button onClick={() => handleOpenHistoryModal(note)} className="text-gray-600 hover:text-gray-900 transition-colors">History</button>
-                                        <button onClick={() => onViewChange({ name: 'VIEW_THN', id: note._id })} className="text-indigo-600 hover:text-indigo-900 transition-colors">View PDF</button>
-                                        <button onClick={() => handleEdit(note)} className="text-green-600 hover:text-green-900 transition-colors">Edit</button>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">
+                                        ₹{(note.balanceAmount || 0).toLocaleString('en-IN')}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(note.status)}`}>
+                                            {note.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                        <button 
+                                            onClick={() => handleEdit(note)} 
+                                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(note)} 
+                                            className="text-red-600 hover:text-red-900 transition-colors"
+                                        >
+                                            Delete
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
                             {filteredNotes.length === 0 && (
                                 <tr>
-                                    <td colSpan={8} className="text-center py-8 text-gray-500">No Truck Hiring Notes found.</td>
+                                    <td colSpan={9} className="text-center py-8 text-gray-500">
+                                        No Truck Hiring Notes found.
+                                    </td>
                                 </tr>
                             )}
                         </tbody>

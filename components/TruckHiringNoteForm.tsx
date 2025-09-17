@@ -9,34 +9,33 @@ import { getCurrentDate } from '../services/utils';
 
 interface TruckHiringNoteFormProps {
     existingNote?: TruckHiringNote;
-    onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balancePayable'>>) => Promise<any>;
+    onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
     onCancel: () => void;
 }
 
 export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existingNote, onSave, onCancel }) => {
-    const getInitialState = (): Partial<Omit<TruckHiringNote, '_id' | 'thnNumber'>> => ({
+    const getInitialState = (): Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>> => ({
         date: getCurrentDate(),
-        transporterCompanyName: '',
         truckNumber: '',
-        origin: '',
-        destination: '',
-        goodsType: '',
-        weight: 0,
-        freight: 0,
-        advancePaid: 0,
+        truckType: '',
+        vehicleCapacity: 0,
+        loadingLocation: '',
+        unloadingLocation: '',
+        loadingDateTime: '',
         expectedDeliveryDate: '',
-        specialInstructions: '',
-        paymentTerms: 'COD',
-        reminders: '',
-        gstRate: 18,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        igstAmount: 0,
-        loadingCharges: 0,
-        unloadingCharges: 0,
-        detentionCharges: 0,
-        totalGstAmount: 0,
-        grandTotal: 0,
+        goodsType: '',
+        agencyName: '',
+        truckOwnerName: '',
+        truckOwnerContact: '',
+        freightRate: 0,
+        freightRateType: 'per_trip',
+        advanceAmount: 0,
+        paymentMode: 'Cash',
+        paymentTerms: '',
+        additionalCharges: 0,
+        remarks: '',
+        linkedLR: '',
+        linkedInvoice: ''
     });
 
     const [note, setNote] = useState(existingNote || getInitialState());
@@ -45,19 +44,26 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
     const [currentStep, setCurrentStep] = useState(1);
     const formRef = useRef<HTMLFormElement>(null);
 
+    // Common truck types
+    const truckTypes = [
+        'Open Body', 'Container', 'Trailer', 'Tanker', 'Refrigerated', 
+        'Flatbed', 'Box Truck', 'Dump Truck', 'Crane Truck', 'Other'
+    ];
+
+    // Common goods types
+    const commonGoodsTypes = [
+        'General Cargo', 'Textiles', 'Electronics', 'Machinery', 'Food Items', 
+        'Pharmaceuticals', 'Automotive Parts', 'Construction Materials', 
+        'Agricultural Products', 'Chemicals', 'Furniture', 'Books & Stationery', 
+        'Garments', 'Footwear', 'Home Appliances'
+    ];
+
     // Common cities for autocomplete
     const commonCities = [
         'Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad',
         'Jaipur', 'Surat', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal',
         'Visakhapatnam', 'Pimpri-Chinchwad', 'Patna', 'Vadodara', 'Ghaziabad', 'Ludhiana',
         'Agra', 'Nashik', 'Faridabad', 'Meerut', 'Rajkot', 'Kalyan-Dombivli', 'Vasai-Virar'
-    ];
-
-    // Common goods types
-    const commonGoodsTypes = [
-        'General Cargo', 'Textiles', 'Electronics', 'Machinery', 'Food Items', 'Pharmaceuticals',
-        'Automotive Parts', 'Construction Materials', 'Agricultural Products', 'Chemicals',
-        'Furniture', 'Books & Stationery', 'Garments', 'Footwear', 'Home Appliances'
     ];
 
     useEffect(() => {
@@ -71,21 +77,26 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
         const newErrors: Record<string, string> = {};
         
         if (!note.date) newErrors.date = 'Date is required';
-        if (!note.transporterCompanyName?.trim()) newErrors.transporterCompanyName = 'Transporter/Company name is required';
         if (!note.truckNumber?.trim()) newErrors.truckNumber = 'Truck number is required';
-        if (!note.origin?.trim()) newErrors.origin = 'Origin is required';
-        if (!note.destination?.trim()) newErrors.destination = 'Destination is required';
-        if (!note.goodsType?.trim()) newErrors.goodsType = 'Type of goods is required';
-        if (!note.weight || note.weight <= 0) newErrors.weight = 'Weight must be greater than 0';
-        if (!note.freight || note.freight <= 0) newErrors.freight = 'Freight amount is required';
+        if (!note.truckType?.trim()) newErrors.truckType = 'Truck type is required';
+        if (!note.vehicleCapacity || note.vehicleCapacity <= 0) newErrors.vehicleCapacity = 'Vehicle capacity must be greater than 0';
+        if (!note.loadingLocation?.trim()) newErrors.loadingLocation = 'Loading location is required';
+        if (!note.unloadingLocation?.trim()) newErrors.unloadingLocation = 'Unloading location is required';
+        if (!note.loadingDateTime) newErrors.loadingDateTime = 'Loading date & time is required';
         if (!note.expectedDeliveryDate) newErrors.expectedDeliveryDate = 'Expected delivery date is required';
+        if (!note.goodsType?.trim()) newErrors.goodsType = 'Type of goods is required';
+        if (!note.agencyName?.trim()) newErrors.agencyName = 'Agency name is required';
+        if (!note.truckOwnerName?.trim()) newErrors.truckOwnerName = 'Truck owner name is required';
+        if (!note.freightRate || note.freightRate <= 0) newErrors.freightRate = 'Freight rate is required';
+        if (!note.paymentMode?.trim()) newErrors.paymentMode = 'Payment mode is required';
+        if (!note.paymentTerms?.trim()) newErrors.paymentTerms = 'Payment terms are required';
         
         // Validate dates
-        if (note.date && note.expectedDeliveryDate) {
-            const noteDate = new Date(note.date);
+        if (note.loadingDateTime && note.expectedDeliveryDate) {
+            const loadingDate = new Date(note.loadingDateTime);
             const deliveryDate = new Date(note.expectedDeliveryDate);
-            if (deliveryDate < noteDate) {
-                newErrors.expectedDeliveryDate = 'Delivery date cannot be before note date';
+            if (deliveryDate < loadingDate) {
+                newErrors.expectedDeliveryDate = 'Delivery date cannot be before loading date';
             }
         }
         
@@ -101,52 +112,10 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
         
-        setNote(prev => {
-            const updatedNote = {
-                ...prev,
-                [name]: type === 'number' ? parseFloat(value) || 0 : value,
-            };
-            
-            // Calculate GST and totals when relevant fields change
-            if (['freight', 'loadingCharges', 'unloadingCharges', 'detentionCharges', 'gstRate', 'origin', 'destination'].includes(name)) {
-                const freight = updatedNote.freight || 0;
-                const loadingCharges = updatedNote.loadingCharges || 0;
-                const unloadingCharges = updatedNote.unloadingCharges || 0;
-                const detentionCharges = updatedNote.detentionCharges || 0;
-                const gstRate = updatedNote.gstRate || 0;
-                
-                const subtotal = freight + loadingCharges + unloadingCharges + detentionCharges;
-                const totalGstAmount = (subtotal * gstRate) / 100;
-                const grandTotal = subtotal + totalGstAmount;
-                
-                // Calculate CGST/SGST or IGST based on origin/destination
-                const isInterState = updatedNote.origin !== updatedNote.destination;
-                const cgstAmount = isInterState ? 0 : totalGstAmount / 2;
-                const sgstAmount = isInterState ? 0 : totalGstAmount / 2;
-                const igstAmount = isInterState ? totalGstAmount : 0;
-                
-                return {
-                    ...updatedNote,
-                    cgstAmount,
-                    sgstAmount,
-                    igstAmount,
-                    totalGstAmount,
-                    grandTotal,
-                    balancePayable: grandTotal - (updatedNote.advancePaid || 0)
-                };
-            }
-            
-            // Recalculate balance when advance changes
-            if (name === 'advancePaid') {
-                const grandTotal = updatedNote.grandTotal || 0;
-                return {
-                    ...updatedNote,
-                    balancePayable: grandTotal - (parseFloat(value) || 0)
-                };
-            }
-            
-            return updatedNote;
-        });
+        setNote(prev => ({
+            ...prev,
+            [name]: type === 'number' ? parseFloat(value) || 0 : value,
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -173,7 +142,7 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
     };
 
     const nextStep = () => {
-        if (currentStep < 3) {
+        if (currentStep < 4) {
             setCurrentStep(currentStep + 1);
         }
     };
@@ -187,17 +156,19 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
     const isStepValid = (step: number): boolean => {
         switch (step) {
             case 1:
-                return !!(note.date && note.transporterCompanyName?.trim() && note.truckNumber?.trim() && note.expectedDeliveryDate);
+                return !!(note.date && note.truckNumber?.trim() && note.truckType?.trim() && note.vehicleCapacity && note.vehicleCapacity > 0);
             case 2:
-                return !!(note.origin?.trim() && note.destination?.trim() && note.goodsType?.trim() && note.weight && note.weight > 0);
+                return !!(note.loadingLocation?.trim() && note.unloadingLocation?.trim() && note.loadingDateTime && note.expectedDeliveryDate && note.goodsType?.trim());
             case 3:
-                return !!(note.freight && note.freight > 0);
+                return !!(note.agencyName?.trim() && note.truckOwnerName?.trim() && note.freightRate && note.freightRate > 0);
+            case 4:
+                return !!(note.paymentMode?.trim() && note.paymentTerms?.trim());
             default:
                 return false;
         }
     };
 
-    const balancePayable = (note.grandTotal || 0) - (note.advancePaid || 0);
+    const balanceAmount = (note.freightRate || 0) + (note.additionalCharges || 0) - (note.advanceAmount || 0);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-start p-4 overflow-y-auto">
@@ -207,7 +178,7 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                         {/* Progress Steps */}
                         <div className="mb-8">
                             <div className="flex items-center justify-center space-x-4">
-                                {[1, 2, 3].map((step) => (
+                                {[1, 2, 3, 4].map((step) => (
                                     <div key={step} className="flex items-center">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
                                             currentStep >= step 
@@ -221,9 +192,9 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                         <span className={`ml-2 text-sm font-medium ${
                                             currentStep >= step ? 'text-blue-600' : 'text-gray-500'
                                         }`}>
-                                            {step === 1 ? 'Basic Info' : step === 2 ? 'Cargo Details' : 'Financial'}
+                                            {step === 1 ? 'Basic Info' : step === 2 ? 'Trip Details' : step === 3 ? 'Party & Freight' : 'Payment'}
                                         </span>
-                                        {step < 3 && <div className="w-8 h-0.5 bg-gray-300 ml-4" />}
+                                        {step < 4 && <div className="w-8 h-0.5 bg-gray-300 ml-4" />}
                                     </div>
                                 ))}
                             </div>
@@ -235,43 +206,15 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Basic Information</h3>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <Input 
-                                            label="Date" 
-                                            name="date" 
-                                            type="date" 
-                                            value={note.date || ''} 
-                                            onChange={handleChange} 
-                                            required 
-                                            error={errors.date}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Input 
-                                            label="Expected Delivery Date" 
-                                            name="expectedDeliveryDate" 
-                                            type="date" 
-                                            value={note.expectedDeliveryDate || ''} 
-                                            onChange={handleChange} 
-                                            required 
-                                            error={errors.expectedDeliveryDate}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
                                     <Input 
-                                        label="Transporter/Company Name" 
-                                        name="transporterCompanyName" 
-                                        value={note.transporterCompanyName || ''} 
+                                        label="Date" 
+                                        name="date" 
+                                        type="date" 
+                                        value={note.date || ''} 
                                         onChange={handleChange} 
                                         required 
-                                        error={errors.transporterCompanyName}
-                                        placeholder="Enter transporter or company name"
+                                        error={errors.date}
                                     />
-                                </div>
-
-                                <div>
                                     <Input 
                                         label="Truck Number" 
                                         name="truckNumber" 
@@ -282,269 +225,281 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                         placeholder="e.g., MH-12-AB-1234"
                                     />
                                 </div>
-                            </div>
-                        )}
 
-                        {/* Step 2: Cargo Details */}
-                        {currentStep === 2 && (
-                            <div className="space-y-6">
-                                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Cargo Details</h3>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-                                        <input
-                                            type="text"
-                                            name="origin"
-                                            value={note.origin || ''}
-                                            onChange={handleChange}
-                                            list="origin-cities"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Enter origin city"
-                                            required
-                                        />
-                                        <datalist id="origin-cities">
-                                            {commonCities.map(city => <option key={city} value={city} />)}
-                                        </datalist>
-                                        {errors.origin && <p className="text-red-500 text-xs mt-1">{errors.origin}</p>}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                                        <input
-                                            type="text"
-                                            name="destination"
-                                            value={note.destination || ''}
-                                            onChange={handleChange}
-                                            list="destination-cities"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Enter destination city"
-                                            required
-                                        />
-                                        <datalist id="destination-cities">
-                                            {commonCities.map(city => <option key={city} value={city} />)}
-                                        </datalist>
-                                        {errors.destination && <p className="text-red-500 text-xs mt-1">{errors.destination}</p>}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Type of Goods</label>
-                                        <input
-                                            type="text"
-                                            name="goodsType"
-                                            value={note.goodsType || ''}
-                                            onChange={handleChange}
-                                            list="goods-types"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Enter type of goods"
-                                            required
-                                        />
-                                        <datalist id="goods-types">
-                                            {commonGoodsTypes.map(type => <option key={type} value={type} />)}
-                                        </datalist>
-                                        {errors.goodsType && <p className="text-red-500 text-xs mt-1">{errors.goodsType}</p>}
-                                    </div>
-                                    <div>
-                                        <Input 
-                                            label="Weight (kg)" 
-                                            name="weight" 
-                                            type="number" 
-                                            value={note.weight || 0} 
-                                            onChange={handleChange} 
-                                            required 
-                                            error={errors.weight}
-                                            min="0"
-                                            step="0.1"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* GST Type Indicator */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0">
-                                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-3">
-                                            <p className="text-sm text-blue-700">
-                                                <strong>GST Type:</strong> {note.origin === note.destination ? 'CGST + SGST (Intra-state)' : 'IGST (Inter-state)'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 3: Financial Details */}
-                        {currentStep === 3 && (
-                            <div className="space-y-6">
-                                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Financial Details</h3>
-                                
-                                {/* Payment Terms */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Select 
-                                        label="Payment Terms" 
-                                        name="paymentTerms" 
-                                        value={note.paymentTerms || 'COD'} 
+                                        label="Truck Type" 
+                                        name="truckType" 
+                                        value={note.truckType || ''} 
+                                        onChange={handleChange}
+                                        options={truckTypes.map(type => ({ value: type, label: type }))}
+                                        required 
+                                        error={errors.truckType}
+                                    />
+                                    <Input 
+                                        label="Vehicle Capacity (tons)" 
+                                        name="vehicleCapacity" 
+                                        type="number" 
+                                        value={note.vehicleCapacity || 0} 
+                                        onChange={handleChange} 
+                                        required 
+                                        error={errors.vehicleCapacity}
+                                        min="0"
+                                        step="0.1"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 2: Trip Details */}
+                        {currentStep === 2 && (
+                            <div className="space-y-6">
+                                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Trip Details</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Loading Location</label>
+                                        <input
+                                            type="text"
+                                            name="loadingLocation"
+                                            value={note.loadingLocation || ''}
+                                            onChange={handleChange}
+                                            list="loading-cities"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="Enter loading location"
+                                            required
+                                        />
+                                        <datalist id="loading-cities">
+                                            {commonCities.map(city => <option key={city} value={city} />)}
+                                        </datalist>
+                                        {errors.loadingLocation && <p className="text-red-500 text-xs mt-1">{errors.loadingLocation}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Unloading Location</label>
+                                        <input
+                                            type="text"
+                                            name="unloadingLocation"
+                                            value={note.unloadingLocation || ''}
+                                            onChange={handleChange}
+                                            list="unloading-cities"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="Enter unloading location"
+                                            required
+                                        />
+                                        <datalist id="unloading-cities">
+                                            {commonCities.map(city => <option key={city} value={city} />)}
+                                        </datalist>
+                                        {errors.unloadingLocation && <p className="text-red-500 text-xs mt-1">{errors.unloadingLocation}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Input 
+                                        label="Loading Date & Time" 
+                                        name="loadingDateTime" 
+                                        type="datetime-local" 
+                                        value={note.loadingDateTime || ''} 
+                                        onChange={handleChange} 
+                                        required 
+                                        error={errors.loadingDateTime}
+                                    />
+                                    <Input 
+                                        label="Expected Delivery Date" 
+                                        name="expectedDeliveryDate" 
+                                        type="date" 
+                                        value={note.expectedDeliveryDate || ''} 
+                                        onChange={handleChange} 
+                                        required 
+                                        error={errors.expectedDeliveryDate}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type of Goods</label>
+                                    <input
+                                        type="text"
+                                        name="goodsType"
+                                        value={note.goodsType || ''}
+                                        onChange={handleChange}
+                                        list="goods-types"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Enter type of goods"
+                                        required
+                                    />
+                                    <datalist id="goods-types">
+                                        {commonGoodsTypes.map(type => <option key={type} value={type} />)}
+                                    </datalist>
+                                    {errors.goodsType && <p className="text-red-500 text-xs mt-1">{errors.goodsType}</p>}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 3: Party & Freight Details */}
+                        {currentStep === 3 && (
+                            <div className="space-y-6">
+                                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Party & Freight Details</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Input 
+                                        label="Your Agency Name" 
+                                        name="agencyName" 
+                                        value={note.agencyName || ''} 
+                                        onChange={handleChange} 
+                                        required 
+                                        error={errors.agencyName}
+                                        placeholder="Enter your agency name"
+                                    />
+                                    <Input 
+                                        label="Truck Owner/Operator Name" 
+                                        name="truckOwnerName" 
+                                        value={note.truckOwnerName || ''} 
+                                        onChange={handleChange} 
+                                        required 
+                                        error={errors.truckOwnerName}
+                                        placeholder="Enter truck owner name"
+                                    />
+                                </div>
+
+                                <Input 
+                                    label="Truck Owner Contact (Optional)" 
+                                    name="truckOwnerContact" 
+                                    value={note.truckOwnerContact || ''} 
+                                    onChange={handleChange} 
+                                    placeholder="Enter contact number"
+                                />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Input 
+                                        label="Freight Rate (₹)" 
+                                        name="freightRate" 
+                                        type="number" 
+                                        value={note.freightRate || 0} 
+                                        onChange={handleChange} 
+                                        required 
+                                        error={errors.freightRate}
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                    <Select 
+                                        label="Freight Rate Type" 
+                                        name="freightRateType" 
+                                        value={note.freightRateType || 'per_trip'} 
                                         onChange={handleChange}
                                         options={[
-                                            { value: 'COD', label: 'Cash on Delivery' },
-                                            { value: 'Credit', label: 'Credit' },
-                                            { value: 'Advance', label: 'Advance Payment' }
+                                            { value: 'per_trip', label: 'Per Trip' },
+                                            { value: 'per_ton', label: 'Per Ton' },
+                                            { value: 'per_km', label: 'Per KM' }
                                         ]}
                                         required 
                                     />
+                                </div>
+
+                                <Input 
+                                    label="Additional Charges (₹)" 
+                                    name="additionalCharges" 
+                                    type="number" 
+                                    value={note.additionalCharges || 0} 
+                                    onChange={handleChange} 
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="e.g., detention charges"
+                                />
+                            </div>
+                        )}
+
+                        {/* Step 4: Payment Details */}
+                        {currentStep === 4 && (
+                            <div className="space-y-6">
+                                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Payment Details</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Select 
+                                        label="Payment Mode" 
+                                        name="paymentMode" 
+                                        value={note.paymentMode || 'Cash'} 
+                                        onChange={handleChange}
+                                        options={[
+                                            { value: 'Cash', label: 'Cash' },
+                                            { value: 'UPI', label: 'UPI' },
+                                            { value: 'Bank Transfer', label: 'Bank Transfer' },
+                                            { value: 'Cheque', label: 'Cheque' },
+                                            { value: 'Other', label: 'Other' }
+                                        ]}
+                                        required 
+                                        error={errors.paymentMode}
+                                    />
                                     <Input 
-                                        label="Reminders" 
-                                        name="reminders" 
-                                        value={note.reminders || ''} 
+                                        label="Advance Amount (₹)" 
+                                        name="advanceAmount" 
+                                        type="number" 
+                                        value={note.advanceAmount || 0} 
                                         onChange={handleChange} 
-                                        placeholder="Payment reminders and notes" 
+                                        min="0"
+                                        step="0.01"
                                     />
                                 </div>
 
-                                {/* Basic Charges */}
-                                <div className="bg-gray-50 rounded-lg p-4">
-                                    <h4 className="text-md font-semibold text-gray-700 mb-4">Charges</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Input 
-                                            label="Freight (₹)" 
-                                            name="freight" 
-                                            type="number" 
-                                            value={note.freight || 0} 
-                                            onChange={handleChange} 
-                                            required 
-                                            error={errors.freight}
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                        <Input 
-                                            label="Loading Charges (₹)" 
-                                            name="loadingCharges" 
-                                            type="number" 
-                                            value={note.loadingCharges || 0} 
-                                            onChange={handleChange} 
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                        <Input 
-                                            label="Unloading Charges (₹)" 
-                                            name="unloadingCharges" 
-                                            type="number" 
-                                            value={note.unloadingCharges || 0} 
-                                            onChange={handleChange} 
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                        <Input 
-                                            label="Detention Charges (₹)" 
-                                            name="detentionCharges" 
-                                            type="number" 
-                                            value={note.detentionCharges || 0} 
-                                            onChange={handleChange} 
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                    </div>
-                                </div>
+                                <Textarea 
+                                    label="Payment Terms" 
+                                    name="paymentTerms" 
+                                    value={note.paymentTerms || ''} 
+                                    onChange={handleChange} 
+                                    required 
+                                    error={errors.paymentTerms}
+                                    rows={3}
+                                    placeholder="e.g., 50% advance, balance after delivery"
+                                />
 
-                                {/* GST Calculation */}
-                                <div className="bg-blue-50 rounded-lg p-4">
-                                    <h4 className="text-md font-semibold text-gray-700 mb-4">GST Calculation</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Input 
-                                            label="GST Rate (%)" 
-                                            name="gstRate" 
-                                            type="number" 
-                                            value={note.gstRate || 18} 
-                                            onChange={handleChange} 
-                                            min="0"
-                                            max="100"
-                                            step="0.01"
-                                        />
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Subtotal (₹)</label>
-                                            <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-semibold">
-                                                {((note.freight || 0) + (note.loadingCharges || 0) + (note.unloadingCharges || 0) + (note.detentionCharges || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* GST Breakdown */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">CGST (₹)</label>
-                                            <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white">
-                                                {(note.cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">SGST (₹)</label>
-                                            <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white">
-                                                {(note.sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">IGST (₹)</label>
-                                            <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white">
-                                                {(note.igstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Total and Payment */}
+                                {/* Payment Summary */}
                                 <div className="bg-green-50 rounded-lg p-4">
                                     <h4 className="text-md font-semibold text-gray-700 mb-4">Payment Summary</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Total GST (₹)</label>
+                                            <label className="block text-sm font-medium text-gray-700">Total Amount (₹)</label>
                                             <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-semibold">
-                                                {(note.totalGstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                {((note.freightRate || 0) + (note.additionalCharges || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Grand Total (₹)</label>
-                                            <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-bold text-lg text-green-600">
-                                                {(note.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                            <label className="block text-sm font-medium text-gray-700">Advance Paid (₹)</label>
+                                            <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white">
+                                                {(note.advanceAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                         <div>
-                                            <Input 
-                                                label="Advance Paid (₹)" 
-                                                name="advancePaid" 
-                                                type="number" 
-                                                value={note.advancePaid || 0} 
-                                                onChange={handleChange} 
-                                                min="0"
-                                                step="0.01"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Balance Payable */}
-                                    <div className="mt-4">
-                                        <label className="block text-sm font-medium text-gray-700">Balance Payable (₹)</label>
-                                        <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-bold text-xl text-red-600">
-                                            {balancePayable.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                            <label className="block text-sm font-medium text-gray-700">Balance Amount (₹)</label>
+                                            <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-bold text-lg text-red-600">
+                                                {balanceAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Special Instructions */}
-                                <div>
-                                    <Textarea 
-                                        label="Special Instructions" 
-                                        name="specialInstructions" 
-                                        value={note.specialInstructions || ''} 
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Input 
+                                        label="Linked LR Number (Optional)" 
+                                        name="linkedLR" 
+                                        value={note.linkedLR || ''} 
                                         onChange={handleChange} 
-                                        rows={3} 
-                                        placeholder="Any special instructions for the transporter..."
+                                        placeholder="Link to Lorry Receipt"
+                                    />
+                                    <Input 
+                                        label="Linked Invoice Number (Optional)" 
+                                        name="linkedInvoice" 
+                                        value={note.linkedInvoice || ''} 
+                                        onChange={handleChange} 
+                                        placeholder="Link to Invoice"
                                     />
                                 </div>
+
+                                <Textarea 
+                                    label="Remarks" 
+                                    name="remarks" 
+                                    value={note.remarks || ''} 
+                                    onChange={handleChange} 
+                                    rows={3} 
+                                    placeholder="Any special instructions or notes..."
+                                />
                             </div>
                         )}
 
@@ -561,7 +516,7 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                 <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>
                                     Cancel
                                 </Button>
-                                {currentStep < 3 ? (
+                                {currentStep < 4 ? (
                                     <Button 
                                         type="button" 
                                         onClick={nextStep}
@@ -571,7 +526,7 @@ export const TruckHiringNoteForm: React.FC<TruckHiringNoteFormProps> = ({ existi
                                     </Button>
                                 ) : (
                                     <Button type="submit" disabled={isSaving}>
-                                        {isSaving ? 'Saving...' : 'Save Note'}
+                                        {isSaving ? 'Saving...' : 'Save THN'}
                                     </Button>
                                 )}
                             </div>
