@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { TruckHiringNote, CompanyInfo } from '../types';
 import { generatePdf } from '../services/pdfService';
 import { Button } from './ui/Button';
@@ -150,6 +150,19 @@ export const THNView: React.FC<{truckHiringNote: TruckHiringNote, companyInfo: C
 };
 
 export const THNPdf: React.FC<THNPdfProps> = ({ truckHiringNote, companyInfo, onBack }) => {
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGeneratePdf = async () => {
+        setIsGenerating(true);
+        try {
+            await generatePdf('thn-pdf-container', `THN-${truckHiringNote.thnNumber}`);
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <div>
             <style>{`
@@ -160,8 +173,12 @@ export const THNPdf: React.FC<THNPdfProps> = ({ truckHiringNote, companyInfo, on
                 }
             `}</style>
             <div className="mb-4 flex justify-end no-print">
-                <Button onClick={() => generatePdf('thn-pdf-container', `THN-${truckHiringNote.thnNumber}`)} className="mr-4">
-                    Download PDF
+                <Button 
+                    onClick={handleGeneratePdf} 
+                    className="mr-4"
+                    disabled={isGenerating}
+                >
+                    {isGenerating ? 'Generating PDF...' : 'Download PDF'}
                 </Button>
                 <Button variant="secondary" onClick={onBack}>Back</Button>
             </div>

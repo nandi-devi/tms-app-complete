@@ -260,6 +260,7 @@ export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, 
             hideCharges: false,
         }))
     );
+    const [isGenerating, setIsGenerating] = useState(false);
     
     const handleSelectionChange = (index: number) => {
         setSelections(prev => prev.map((item, i) => i === index ? { ...item, selected: !item.selected } : item));
@@ -268,6 +269,17 @@ export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, 
     const handleHideChargesChange = (index: number) => {
         setSelections(prev => prev.map((item, i) => i === index ? { ...item, hideCharges: !item.hideCharges } : item));
     }
+
+    const handleGeneratePdf = async () => {
+        setIsGenerating(true);
+        try {
+            await generateMultiPagePdf('lr-pdf-container', `LR-${lorryReceipt.id}-Copies`);
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const selectedCopies = selections.filter(s => s.selected);
 
@@ -311,11 +323,11 @@ export const LorryReceiptPDF: React.FC<LorryReceiptPDFProps> = ({ lorryReceipt, 
                  </div>
                  <div>
                     <Button
-                        onClick={() => generateMultiPagePdf('lr-pdf-container', `LR-${lorryReceipt.id}-Copies`)}
-                        disabled={selectedCopies.length === 0}
+                        onClick={handleGeneratePdf}
+                        disabled={selectedCopies.length === 0 || isGenerating}
                         className="mr-4"
                     >
-                        Download {selectedCopies.length} {selectedCopies.length === 1 ? 'Copy' : 'Copies'} as PDF
+                        {isGenerating ? 'Generating PDF...' : `Download ${selectedCopies.length} ${selectedCopies.length === 1 ? 'Copy' : 'Copies'} as PDF`}
                     </Button>
                     <Button variant="secondary" onClick={onBack}>Back</Button>
                  </div>

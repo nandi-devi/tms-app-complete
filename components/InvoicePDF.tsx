@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { Invoice, CompanyInfo, Customer } from '../types';
 import { GstType } from '../types';
 import { generatePdf } from '../services/pdfService';
@@ -198,6 +198,19 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
 
 
 export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, customers, onBack }) => {
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGeneratePdf = async () => {
+        setIsGenerating(true);
+        try {
+            await generatePdf('invoice-pdf-container', `Invoice-${invoice.invoiceNumber}`);
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <div>
             <style>{`
@@ -208,8 +221,12 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
                 }
             `}</style>
             <div className="mb-4 flex justify-end no-print">
-                <Button onClick={() => generatePdf('invoice-pdf-container', `Invoice-${invoice.invoiceNumber}`)} className="mr-4">
-                    Download PDF
+                <Button 
+                    onClick={handleGeneratePdf} 
+                    className="mr-4"
+                    disabled={isGenerating}
+                >
+                    {isGenerating ? 'Generating PDF...' : 'Download PDF'}
                 </Button>
                 <Button variant="secondary" onClick={onBack}>Back</Button>
             </div>

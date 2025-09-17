@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { CompanyInfo } from '../types';
 import { generatePdf } from '../services/pdfService';
 import { Button } from './ui/Button';
@@ -72,6 +72,19 @@ export const LedgerView: React.FC<Omit<LedgerPDFProps, 'title' | 'onBack'>> = ({
 
 
 export const LedgerPDF: React.FC<LedgerPDFProps> = (props) => {
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGeneratePdf = async () => {
+        setIsGenerating(true);
+        try {
+            await generatePdf('ledger-pdf-container', `${props.title.replace(/\s+/g, '_')}-Ledger`);
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <div>
             <style>{`
@@ -82,8 +95,12 @@ export const LedgerPDF: React.FC<LedgerPDFProps> = (props) => {
                 }
             `}</style>
             <div className="mb-4 flex justify-end no-print">
-                <Button onClick={() => generatePdf('ledger-pdf-container', `${props.title.replace(/\s+/g, '_')}-Ledger`)} className="mr-4">
-                    Download PDF
+                <Button 
+                    onClick={handleGeneratePdf} 
+                    className="mr-4"
+                    disabled={isGenerating}
+                >
+                    {isGenerating ? 'Generating PDF...' : 'Download PDF'}
                 </Button>
                 <Button variant="secondary" onClick={props.onBack}>Back</Button>
             </div>
