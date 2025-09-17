@@ -8,8 +8,8 @@ import { Card } from './ui/Card';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
 import { InvoiceView } from './InvoicePDF';
-import { PaymentForm } from './PaymentForm';
-import { PaymentHistoryModal } from './PaymentHistoryModal';
+import { UniversalPaymentForm } from './UniversalPaymentForm';
+import { UniversalPaymentHistoryModal } from './UniversalPaymentHistoryModal';
 
 interface InvoicesProps {
   invoices: Invoice[];
@@ -156,17 +156,18 @@ export const Invoices: React.FC<InvoicesProps> = ({ invoices, payments, customer
   return (
     <div className="space-y-8">
       {isPaymentFormOpen && selectedInvoiceForPayment && (
-        <PaymentForm
+        <UniversalPaymentForm
           invoiceId={selectedInvoiceForPayment._id}
           customerId={selectedInvoiceForPayment.customerId}
           grandTotal={selectedInvoiceForPayment.grandTotal}
           balanceDue={selectedInvoiceForPayment.balanceDue || selectedInvoiceForPayment.grandTotal}
           onSave={onSavePayment}
           onClose={() => setIsPaymentFormOpen(false)}
+          title={`Add Payment for Invoice #${selectedInvoiceForPayment.invoiceNumber}`}
         />
       )}
       {isHistoryModalOpen && selectedInvoiceForHistory && (
-        <PaymentHistoryModal
+        <UniversalPaymentHistoryModal
           invoice={selectedInvoiceForHistory}
           payments={payments}
           onClose={() => setIsHistoryModalOpen(false)}

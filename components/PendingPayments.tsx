@@ -4,7 +4,7 @@ import { InvoiceStatus } from '../types';
 import { formatDate } from '../services/utils';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
-import { PaymentForm } from './PaymentForm';
+import { UniversalPaymentForm } from './UniversalPaymentForm';
 
 interface PendingPaymentsProps {
   invoices: Invoice[];
@@ -30,13 +30,14 @@ export const PendingPayments: React.FC<PendingPaymentsProps> = ({ invoices, onSa
   return (
     <div className="space-y-6">
       {isPaymentFormOpen && selectedInvoice && (
-        <PaymentForm
+        <UniversalPaymentForm
           invoiceId={selectedInvoice._id}
           customerId={selectedInvoice.customerId}
           grandTotal={selectedInvoice.grandTotal}
           balanceDue={selectedInvoice.balanceDue || selectedInvoice.grandTotal}
           onSave={onSavePayment}
           onClose={() => setIsPaymentFormOpen(false)}
+          title={`Add Payment for Invoice #${selectedInvoice.invoiceNumber}`}
         />
       )}
       <div className="flex justify-between items-center">

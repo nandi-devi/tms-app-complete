@@ -4,6 +4,7 @@ import { PaymentType, PaymentMode } from '../types';
 export interface IPayment extends Document {
   invoiceId?: Schema.Types.ObjectId;
   truckHiringNoteId?: Schema.Types.ObjectId;
+  customer: Schema.Types.ObjectId;
   date: string;
   amount: number;
   type: PaymentType;
@@ -15,6 +16,7 @@ export interface IPayment extends Document {
 const PaymentSchema = new Schema({
   invoiceId: { type: Schema.Types.ObjectId, ref: 'Invoice', required: false },
   truckHiringNoteId: { type: Schema.Types.ObjectId, ref: 'TruckHiringNote', required: false },
+  customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
   date: { type: String, required: true },
   amount: { type: Number, required: true },
   type: { type: String, enum: Object.values(PaymentType), required: true },

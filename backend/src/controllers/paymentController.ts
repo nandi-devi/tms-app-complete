@@ -14,7 +14,8 @@ const updateThnStatus = async (thnId: string) => {
     ]);
     
     const paidAmount = totalPaid.length > 0 ? totalPaid[0].total : 0;
-    const balanceAmount = thn.freightRate + (thn.additionalCharges || 0) - paidAmount;
+    const totalAmount = thn.freightRate + (thn.additionalCharges || 0);
+    const balanceAmount = totalAmount - paidAmount;
     
     let status = 'UNPAID';
     if (balanceAmount <= 0) {
@@ -34,6 +35,7 @@ import { createPaymentSchema, updatePaymentSchema } from '../utils/validation';
 
 export const getPayments = asyncHandler(async (req: Request, res: Response) => {
   const payments = await Payment.find()
+    .populate('customer')
     .populate({
       path: 'invoiceId',
       populate: {
@@ -79,6 +81,7 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
   }
 
   const populatedPayment = await Payment.findById(newPayment._id)
+    .populate('customer')
     .populate('invoiceId')
     .populate('truckHiringNoteId');
 

@@ -34,7 +34,7 @@ export const CompanyLedger: React.FC<CompanyLedgerProps> = ({ invoices, payments
         date: thn.date,
         id: `thn-${thn._id}`,
         particulars: `THN No: ${thn.thnNumber} to ${thn.truckOwnerName}`,
-        amount: thn.freight,
+        amount: thn.totalAmount || (thn.freightRate + (thn.additionalCharges || 0)),
     }));
 
     // Note: We are considering all payments as cash flow, not separate income/expense

@@ -1,17 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import type { TruckHiringNote } from '../types';
+import type { TruckHiringNote, Payment } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { TruckHiringNoteForm } from './TruckHiringNoteForm';
+import { UniversalPaymentForm } from './UniversalPaymentForm';
+import { UniversalPaymentHistoryModal } from './UniversalPaymentHistoryModal';
 import { formatDate } from '../services/utils';
 import type { View } from '../App';
 
 interface TruckHiringNotesProps {
     notes: TruckHiringNote[];
+    payments: Payment[];
     onSave: (note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
     onUpdate: (id: string, note: Partial<Omit<TruckHiringNote, '_id' | 'thnNumber' | 'balanceAmount' | 'paidAmount' | 'payments' | 'status'>>) => Promise<any>;
     onDelete: (id: string) => Promise<void>;
+    onSavePayment: (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => Promise<void>;
     onViewChange: (view: View) => void;
     onBack: () => void;
     initialFilters?: Partial<Record<keyof THNTableFilters, any>>;
@@ -27,10 +31,14 @@ interface THNTableFilters {
 }
 
 export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({ 
-    notes, onSave, onUpdate, onDelete, onViewChange, onBack, initialFilters 
+    notes, payments, onSave, onUpdate, onDelete, onSavePayment, onViewChange, onBack, initialFilters 
 }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<TruckHiringNote | undefined>(undefined);
+    const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+    const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+    const [selectedNoteForPayment, setSelectedNoteForPayment] = useState<TruckHiringNote | null>(null);
+    const [selectedNoteForHistory, setSelectedNoteForHistory] = useState<TruckHiringNote | null>(null);
 
     const [searchTerm, setSearchTerm] = useState(initialFilters?.searchTerm || '');
     const [startDate, setStartDate] = useState(initialFilters?.startDate || '');
@@ -82,6 +90,22 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
         setIsFormOpen(true);
     };
 
+    const handleAddPayment = (note: TruckHiringNote) => {
+        setSelectedNoteForPayment(note);
+        setIsPaymentFormOpen(true);
+    };
+
+    const handleViewPaymentHistory = (note: TruckHiringNote) => {
+        setSelectedNoteForHistory(note);
+        setIsPaymentHistoryOpen(true);
+    };
+
+    const handleSavePayment = async (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => {
+        await onSavePayment(payment);
+        setIsPaymentFormOpen(false);
+        setSelectedNoteForPayment(null);
+    };
+
     const handleEdit = (note: TruckHiringNote) => {
         setEditingNote(note);
         setIsFormOpen(true);
@@ -116,6 +140,32 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                     existingNote={editingNote}
                     onSave={handleSave}
                     onCancel={() => setIsFormOpen(false)}
+                />
+            )}
+            
+            {isPaymentFormOpen && selectedNoteForPayment && (
+                <UniversalPaymentForm
+                    truckHiringNoteId={selectedNoteForPayment._id}
+                    customerId={selectedNoteForPayment.agencyName} // Using agency name as customer
+                    grandTotal={selectedNoteForPayment.totalAmount || (selectedNoteForPayment.freightRate + (selectedNoteForPayment.additionalCharges || 0))}
+                    balanceDue={selectedNoteForPayment.balanceAmount}
+                    onSave={handleSavePayment}
+                    onClose={() => {
+                        setIsPaymentFormOpen(false);
+                        setSelectedNoteForPayment(null);
+                    }}
+                    title={`Add Payment for THN #${selectedNoteForPayment.thnNumber}`}
+                />
+            )}
+
+            {isPaymentHistoryOpen && selectedNoteForHistory && (
+                <UniversalPaymentHistoryModal
+                    truckHiringNote={selectedNoteForHistory}
+                    payments={payments}
+                    onClose={() => {
+                        setIsPaymentHistoryOpen(false);
+                        setSelectedNoteForHistory(null);
+                    }}
                 />
             )}
 
@@ -193,6 +243,7 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Freight</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
                                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -233,6 +284,9 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                                             <div className="text-xs text-gray-400">+₹{note.additionalCharges.toLocaleString('en-IN')}</div>
                                         )}
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
+                                        ₹{(note.paidAmount || 0).toLocaleString('en-IN')}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">
                                         ₹{(note.balanceAmount || 0).toLocaleString('en-IN')}
                                     </td>
@@ -242,6 +296,20 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                        <button 
+                                            onClick={() => handleAddPayment(note)} 
+                                            className="text-green-600 hover:text-green-900 transition-colors"
+                                            title="Add Payment"
+                                        >
+                                            Payment
+                                        </button>
+                                        <button 
+                                            onClick={() => handleViewPaymentHistory(note)} 
+                                            className="text-purple-600 hover:text-purple-900 transition-colors"
+                                            title="View Payment History"
+                                        >
+                                            History
+                                        </button>
                                         <button 
                                             onClick={() => handleEdit(note)} 
                                             className="text-blue-600 hover:text-blue-900 transition-colors"
@@ -259,7 +327,7 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
                             ))}
                             {filteredNotes.length === 0 && (
                                 <tr>
-                                    <td colSpan={9} className="text-center py-8 text-gray-500">
+                                    <td colSpan={10} className="text-center py-8 text-gray-500">
                                         No Truck Hiring Notes found.
                                     </td>
                                 </tr>

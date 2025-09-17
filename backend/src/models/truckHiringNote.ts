@@ -72,6 +72,13 @@ const TruckHiringNoteSchema = new Schema({
   payments: [{ type: Schema.Types.ObjectId, ref: 'Payment' }]
 }, {
   timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual for total amount (freight + additional charges)
+TruckHiringNoteSchema.virtual('totalAmount').get(function(this: ITruckHiringNote) {
+  return this.freightRate + (this.additionalCharges || 0);
 });
 
 export default model<ITruckHiringNote>('TruckHiringNote', TruckHiringNoteSchema);

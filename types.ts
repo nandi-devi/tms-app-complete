@@ -144,13 +144,12 @@ export interface CompanyInfo {
 }
 
 export interface Payment {
-    _id:string;
+    _id: string;
     invoiceId?: string;
     invoice?: Invoice;
     truckHiringNoteId?: string;
     truckHiringNote?: TruckHiringNote;
-    customerId: string;
-    customer?: Customer;
+    customer: string | Customer;
     date: string;
     amount: number;
     type: PaymentType;
@@ -178,6 +177,7 @@ export interface TruckHiringNote {
   freightRateType: 'per_trip' | 'per_ton' | 'per_km';
   advanceAmount: number;
   balanceAmount: number;
+  totalAmount: number; // Virtual field from backend
   paymentMode: 'Cash' | 'UPI' | 'Bank Transfer' | 'Cheque' | 'Other';
   paymentTerms: string;
   additionalCharges?: number;

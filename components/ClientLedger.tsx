@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Customer, Invoice, Payment } from '../types';
+import type { Customer, Invoice, Payment, TruckHiringNote } from '../types';
 import { formatDate } from '../services/utils';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
@@ -12,10 +12,11 @@ interface ClientLedgerProps {
   customers: Customer[];
   invoices: Invoice[];
   payments: Payment[];
+  truckHiringNotes: TruckHiringNote[];
   onViewChange: (view: View) => void;
 }
 
-export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices, payments, onViewChange }) => {
+export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices, payments, truckHiringNotes, onViewChange }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -36,15 +37,44 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
     }));
 
     const customerPayments = payments
-      .filter(p => p.invoiceId?.customer?._id === selectedCustomerId)
-      .map(p => ({
+      .filter(p => {
+        // Check if payment is for an invoice belonging to this customer
+        const isInvoicePayment = p.invoiceId && 
+          (typeof p.invoiceId === 'string' ? 
+            invoices.find(inv => inv._id === p.invoiceId)?.customer?._id === selectedCustomerId :
+            p.invoiceId.customer?._id === selectedCustomerId);
+        
+        // Check if payment is for a THN belonging to this customer (using agency name as customer identifier)
+        const isThnPayment = p.truckHiringNoteId && 
+          (typeof p.truckHiringNoteId === 'string' ?
+            truckHiringNotes.find(thn => thn._id === p.truckHiringNoteId)?.agencyName === customers.find(c => c._id === selectedCustomerId)?.name :
+            p.truckHiringNoteId.agencyName === customers.find(c => c._id === selectedCustomerId)?.name);
+        
+        return isInvoicePayment || isThnPayment;
+      })
+      .map(p => {
+        let particulars = '';
+        if (p.invoiceId) {
+          const invoiceNumber = typeof p.invoiceId === 'string' ? 
+            invoices.find(inv => inv._id === p.invoiceId)?.invoiceNumber :
+            p.invoiceId.invoiceNumber;
+          particulars = `Payment for INV-${invoiceNumber} via ${p.mode}`;
+        } else if (p.truckHiringNoteId) {
+          const thnNumber = typeof p.truckHiringNoteId === 'string' ?
+            truckHiringNotes.find(thn => thn._id === p.truckHiringNoteId)?.thnNumber :
+            p.truckHiringNoteId.thnNumber;
+          particulars = `Payment for THN-${thnNumber} via ${p.mode}`;
+        }
+        
+        return {
           type: 'payment' as const,
           date: p.date,
           id: `pay-${p._id}`,
-          particulars: `Payment for INV-${p.invoiceId?.invoiceNumber} via ${p.mode}`,
+          particulars,
           debit: 0,
           credit: p.amount
-      }));
+        };
+      });
 
     const allTransactions = [...customerInvoices, ...customerPayments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -68,7 +98,7 @@ export const ClientLedger: React.FC<ClientLedgerProps> = ({ customers, invoices,
     const finalBalance = allTransactionsWithBalance.length > 0 ? allTransactionsWithBalance[allTransactionsWithBalance.length - 1].balance : 0;
 
     return { transactions: filteredTransactions, totalDebit, totalCredit, finalBalance };
-  }, [selectedCustomerId, invoices, payments, startDate, endDate, transactionType]);
+  }, [selectedCustomerId, invoices, payments, truckHiringNotes, customers, startDate, endDate, transactionType]);
 
   const handleExport = () => {
     if (!transactionData || !selectedCustomerId) return;

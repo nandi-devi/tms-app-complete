@@ -303,8 +303,10 @@ const App: React.FC = () => {
     try {
       await createPayment(payment);
       await fetchAllData(); // Refetch all data to update invoices, THNs, and payments
+      pushToast('success', 'Payment recorded successfully');
     } catch (error) {
       handleAndToastApiError(error, 'Failed to save payment');
+      throw error; // Re-throw to allow components to handle the error
     }
   };
   
@@ -519,9 +521,11 @@ const App: React.FC = () => {
       case 'TRUCK_HIRING_NOTES':
         return <TruckHiringNotes 
           notes={truckHiringNotes} 
+          payments={payments}
           onSave={saveTruckHiringNote} 
           onUpdate={updateTruckHiringNoteHandler}
           onDelete={deleteTruckHiringNoteHandler}
+          onSavePayment={savePayment}
           onViewChange={navigateTo} 
           onBack={goBack} 
           initialFilters={currentView.filters} 
