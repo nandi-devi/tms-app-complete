@@ -66,7 +66,19 @@ export const createLrSchema = z.object({
   totalAmount: z.number().nonnegative(),
   eWayBillNo: z.string().optional(),
   valueGoods: z.number().optional(),
-  gstPayableBy: z.string().min(1),
+  gstPayableBy: z.enum(['Consignor', 'Consignee', 'Transporter']),
+  reportingDate: z.string().optional(),
+  deliveryDate: z.string().optional(),
+  insurance: z.object({
+    hasInsured: z.boolean().default(false),
+    company: z.string().optional(),
+    policyNo: z.string().optional(),
+    date: z.string().optional(),
+    amount: z.number().optional(),
+    risk: z.string().optional(),
+  }).optional(),
+  invoiceNo: z.string().optional(),
+  sealNo: z.string().optional(),
 });
 
 export const updateLrSchema = createLrSchema.partial();

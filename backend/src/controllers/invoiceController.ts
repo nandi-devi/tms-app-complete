@@ -53,7 +53,17 @@ export const getInvoiceById = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const createInvoice = asyncHandler(async (req: Request, res: Response) => {
-  const invoiceData = createInvoiceSchema.parse(req.body);
+  // Transform frontend data format to backend format before validation
+  const transformedData = {
+    ...req.body,
+    customer: req.body.customerId || req.body.customer,
+    lorryReceipts: req.body.lorryReceipts?.map((lr: any) => lr._id || lr) || req.body.lorryReceipts,
+  };
+  
+  // Remove frontend-specific fields
+  delete transformedData.customerId;
+  
+  const invoiceData = createInvoiceSchema.parse(transformedData);
   const invoiceNumber = await getNextSequenceValue('invoiceId');
 
   const invoice = new Invoice({
@@ -74,7 +84,17 @@ export const createInvoice = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const updateInvoice = asyncHandler(async (req: Request, res: Response) => {
-  const invoiceData = updateInvoiceSchema.parse(req.body);
+  // Transform frontend data format to backend format before validation
+  const transformedData = {
+    ...req.body,
+    customer: req.body.customerId || req.body.customer,
+    lorryReceipts: req.body.lorryReceipts?.map((lr: any) => lr._id || lr) || req.body.lorryReceipts,
+  };
+  
+  // Remove frontend-specific fields
+  delete transformedData.customerId;
+  
+  const invoiceData = updateInvoiceSchema.parse(transformedData);
   const invoice = await Invoice.findById(req.params.id);
 
   if (invoice) {

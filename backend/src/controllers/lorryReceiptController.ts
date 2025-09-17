@@ -53,7 +53,20 @@ export const getLorryReceiptById = asyncHandler(async (req: Request, res: Respon
 });
 
 export const createLorryReceipt = asyncHandler(async (req: Request, res: Response) => {
-  const lrData = createLrSchema.parse(req.body);
+  // Transform frontend data format to backend format before validation
+  const transformedData = {
+    ...req.body,
+    consignor: req.body.consignorId || req.body.consignor,
+    consignee: req.body.consigneeId || req.body.consignee,
+    vehicle: req.body.vehicleId || req.body.vehicle,
+  };
+  
+  // Remove frontend-specific fields
+  delete transformedData.consignorId;
+  delete transformedData.consigneeId;
+  delete transformedData.vehicleId;
+  
+  const lrData = createLrSchema.parse(transformedData);
   const lrNumber = await getNextSequenceValue('lorryReceiptId');
   
   const lorryReceipt = new LorryReceipt({
@@ -66,7 +79,20 @@ export const createLorryReceipt = asyncHandler(async (req: Request, res: Respons
 });
 
 export const updateLorryReceipt = asyncHandler(async (req: Request, res: Response) => {
-  const lrData = updateLrSchema.parse(req.body);
+  // Transform frontend data format to backend format before validation
+  const transformedData = {
+    ...req.body,
+    consignor: req.body.consignorId || req.body.consignor,
+    consignee: req.body.consigneeId || req.body.consignee,
+    vehicle: req.body.vehicleId || req.body.vehicle,
+  };
+  
+  // Remove frontend-specific fields
+  delete transformedData.consignorId;
+  delete transformedData.consigneeId;
+  delete transformedData.vehicleId;
+  
+  const lrData = updateLrSchema.parse(transformedData);
   const lorryReceipt = await LorryReceipt.findById(req.params.id);
 
   if (lorryReceipt) {
