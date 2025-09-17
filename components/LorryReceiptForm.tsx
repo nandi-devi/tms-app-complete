@@ -217,7 +217,13 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         }
     }
     else {
-        setLr(prev => ({ ...prev, [name]: value }));
+        // Handle number fields properly
+        const numberFields = ['valueGoods', 'totalAmount'];
+        if (numberFields.includes(name)) {
+            setLr(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+        } else {
+            setLr(prev => ({ ...prev, [name]: value }));
+        }
     }
   };
   
@@ -284,6 +290,8 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       console.log('ConsignorId:', lrDataToSave.consignorId);
       console.log('ConsigneeId:', lrDataToSave.consigneeId);
       console.log('VehicleId:', lrDataToSave.vehicleId);
+      console.log('ValueGoods type:', typeof lrDataToSave.valueGoods, 'value:', lrDataToSave.valueGoods);
+      console.log('TotalAmount type:', typeof lrDataToSave.totalAmount, 'value:', lrDataToSave.totalAmount);
 
       try {
         await onSave(lrDataToSave);

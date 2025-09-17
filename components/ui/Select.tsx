@@ -1,12 +1,27 @@
 import React from 'react';
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   error?: string;
   wrapperClassName?: string;
+  options?: SelectOption[];
 }
 
-export const Select: React.FC<SelectProps> = ({ label, id, error, wrapperClassName, className, children, ...props }) => {
+export const Select: React.FC<SelectProps> = ({ 
+  label, 
+  id, 
+  error, 
+  wrapperClassName, 
+  className, 
+  children, 
+  options,
+  ...props 
+}) => {
   const selectId = id || `select-${(label || '').replace(/\s+/g, '-')}`;
   
   const errorClasses = error 
@@ -22,7 +37,18 @@ export const Select: React.FC<SelectProps> = ({ label, id, error, wrapperClassNa
         className={`peer block w-full rounded-lg shadow-sm appearance-none py-3 px-3 bg-white border ${errorClasses} focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors duration-200 text-base text-gray-900 ${error ? 'animate-shake' : ''} ${className || ''}`}
         {...props}
       >
-        {children}
+        {options ? (
+          <>
+            <option value="" disabled>Select {label}</option>
+            {options.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </>
+        ) : (
+          children
+        )}
       </select>
       <label
         htmlFor={selectId}
