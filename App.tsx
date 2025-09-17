@@ -98,13 +98,19 @@ const App: React.FC = () => {
       ]);
       fetchCustomers();
       fetchVehicles();
-      setLorryReceipts(fetchedLorryReceipts);
-      setInvoices(fetchedInvoices);
-      setPayments(fetchedPayments);
-      setTruckHiringNotes(fetchedTruckHiringNotes);
+      // Ensure arrays are never undefined or null
+      setLorryReceipts(Array.isArray(fetchedLorryReceipts) ? fetchedLorryReceipts : []);
+      setInvoices(Array.isArray(fetchedInvoices) ? fetchedInvoices : []);
+      setPayments(Array.isArray(fetchedPayments) ? fetchedPayments : []);
+      setTruckHiringNotes(Array.isArray(fetchedTruckHiringNotes) ? fetchedTruckHiringNotes : []);
     } catch (error) {
       console.error('Failed to fetch initial data:', error);
       pushToast('error', 'Failed to load data from the server. Please check your connection and refresh.');
+      // Set empty arrays on error to prevent undefined issues
+      setLorryReceipts([]);
+      setInvoices([]);
+      setPayments([]);
+      setTruckHiringNotes([]);
     }
   }, [fetchCustomers, fetchVehicles]);
 
@@ -386,28 +392,36 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView.name) {
       case 'CREATE_LR':
-        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} />;
+        const safeLorryReceipts6 = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} onSaveCustomer={saveCustomer} lorryReceipts={safeLorryReceipts6} onSaveVehicle={saveVehicle} />;
       case 'EDIT_LR':
-        const lrToEdit = lorryReceipts.find(lr => lr._id === currentView.id);
-        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
+        const safeLorryReceipts4 = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+        const lrToEdit = safeLorryReceipts4.find(lr => lr._id === currentView.id);
+        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={safeLorryReceipts4} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
       case 'VIEW_LR':
-        const lrToView = lorryReceipts.find(lr => lr._id === currentView.id);
+        const safeLorryReceipts5 = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+        const lrToView = safeLorryReceipts5.find(lr => lr._id === currentView.id);
         return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} onBack={goBack} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
-        const availableLrs = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status));
+        const safeLorryReceipts = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+        const availableLrs = safeLorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status));
         return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} />;
       case 'CREATE_INVOICE_FROM_LR':
-        const lrToInvoice = lorryReceipts.find(lr => lr._id === currentView.lrId);
+        const safeLorryReceipts2 = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+        const lrToInvoice = safeLorryReceipts2.find(lr => lr._id === currentView.lrId);
         if (!lrToInvoice) return <div>LR not found</div>;
-        const availableLrsForNewInvoice = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === currentView.lrId);
+        const availableLrsForNewInvoice = safeLorryReceipts2.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === currentView.lrId);
          return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} />;
       case 'EDIT_INVOICE':
-         const invoiceToEdit = invoices.find(inv => inv._id === currentView.id);
-         const lrsForEdit = lorryReceipts.filter(lr => (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || invoiceToEdit?.lorryReceipts.some(ilr => ilr._id === lr._id));
+         const safeInvoices = Array.isArray(invoices) ? invoices : [];
+         const safeLorryReceipts3 = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+         const invoiceToEdit = safeInvoices.find(inv => inv._id === currentView.id);
+         const lrsForEdit = safeLorryReceipts3.filter(lr => (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || invoiceToEdit?.lorryReceipts?.some(ilr => ilr._id === lr._id));
          return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
-        const invoiceToView = invoices.find(inv => inv._id === currentView.id);
+        const safeInvoices2 = Array.isArray(invoices) ? invoices : [];
+        const invoiceToView = safeInvoices2.find(inv => inv._id === currentView.id);
         return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} onBack={goBack} /> : <div>Invoice not found</div>;
       
       case 'SETTINGS':

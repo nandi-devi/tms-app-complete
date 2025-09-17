@@ -47,30 +47,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const totalLrsToday = lorryReceipts.filter(lr => {
+    // Ensure arrays are defined before using filter
+    const safeLorryReceipts = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+    const safeInvoices = Array.isArray(invoices) ? invoices : [];
+    const safeTruckHiringNotes = Array.isArray(truckHiringNotes) ? truckHiringNotes : [];
+
+    const totalLrsToday = safeLorryReceipts.filter(lr => {
       const lrDate = new Date(lr.date);
       lrDate.setHours(0, 0, 0, 0);
       return lrDate.getTime() === today.getTime();
     }).length;
 
-    const invoicedLrIds = new Set(invoices.flatMap(inv => inv.lorryReceipts.map(lr => lr._id)));
-    const unbilledLrs = lorryReceipts.filter(lr => !invoicedLrIds.has(lr._id));
+    const invoicedLrIds = new Set(safeInvoices.flatMap(inv => inv.lorryReceipts?.map(lr => lr._id) || []));
+    const unbilledLrs = safeLorryReceipts.filter(lr => !invoicedLrIds.has(lr._id));
 
-    const outstandingPayments = invoices.reduce((acc, inv) => {
+    const outstandingPayments = safeInvoices.reduce((acc, inv) => {
         return acc + (inv.balanceDue || 0);
     }, 0);
 
-    const totalFreightThisMonth = truckHiringNotes.filter(thn => {
+    const totalFreightThisMonth = safeTruckHiringNotes.filter(thn => {
         const thnDate = new Date(thn.date);
         return thnDate.getMonth() === today.getMonth() && thnDate.getFullYear() === today.getFullYear();
     }).reduce((acc, thn) => acc + thn.freight, 0);
 
-    const outstandingSupplierPayments = truckHiringNotes.reduce((acc, thn) => acc + thn.balancePayable, 0);
+    const outstandingSupplierPayments = safeTruckHiringNotes.reduce((acc, thn) => acc + thn.balancePayable, 0);
 
     return {
       totalLrsToday,
-      totalLrs: lorryReceipts.length,
-      totalInvoices: invoices.length,
+      totalLrs: safeLorryReceipts.length,
+      totalInvoices: safeInvoices.length,
       outstandingPayments,
       totalFreightThisMonth,
       outstandingSupplierPayments,
@@ -79,11 +84,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ lorryReceipts, invoices, t
   }, [lorryReceipts, invoices, truckHiringNotes]);
 
   const recentLrs = useMemo(() => {
-    return lorryReceipts.sort((a, b) => b.lrNumber - a.lrNumber).slice(0, 5);
+    const safeLorryReceipts = Array.isArray(lorryReceipts) ? lorryReceipts : [];
+    return safeLorryReceipts.sort((a, b) => b.lrNumber - a.lrNumber).slice(0, 5);
   }, [lorryReceipts]);
 
   const recentInvoices = useMemo(() => {
-    return invoices.sort((a, b) => b.invoiceNumber - a.invoiceNumber).slice(0, 5);
+    const safeInvoices = Array.isArray(invoices) ? invoices : [];
+    return safeInvoices.sort((a, b) => b.invoiceNumber - a.invoiceNumber).slice(0, 5);
   }, [invoices]);
 
   const today = new Date();
