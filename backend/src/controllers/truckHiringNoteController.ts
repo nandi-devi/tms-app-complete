@@ -7,6 +7,7 @@ import { THNStatus } from '../types';
 
 export const getTruckHiringNotes = asyncHandler(async (req: Request, res: Response) => {
   const notes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
+  console.log(`Returning ${notes.length} THNs with statuses:`, notes.map(n => ({ thnNumber: n.thnNumber, status: n.status, paidAmount: n.paidAmount, balanceAmount: n.balanceAmount })));
   res.json(notes);
 });
 

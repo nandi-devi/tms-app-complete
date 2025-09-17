@@ -6,19 +6,27 @@ import TruckHiringNote from '../models/truckHiringNote';
 import { updateInvoiceStatus } from '../utils/invoiceUtils';
 import { getNextSequenceValue } from '../utils/sequence';
 import { THNStatus } from '../types';
+import mongoose from 'mongoose';
 // THN status update function
 const updateThnStatus = async (thnId: string) => {
   try {
+    console.log(`Updating THN status for ID: ${thnId}`);
     const thn = await TruckHiringNote.findById(thnId);
     if (thn) {
+      console.log(`Found THN: ${thn.thnNumber}, Freight: ${thn.freightRate}, Additional: ${thn.additionalCharges || 0}`);
+      
       const totalPaid = await Payment.aggregate([
-        { $match: { truckHiringNoteId: thnId } },
+        { $match: { truckHiringNoteId: new mongoose.Types.ObjectId(thnId) } },
         { $group: { _id: null, total: { $sum: '$amount' } } }
       ]);
+      
+      console.log(`Payment aggregation result:`, totalPaid);
     
     const paidAmount = totalPaid.length > 0 ? totalPaid[0].total : 0;
     const totalAmount = thn.freightRate + (thn.additionalCharges || 0);
     const balanceAmount = totalAmount - paidAmount;
+    
+    console.log(`Calculated - Paid: ${paidAmount}, Total: ${totalAmount}, Balance: ${balanceAmount}`);
     
     let status = THNStatus.UNPAID;
     if (balanceAmount <= 0) {
@@ -27,11 +35,17 @@ const updateThnStatus = async (thnId: string) => {
       status = THNStatus.PARTIALLY_PAID;
     }
     
+    console.log(`Updating THN with status: ${status}`);
+    
       await TruckHiringNote.findByIdAndUpdate(thnId, { 
         paidAmount, 
         balanceAmount, 
         status 
       }, { runValidators: false });
+      
+      console.log(`THN status updated successfully`);
+    } else {
+      console.log(`THN not found with ID: ${thnId}`);
     }
   } catch (error) {
     console.error(`Error updating THN status for ${thnId}:`, error);
