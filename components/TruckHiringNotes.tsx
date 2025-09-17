@@ -146,7 +146,7 @@ export const TruckHiringNotes: React.FC<TruckHiringNotesProps> = ({
             {isPaymentFormOpen && selectedNoteForPayment && (
                 <UniversalPaymentForm
                     truckHiringNoteId={selectedNoteForPayment._id}
-                    customerId={selectedNoteForPayment.agencyName} // Using agency name as customer
+                    customerId={undefined} // No customer for THN payments
                     grandTotal={selectedNoteForPayment.totalAmount || (selectedNoteForPayment.freightRate + (selectedNoteForPayment.additionalCharges || 0))}
                     balanceDue={selectedNoteForPayment.balanceAmount}
                     onSave={handleSavePayment}

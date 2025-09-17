@@ -66,6 +66,17 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     console.log('Payment creation request body:', JSON.stringify(req.body, null, 2));
     const paymentData = createPaymentSchema.parse(req.body);
     console.log('Parsed payment data:', JSON.stringify(paymentData, null, 2));
+    
+    // Validate customer ID is a valid ObjectId (only if provided)
+    if (paymentData.customer && !paymentData.customer.match(/^[0-9a-fA-F]{24}$/)) {
+      console.error('Invalid customer ID:', paymentData.customer);
+      res.status(400).json({
+        message: 'Invalid customer ID format',
+        error: 'Customer ID must be a valid MongoDB ObjectId'
+      });
+      return;
+    }
+    
     const { invoiceId, truckHiringNoteId } = paymentData;
 
     const payment = new Payment(paymentData);

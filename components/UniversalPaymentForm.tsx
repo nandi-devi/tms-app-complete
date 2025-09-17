@@ -13,7 +13,7 @@ import { getCurrentDate } from '../services/utils';
 interface UniversalPaymentFormProps {
     invoiceId?: string;
     truckHiringNoteId?: string;
-    customerId: string;
+    customerId?: string;
     grandTotal: number;
     balanceDue: number;
     onSave: (payment: Omit<Payment, '_id' | 'customer' | 'invoice' | 'truckHiringNote'>) => Promise<void>;
@@ -39,7 +39,7 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
     const [payment, setPayment] = useState({
         invoiceId,
         truckHiringNoteId,
-        customer: customerId,
+        ...(customerId && { customer: customerId }),
         amount: balanceDue,
         date: getCurrentDate(),
         type: PaymentType.RECEIPT,
