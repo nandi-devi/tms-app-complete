@@ -13,6 +13,11 @@ export const getInvoices = async (): Promise<Invoice[]> => {
 };
 
 export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promise<Invoice> => {
+    console.log('=== FRONTEND INVOICE SERVICE ===');
+    console.log('Original invoice data:', JSON.stringify(invoice, null, 2));
+    console.log('Invoice customerId:', invoice.customerId);
+    console.log('Invoice lorryReceipts:', invoice.lorryReceipts);
+    
     // Transform frontend data format to backend format
     const backendData = {
         ...invoice,
@@ -23,6 +28,13 @@ export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promi
     // Remove the frontend-specific fields
     delete (backendData as any).customerId;
     
+    console.log('Transformed backend data:', JSON.stringify(backendData, null, 2));
+    console.log('Backend customer:', backendData.customer);
+    console.log('Backend lorryReceipts:', backendData.lorryReceipts);
+    
+    console.log('Making POST request to:', `${API_BASE_URL}/invoices`);
+    console.log('Request body:', JSON.stringify(backendData, null, 2));
+    
     const response = await fetch(`${API_BASE_URL}/invoices`, {
         method: 'POST',
         headers: {
@@ -30,6 +42,10 @@ export const createInvoice = async (invoice: Omit<Invoice, 'id' | '_id'>): Promi
         },
         body: JSON.stringify(backendData),
     });
+    
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
         const details = (errorData?.errors?.fieldErrors) ?
