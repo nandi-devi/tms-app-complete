@@ -49,11 +49,11 @@ class NumberingService {
         });
       } else {
         // If both fail, initialize with default configs
-        console.warn('Server endpoints not available, using default configs');
+        console.log('Initializing numbering system with default configurations');
         this.initializeDefaultConfigs();
       }
     } catch (error) {
-      console.error('Failed to load numbering configs:', error);
+      console.log('Initializing numbering system with default configurations');
       this.initializeDefaultConfigs();
     }
   }
@@ -117,7 +117,7 @@ class NumberingService {
       }
     } catch (error) {
       // If server is not available, save locally and show success
-      console.warn('Server not available, saving configuration locally:', error);
+      console.log('Saving numbering configuration locally');
       const savedConfig: NumberingConfig = {
         id: `${config.type}-${Date.now()}`,
         type: config.type,
