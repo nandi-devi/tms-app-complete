@@ -7,6 +7,7 @@ import { Input } from './ui/Input';
 import { Card } from './ui/Card';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
+import { Textarea } from './ui/Textarea';
 import { LorryReceiptView } from './LorryReceiptPDF';
 import { uploadPod } from '../services/lorryReceiptService';
 import { API_BASE_URL } from '../constants';
@@ -303,7 +304,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, cus
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignor?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lr.from} to {lr.to}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{lr.totalAmount.toLocaleString('en-IN')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <select
                       value={lr.status}

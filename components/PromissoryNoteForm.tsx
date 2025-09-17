@@ -60,7 +60,7 @@ export const PromissoryNoteForm: React.FC<PromissoryNoteFormProps> = ({ note, on
         const text = `
 --- PROMISSORY NOTE ---
 Supplier: ${formData.supplier.name}
-Amount: ₹${formData.amount?.toLocaleString() || 'N/A'}
+Amount: ₹${formData.amount?.toLocaleString('en-IN') || 'N/A'}
 Issue Date: ${formData.issueDate || 'N/A'}
 Due Date: ${formData.dueDate || 'N/A'}
 Payment Terms: ${formData.paymentTerms || 'As per agreement'}
