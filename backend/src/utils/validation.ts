@@ -89,7 +89,7 @@ export const updateLrSchema = createLrSchema.partial();
 export const createPaymentSchema = z.object({
   invoiceId: z.string().optional(),
   truckHiringNoteId: z.string().optional(),
-  customerId: z.string().min(1),
+  customer: z.string().min(1),
   amount: z.number().positive(),
   date: z.string().min(1),
   type: z.string().min(1),

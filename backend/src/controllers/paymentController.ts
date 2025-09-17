@@ -6,12 +6,13 @@ import TruckHiringNote from '../models/truckHiringNote';
 import { updateInvoiceStatus } from '../utils/invoiceUtils';
 // THN status update function
 const updateThnStatus = async (thnId: string) => {
-  const thn = await TruckHiringNote.findById(thnId);
-  if (thn) {
-    const totalPaid = await Payment.aggregate([
-      { $match: { truckHiringNoteId: thnId } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
+  try {
+    const thn = await TruckHiringNote.findById(thnId);
+    if (thn) {
+      const totalPaid = await Payment.aggregate([
+        { $match: { truckHiringNoteId: thnId } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]);
     
     const paidAmount = totalPaid.length > 0 ? totalPaid[0].total : 0;
     const totalAmount = thn.freightRate + (thn.additionalCharges || 0);
@@ -24,11 +25,14 @@ const updateThnStatus = async (thnId: string) => {
       status = 'PARTIAL';
     }
     
-    await TruckHiringNote.findByIdAndUpdate(thnId, { 
-      paidAmount, 
-      balanceAmount, 
-      status 
-    });
+      await TruckHiringNote.findByIdAndUpdate(thnId, { 
+        paidAmount, 
+        balanceAmount, 
+        status 
+      });
+    }
+  } catch (error) {
+    console.error(`Error updating THN status for ${thnId}:`, error);
   }
 };
 import { createPaymentSchema, updatePaymentSchema } from '../utils/validation';
@@ -58,11 +62,15 @@ export const getPaymentById = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const createPayment = asyncHandler(async (req: Request, res: Response) => {
-  const paymentData = createPaymentSchema.parse(req.body);
-  const { invoiceId, truckHiringNoteId } = paymentData;
+  try {
+    console.log('Payment creation request body:', JSON.stringify(req.body, null, 2));
+    const paymentData = createPaymentSchema.parse(req.body);
+    console.log('Parsed payment data:', JSON.stringify(paymentData, null, 2));
+    const { invoiceId, truckHiringNoteId } = paymentData;
 
-  const payment = new Payment(paymentData);
-  const newPayment = await payment.save();
+    const payment = new Payment(paymentData);
+    const newPayment = await payment.save();
+    console.log('Payment saved successfully:', newPayment._id);
 
   if (invoiceId) {
     const invoice = await Invoice.findById(invoiceId);
@@ -80,12 +88,17 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     }
   }
 
-  const populatedPayment = await Payment.findById(newPayment._id)
-    .populate('customer')
-    .populate('invoiceId')
-    .populate('truckHiringNoteId');
+    const populatedPayment = await Payment.findById(newPayment._id)
+      .populate('customer')
+      .populate('invoiceId')
+      .populate('truckHiringNoteId');
 
-  res.status(201).json(populatedPayment);
+    console.log('Payment created successfully:', populatedPayment._id);
+    res.status(201).json(populatedPayment);
+  } catch (error) {
+    console.error('Error creating payment:', error);
+    throw error;
+  }
 });
 
 export const updatePayment = asyncHandler(async (req: Request, res: Response) => {
