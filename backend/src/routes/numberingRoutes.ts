@@ -35,12 +35,9 @@ router.post('/configs', async (req: Request, res: Response) => {
       existingConfig.allowManualEntry = !!allowManualEntry;
       existingConfig.allowOutsideRange = !!allowOutsideRange;
       
-      // If current number is outside new range, reset to start
-      if (existingConfig.currentNumber < startNumber) {
-        existingConfig.currentNumber = startNumber;
-      } else if (existingConfig.currentNumber > endNumber && !allowOutsideRange) {
-        existingConfig.currentNumber = startNumber;
-      }
+      // Reset current number to start number when range is updated
+      // This ensures the numbering starts from the new range
+      existingConfig.currentNumber = startNumber;
       
       await existingConfig.save();
       res.json(existingConfig);
